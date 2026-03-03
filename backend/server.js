@@ -19,8 +19,9 @@ const app = express();
 const server = http.createServer(app); // Wrap Express with HTTP server
 const allowedOrigins = [
   'http://localhost:5173',
-  'https://cse-471-project-gamma.vercel.app', // production frontend URL
-  process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null, // dynamically passed in production, immune to trailing slashes
+  'https://klivra.vercel.app',               // production frontend URL (primary)
+  'https://cse-471-project-gamma.vercel.app', // production frontend URL (alternate)
+  process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null, // dynamically passed in production
 ].filter(Boolean);
 
 const io = new Server(server, {
