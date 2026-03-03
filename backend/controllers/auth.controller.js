@@ -76,7 +76,7 @@ const registerUser = async (req, res, next) => {
             throw new Error('Invalid user data');
         }
     } catch (error) {
-        console.error('❌ Registration Error:', error.message);
+        console.error('❌ Registration Error FULL:', error);
 
         // MongoDB duplicate key error (email already in use)
         if (error.code === 11000) {
@@ -89,7 +89,8 @@ const registerUser = async (req, res, next) => {
             res.status(400);
             return next(new Error(messages.join(', ')));
         }
-        next(error);
+        res.status(400);
+        next(new Error(`Registration failed: ${error.message}`));
     }
 };
 
