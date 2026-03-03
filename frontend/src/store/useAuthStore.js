@@ -4,7 +4,7 @@ import axios from 'axios';
 // Create a configured Axios instance
 // withCredentials: true ensures your browser automatically attaches the HttpOnly cookie to every request.
 export const api = axios.create({
-    baseURL: 'http://localhost:5000/api',
+    baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : 'http://localhost:5000/api',
     withCredentials: true,
 });
 

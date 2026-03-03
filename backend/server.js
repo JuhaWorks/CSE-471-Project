@@ -17,9 +17,14 @@ try {
 
 const app = express();
 const server = http.createServer(app); // Wrap Express with HTTP server
+const allowedOrigins = [
+  'http://localhost:5173',
+  process.env.FRONTEND_URL, // dynamically passed in production
+].filter(Boolean);
+
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173', // Allow our Vite React frontend
+    origin: allowedOrigins, // Allow our Vite React frontend and deployed frontend
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true // Crucial for receiving cookies
   },
@@ -66,10 +71,19 @@ io.on('connection', (socket) => {
 });
 
 app.use(helmet());
-app.use(cors({
-  origin: 'http://localhost:5173', // Needed for strict cookie passing
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true); // Allow requests with no origin
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true // Crucial: Allows the browser to attach the cookie to the request
-}));
+};
+
+app.use(cors(corsOptions));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
