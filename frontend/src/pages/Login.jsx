@@ -1,0 +1,114 @@
+import { useEffect, useState } from 'react';
+import { useAuthStore } from '../store/useAuthStore';
+import { useNavigate, Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const loginSchema = z.object({
+    email: z.string().min(1, 'Email is required').email('Please enter a valid email'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+});
+
+const Login = () => {
+    const navigate = useNavigate();
+    const { login, isLoading, error, clearError, user } = useAuthStore();
+    const [showPassword, setShowPassword] = useState(false);
+
+    const { register, handleSubmit, formState: { errors, isValid } } = useForm({
+        resolver: zodResolver(loginSchema),
+        mode: 'onChange',
+    });
+
+    useEffect(() => { if (user) navigate('/'); }, [user, navigate]);
+    useEffect(() => { clearError(); }, [clearError]);
+
+    const onSubmit = async (data) => {
+        clearError();
+        try { await login(data.email, data.password); navigate('/'); } catch { }
+    };
+
+    return (
+        <div className="min-h-screen flex bg-[#05050a] text-white font-sans selection:bg-violet-500/30">
+            {/* Left Brand Panel */}
+            <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center bg-gradient-to-br from-[#0d0d1a] via-[#111128] to-[#05050a]">
+                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.5) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
+                <div className="absolute top-1/4 left-1/3 w-[400px] h-[400px] bg-violet-600 rounded-full opacity-[0.08] blur-[150px]" />
+                <div className="absolute bottom-1/4 right-1/4 w-[300px] h-[300px] bg-blue-500 rounded-full opacity-[0.06] blur-[120px]" />
+
+                <div className="relative z-10 text-center px-14 max-w-md">
+                    <div className="mx-auto mb-8 w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-2xl shadow-violet-500/30">
+                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <h1 className="text-4xl font-black tracking-tight mb-2">
+                        Sync<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">Forge</span><span className="text-gray-500 text-lg font-medium">.io</span>
+                    </h1>
+                    <p className="text-gray-500 text-[15px] leading-relaxed mt-4 mb-10">
+                        Real-time collaboration platform for teams building extraordinary products.
+                    </p>
+                    <div className="flex flex-wrap gap-2 justify-center">
+                        {['Real-time Sync', 'Kanban', 'Whiteboards', 'Secure'].map(f => (
+                            <span key={f} className="px-3 py-1 rounded-full text-[11px] font-medium bg-white/[0.04] text-gray-400 border border-white/[0.06]">{f}</span>
+                        ))}
+                    </div>
+                </div>
+            </div>
+
+            {/* Right Form */}
+            <div className="w-full lg:w-[55%] flex items-center justify-center p-6 sm:p-12 lg:p-20 relative">
+                <div className="absolute top-1/3 right-1/4 w-80 h-80 bg-violet-600 rounded-full opacity-[0.03] blur-[100px] pointer-events-none" />
+                <div className="w-full max-w-[420px]">
+                    <div className="lg:hidden text-center mb-10">
+                        <h1 className="text-2xl font-black tracking-tight">Sync<span className="text-transparent bg-clip-text bg-gradient-to-r from-violet-400 to-blue-400">Forge</span><span className="text-gray-500 text-sm">.io</span></h1>
+                    </div>
+                    <div className="mb-8">
+                        <h2 className="text-2xl font-bold tracking-tight mb-1.5">Welcome back</h2>
+                        <p className="text-gray-500 text-sm">Don't have an account? <Link to="/register" className="text-violet-400 font-semibold hover:text-violet-300 transition-colors">Sign up</Link></p>
+                    </div>
+
+                    <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-7 shadow-2xl shadow-black/20">
+                        {error && (
+                            <div className="mb-5 flex items-center gap-3 p-3.5 rounded-xl bg-red-500/[0.08] border border-red-500/15 text-red-400" role="alert">
+                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span className="text-sm font-medium flex-1">{error}</span>
+                                <button onClick={clearError} className="p-1 hover:bg-red-500/20 rounded-lg transition-colors" aria-label="Dismiss"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
+                            </div>
+                        )}
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+                            <div>
+                                <label htmlFor="login-email" className="block text-[13px] font-semibold mb-2 text-gray-400">Email</label>
+                                <input id="login-email" type="email" autoComplete="email" {...register('email')} aria-invalid={errors.email ? 'true' : 'false'}
+                                    className={`w-full px-4 py-3 rounded-xl bg-white/[0.03] border text-white placeholder-gray-600 outline-none transition-all text-sm ${errors.email ? 'border-red-500/40 focus:ring-2 focus:ring-red-500/10' : 'border-white/[0.06] hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/10'}`}
+                                    placeholder="you@company.com" />
+                                {errors.email && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
+                            </div>
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <label htmlFor="login-pass" className="block text-[13px] font-semibold text-gray-400">Password</label>
+                                    <button type="button" className="text-[11px] font-medium text-gray-500 hover:text-violet-400 transition-colors" tabIndex={-1}>Forgot?</button>
+                                </div>
+                                <div className="relative">
+                                    <input id="login-pass" type={showPassword ? 'text' : 'password'} autoComplete="current-password" {...register('password')}
+                                        className={`w-full pl-4 pr-12 py-3 rounded-xl bg-white/[0.03] border text-white placeholder-gray-600 outline-none transition-all text-sm ${errors.password ? 'border-red-500/40 focus:ring-2 focus:ring-red-500/10' : 'border-white/[0.06] hover:border-white/[0.12] focus:border-violet-500/50 focus:ring-2 focus:ring-violet-500/10'}`}
+                                        placeholder="••••••••" />
+                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 rounded transition-colors" tabIndex={-1} aria-label={showPassword ? 'Hide' : 'Show'}>
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={showPassword ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M3 3l18 18" : "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} /></svg>
+                                    </button>
+                                </div>
+                                {errors.password && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.password.message}</p>}
+                            </div>
+                            <button type="submit" disabled={isLoading || !isValid}
+                                className={`w-full py-3 rounded-xl font-semibold text-sm transition-all duration-300 flex justify-center items-center gap-2 ${isLoading || !isValid ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-violet-600 to-blue-600 text-white hover:opacity-90 shadow-lg shadow-violet-500/20 active:scale-[0.98]'}`}>
+                                {isLoading ? (<><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Signing in...</>) : 'Sign In'}
+                            </button>
+                        </form>
+                    </div>
+                    <p className="text-center text-[11px] text-gray-600 mt-6">By continuing, you agree to our <a href="#" className="text-gray-500 hover:text-white underline underline-offset-2 transition-colors">Terms</a> & <a href="#" className="text-gray-500 hover:text-white underline underline-offset-2 transition-colors">Privacy</a>.</p>
+                </div>
+            </div>
+        </div>
+    );
+};
+export default Login;
