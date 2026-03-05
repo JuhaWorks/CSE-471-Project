@@ -47,6 +47,18 @@ const userSchema = new mongoose.Schema(
             maxlength: [150, 'Custom message cannot exceed 150 characters'],
             default: '',
         },
+        isActive: {
+            type: Boolean,
+            default: true,
+        },
+        deactivationDate: {
+            type: Date,
+            default: null,
+        },
+        deactivationDuration: {
+            type: Number,
+            default: null, // Number of days, null means deactivated indefinitely
+        },
     },
     {
         timestamps: true, // Automatically add createdAt and updatedAt fields
@@ -70,6 +82,54 @@ userSchema.pre('save', async function () {
 // Method to verify if an entered password matches the hashed password in the database
 userSchema.methods.matchPassword = async function (enteredPassword) {
     return await bcrypt.compare(enteredPassword, this.password);
+};
+
+// Model Statics (Strict MVC)
+userSchema.statics.deactivateAndCleanUp = async function (userId, duration) {
+    const user = await this.findById(userId);
+    if (!user) throw new Error('User not found');
+
+    user.isActive = false;
+    user.deactivationDate = new Date();
+    user.deactivationDuration = duration ? parseInt(duration) : null;
+    return await user.save();
+};
+
+userSchema.statics.deleteAndCleanUp = async function (userId) {
+    const Project = mongoose.model('Project');
+    const Task = mongoose.model('Task');
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+        const user = await this.findByIdAndDelete(userId).session(session);
+
+        if (!user) {
+            throw new Error('User not found');
+        }
+
+        // Clean up references in other collections
+        await Project.updateMany(
+            { 'teamMembers.user': userId },
+            { $pull: { teamMembers: { user: userId } } },
+            { session }
+        );
+
+        await Task.updateMany(
+            { assignee: userId },
+            { $set: { assignee: null } },
+            { session }
+        );
+
+        await session.commitTransaction();
+        session.endSession();
+        return true;
+    } catch (error) {
+        await session.abortTransaction();
+        session.endSession();
+        throw error;
+    }
 };
 
 module.exports = mongoose.model('User', userSchema);

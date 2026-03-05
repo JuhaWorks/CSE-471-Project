@@ -34,4 +34,13 @@ const projectSchema = new mongoose.Schema(
     }
 );
 
+// Optimize lookups for determining which projects a user belongs to
+projectSchema.index({ 'teamMembers.user': 1 });
+
+// Add $text index for Global Search weighting
+projectSchema.index(
+    { name: 'text', description: 'text' },
+    { name: "ProjectTextIndex", weights: { name: 10, description: 5 } }
+);
+
 module.exports = mongoose.model('Project', projectSchema);

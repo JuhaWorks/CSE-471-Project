@@ -1,8 +1,42 @@
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import axios from 'axios';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useRef } from 'react';
 
 const Home = () => {
     const { user } = useAuthStore();
+
+    const { data: apod, isLoading: apodLoading } = useQuery({
+        queryKey: ['apod'],
+        queryFn: async () => {
+            const res = await axios.get('https://api.nasa.gov/planetary/apod?api_key=DEMO_KEY&thumbs=true');
+            return res.data;
+        },
+        staleTime: 1000 * 60 * 60 * 24, // 24 hours cache
+    });
+
+    // Fetch paginated Activity Logs via Audit endpoint
+    const { data: activityResponse, isLoading: activityLoading } = useQuery({
+        queryKey: ['activityFeed'],
+        queryFn: async () => {
+            const res = await api.get('/audit?limit=100'); // Fetch a large chunk for virtualization demo
+            return res.data;
+        },
+        staleTime: 1000 * 60 * 5, // 5 min
+    });
+
+    const activity = activityResponse?.data || [];
+    const parentRef = useRef();
+
+    // The virtualizer handles rendering ONLY the items currently visible on the screen
+    const virtualizer = useVirtualizer({
+        count: activity.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 60, // approximate height of one activity log item in pixels
+        overscan: 5, // Render 5 extra items outside the viewport for smooth scrolling
+    });
 
     const hour = new Date().getHours();
     const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -12,13 +46,6 @@ const Home = () => {
         { label: 'Total Tasks', value: '28', sub: '6 due today', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', gradient: 'from-blue-600 to-cyan-600', glow: 'shadow-blue-500/15' },
         { label: 'Completed', value: '15', sub: '54% done', icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', gradient: 'from-emerald-600 to-teal-600', glow: 'shadow-emerald-500/15' },
         { label: 'Team Members', value: '8', sub: '3 online', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z', gradient: 'from-amber-500 to-orange-600', glow: 'shadow-amber-500/15' },
-    ];
-
-    const activity = [
-        { user: 'Sarah K.', action: 'completed task', target: 'Fix authentication bug', time: '2m ago', color: 'bg-emerald-500' },
-        { user: 'Alex M.', action: 'commented on', target: 'UI redesign proposal', time: '15m ago', color: 'bg-blue-500' },
-        { user: 'You', action: 'moved task to', target: 'In Progress', time: '1h ago', color: 'bg-violet-500' },
-        { user: 'David L.', action: 'created project', target: 'Backend API v2', time: '3h ago', color: 'bg-amber-500' },
     ];
 
     const tasks = [
@@ -81,43 +108,97 @@ const Home = () => {
                     </div>
                 </div>
 
-                {/* Activity Feed */}
-                <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6">
-                    <div className="flex items-center justify-between mb-5">
-                        <h2 className="text-[15px] font-bold text-white">Recent Activity</h2>
+                {/* Activity Feed (Virtualized) */}
+                <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl p-6 flex flex-col h-[400px]">
+                    <div className="flex items-center justify-between mb-5 flex-shrink-0">
+                        <h2 className="text-[15px] font-bold text-white">Recent Activity <span className="text-gray-500 text-xs ml-1 font-normal">({activity.length})</span></h2>
                         <button className="text-[11px] text-violet-400 hover:text-violet-300 font-semibold transition-colors">View all</button>
                     </div>
-                    <div className="space-y-4">
-                        {activity.map((a, i) => (
-                            <div key={i} className="flex gap-3">
-                                <div className="relative mt-0.5">
-                                    <div className={`w-7 h-7 rounded-full ${a.color} flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>{a.user.charAt(0)}</div>
-                                    {i < activity.length - 1 && <div className="absolute top-7 left-1/2 -translate-x-1/2 w-px h-4 bg-white/[0.04]" />}
-                                </div>
-                                <div className="min-w-0">
-                                    <p className="text-[13px] text-gray-400 leading-snug"><span className="font-semibold text-gray-200">{a.user}</span> {a.action} <span className="font-medium text-gray-300">"{a.target}"</span></p>
-                                    <p className="text-[11px] text-gray-600 mt-0.5">{a.time}</p>
-                                </div>
+
+                    {activityLoading ? (
+                        <div className="flex-1 flex items-center justify-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
+                        </div>
+                    ) : (
+                        <div
+                            ref={parentRef}
+                            className="flex-1 overflow-y-auto pr-2 custom-scrollbar"
+                            style={{ contain: 'strict' }}
+                        >
+                            <div
+                                style={{
+                                    height: `${virtualizer.getTotalSize()}px`,
+                                    width: '100%',
+                                    position: 'relative',
+                                }}
+                            >
+                                {virtualizer.getVirtualItems().map((virtualItem) => {
+                                    const a = activity[virtualItem.index];
+                                    const dateStr = new Date(a.createdAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+                                    return (
+                                        <div
+                                            key={virtualItem.key}
+                                            style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                left: 0,
+                                                width: '100%',
+                                                height: `${virtualItem.size}px`,
+                                                transform: `translateY(${virtualItem.start}px)`,
+                                            }}
+                                            className="flex gap-3 px-1 py-2"
+                                        >
+                                            <div className="relative mt-0.5">
+                                                <div className={`w-7 h-7 rounded-full bg-violet-600 flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0`}>
+                                                    {a.user?.name ? a.user.name.charAt(0) : '?'}
+                                                </div>
+                                                {virtualItem.index < activity.length - 1 && <div className="absolute top-7 left-1/2 -translate-x-1/2 w-px h-[calc(100%+16px)] bg-white/[0.04]" />}
+                                            </div>
+                                            <div className="min-w-0">
+                                                <p className="text-[13px] text-gray-400 leading-snug">
+                                                    <span className="font-semibold text-gray-200">{a.user?.name || 'Unknown'}</span> {a.action} <span className="font-medium text-gray-300">"{a.details?.title || a.entityType}"</span>
+                                                </p>
+                                                <p className="text-[11px] text-gray-600 mt-0.5">{dateStr}</p>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
-                        ))}
-                    </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Space Widget */}
                 <div className="bg-white/[0.02] border border-white/[0.06] rounded-2xl overflow-hidden flex flex-col">
                     <div className="p-6 pb-0">
                         <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-[15px] font-bold text-white">Inspiration</h2>
+                            <h2 className="text-[15px] font-bold text-white">INSPIRATION</h2>
                             <span className="text-gray-600 text-xs">🚀</span>
                         </div>
                     </div>
                     <div className="relative flex-1 min-h-[200px]">
-                        <img src="https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600&auto=format&fit=crop&q=80" alt="Deep space nebula" className="w-full h-full object-cover" loading="lazy" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a12] via-transparent to-transparent" />
-                        <div className="absolute bottom-0 left-0 right-0 p-5">
-                            <p className="text-[13px] font-medium text-gray-200 leading-relaxed">"The cosmos is within us. We are made of star-stuff."</p>
-                            <p className="text-[11px] text-gray-500 mt-1">— Carl Sagan</p>
-                        </div>
+                        {apodLoading ? (
+                            <div className="absolute inset-0 flex items-center justify-center bg-gray-900/50">
+                                <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
+                            </div>
+                        ) : (
+                            <>
+                                <img
+                                    src={(apod?.media_type === 'video' ? apod?.thumbnail_url : apod?.url) || "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?w=600&auto=format&fit=crop&q=80"}
+                                    alt={apod?.title || "Deep space nebula"}
+                                    className="w-full h-full object-cover"
+                                    loading="lazy"
+                                />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a12] via-transparent to-transparent" />
+                                <div className="absolute bottom-0 left-0 right-0 p-5">
+                                    <p className="text-[13px] font-medium text-gray-200 leading-relaxed line-clamp-2" title={apod?.explanation}>
+                                        {apod?.explanation ? `"${apod.explanation}"` : '"The cosmos is within us. We are made of star-stuff."'}
+                                    </p>
+                                    <p className="text-[11px] text-gray-500 mt-1">— {apod?.title || "Carl Sagan"}</p>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             </div>

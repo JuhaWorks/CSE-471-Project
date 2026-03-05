@@ -1,5 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore, api } from '../store/useAuthStore';
+import { useQueryClient } from '@tanstack/react-query';
 
 const navItems = [
     { label: 'Dashboard', path: '/', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
@@ -15,6 +16,21 @@ const bottomItems = [
 const Sidebar = ({ isOpen, onClose }) => {
     const { logout } = useAuthStore();
     const navigate = useNavigate();
+    const queryClient = useQueryClient();
+
+    // Intent-Driven Prefetching logic based on navigation path targets
+    const handlePrefetch = (path) => {
+        if (path === '/projects') {
+            queryClient.prefetchQuery({
+                queryKey: ['projects'],
+                queryFn: async () => {
+                    const res = await api.get('/projects');
+                    return res.data;
+                },
+                staleTime: 1000 * 60 * 5 // Cache prefetch for 5 min
+            });
+        }
+    };
 
     const handleLogout = async () => {
         await logout();
@@ -41,8 +57,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                         </svg>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-[15px] font-bold tracking-tight text-white leading-none">SyncForge</span>
-                        <span className="text-[10px] text-gray-500 font-medium tracking-wider">.io</span>
+                        <span className="text-[15px] font-bold tracking-tight text-white leading-none">Klivra</span>
                     </div>
                     <button onClick={onClose} className="lg:hidden ml-auto p-1.5 text-gray-500 hover:text-white rounded-lg transition-colors" aria-label="Close sidebar">
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -58,6 +73,7 @@ const Sidebar = ({ isOpen, onClose }) => {
                             to={item.path}
                             end={item.path === '/'}
                             onClick={onClose}
+                            onMouseEnter={() => handlePrefetch(item.path)}
                             className={({ isActive }) => `
                                 flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
                                 ${isActive

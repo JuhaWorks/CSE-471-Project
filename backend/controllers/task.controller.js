@@ -1,12 +1,13 @@
 const Task = require('../models/task.model');
 const Project = require('../models/project.model');
+const socket = require('../utils/socket');
 
-// @desc    Get all tasks for a project
+// @desc    Get all tasks for a project (with pagination & lean)
 // @route   GET /api/projects/:projectId/tasks
 // @access  Private
 const getTasks = async (req, res, next) => {
     try {
-        const project = await Project.findById(req.params.projectId);
+        const project = await Project.findById(req.params.projectId).lean();
 
         if (!project) {
             res.status(404);
@@ -23,12 +24,27 @@ const getTasks = async (req, res, next) => {
             throw new Error('User not authorized to access tasks for this project');
         }
 
+        // Pagination setup
+        const page = parseInt(req.query.page, 10) || 1;
+        const limit = parseInt(req.query.limit, 10) || 50;
+        const skip = (page - 1) * limit;
+
+        const total = await Task.countDocuments({ project: req.params.projectId });
+
         const tasks = await Task.find({ project: req.params.projectId })
-            .populate('assignee', 'name email');
+            .populate('assignee', 'name email')
+            .skip(skip)
+            .limit(limit)
+            .lean();
 
         res.status(200).json({
             status: 'success',
             count: tasks.length,
+            pagination: {
+                total,
+                page,
+                pages: Math.ceil(total / limit)
+            },
             data: tasks,
         });
     } catch (error) {
@@ -70,6 +86,9 @@ const createTask = async (req, res, next) => {
             project: req.params.projectId
         });
 
+        // Emit real-time WebSocket event
+        socket.getIO().to(req.params.projectId).emit('taskUpdated', task);
+
         res.status(201).json({ status: 'success', data: task });
     } catch (error) {
         next(error);
@@ -106,6 +125,9 @@ const updateTask = async (req, res, next) => {
             runValidators: true,
         });
 
+        // Emit real-time WebSocket event
+        socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+
         res.status(200).json({ status: 'success', data: task });
     } catch (error) {
         next(error);
@@ -135,6 +157,9 @@ const deleteTask = async (req, res, next) => {
         }
 
         await task.deleteOne();
+
+        // Emit real-time WebSocket deletion signal (passing deleted ID)
+        socket.getIO().to(task.project.toString()).emit('taskDeleted', task._id);
 
         res.status(200).json({ status: 'success', data: {} });
     } catch (error) {

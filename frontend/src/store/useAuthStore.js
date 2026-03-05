@@ -23,17 +23,76 @@ export const api = axios.create({
     timeout: 15000, // 15s hard timeout — prevents hanging requests
 });
 
-// Auto-retry once on network timeout (e.g. transient blip on Render cold-start)
+// Add Request Interceptor to inject the access token
+api.interceptors.request.use((config) => {
+    // Safely get state avoiding circular dependency
+    const token = useAuthStore.getState().accessToken;
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+});
+
+// Configure Response Interceptor for automated token refresh
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+    failedQueue.forEach(prom => {
+        if (error) prom.reject(error);
+        else prom.resolve(token);
+    });
+    failedQueue = [];
+};
+
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const config = error.config;
-        // Only retry once, and only on network errors / timeouts (no response)
-        if (!config._retried && (error.code === 'ECONNABORTED' || !error.response)) {
-            config._retried = true;
-            await new Promise((r) => setTimeout(r, 400)); // 400 ms back-off
-            return api(config);
+        const originalRequest = error.config;
+
+        // 1. Intercept 401 Unauthorized for automated token refresh
+        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh' && originalRequest.url !== '/auth/login' && originalRequest.url !== '/auth/register') {
+            if (isRefreshing) {
+                return new Promise(function (resolve, reject) {
+                    failedQueue.push({ resolve, reject });
+                }).then(token => {
+                    originalRequest.headers.Authorization = 'Bearer ' + token;
+                    return api(originalRequest);
+                }).catch(err => Promise.reject(err));
+            }
+
+            originalRequest._retry = true;
+            isRefreshing = true;
+
+            try {
+                // Securely request a new short-lived access token using the HttpOnly refresh cookie
+                // Use plain axios to avoid hitting interceptors recursively
+                const response = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
+                const newAccessToken = response.data.accessToken;
+
+                useAuthStore.getState().setAccessToken(newAccessToken);
+                processQueue(null, newAccessToken);
+
+                // Retry the original failed request
+                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                return api(originalRequest);
+            } catch (refreshError) {
+                processQueue(refreshError, null);
+                // Refresh failed; meaning session is completely dead/expired. Clear client state.
+                useAuthStore.getState().logout(true); // Call logout client-side only
+                return Promise.reject(refreshError);
+            } finally {
+                isRefreshing = false;
+            }
         }
+
+        // 2. Original auto-retry logic for transient network blips
+        if (!originalRequest._retried && (error.code === 'ECONNABORTED' || !error.response)) {
+            originalRequest._retried = true;
+            await new Promise((r) => setTimeout(r, 400)); // 400 ms back-off
+            return api(originalRequest);
+        }
+
         return Promise.reject(error);
     }
 );
@@ -41,16 +100,21 @@ api.interceptors.response.use(
 
 export const useAuthStore = create((set) => ({
     user: null,
+    accessToken: null, // Short-lived token stored only in memory
     isAuthenticated: false,
     isLoading: false, // Start as false so Login/Register buttons are immediately interactive
     authChecking: true, // Separate flag for the initial auth check (prevents protected route flash)
     error: null,
+    setAccessToken: (token) => set({ accessToken: token }),
     clearError: () => set({ error: null }),
 
-    // 1. Check if the user has an active session cookie
+    // 1. Check if the user has an active session
     checkAuth: async () => {
         set({ authChecking: true, error: null });
         try {
+            // Because no accessToken is active on refresh/boot, the request interceptor attaches nothing.
+            // The backend responds with 401. The response interceptor catches it, hits `/auth/refresh` using
+            // the HttpOnly cookie, gets the token, updates zustand state, and seamlessly retries this.
             const response = await api.get('/auth/profile');
             set({
                 user: response.data.data,
@@ -60,6 +124,7 @@ export const useAuthStore = create((set) => ({
         } catch (error) {
             set({
                 user: null,
+                accessToken: null,
                 isAuthenticated: false,
                 authChecking: false
             });
@@ -81,30 +146,39 @@ export const useAuthStore = create((set) => ({
     },
 
     // 3. Login user
-    login: async (email, password) => {
+    login: async (email, password, reactivate = false) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.post('/auth/login', { email, password });
+            const response = await api.post('/auth/login', { email, password, reactivate });
             set({
                 user: response.data.data,
+                accessToken: response.data.accessToken,
                 isAuthenticated: true,
                 isLoading: false
             });
             return response.data;
         } catch (error) {
+            set({ isLoading: false });
+            if (error.response?.data?.requiresReactivation) {
+                // Return the specific object to trigger the modal in Login.jsx
+                throw error.response.data;
+            }
             const errorMessage = error.response?.data?.message || 'Invalid email or password';
-            set({ error: errorMessage, isLoading: false });
-            throw error;
+            set({ error: errorMessage });
+            throw new Error(errorMessage);
         }
     },
 
     // 4. Logout user (Destroys the server-side cookie and clears client state)
-    logout: async () => {
+    logout: async (forceClientSide = false) => {
         set({ isLoading: true, error: null });
         try {
-            await api.get('/auth/logout');
+            if (!forceClientSide) {
+                await api.get('/auth/logout');
+            }
             set({
                 user: null,
+                accessToken: null,
                 isAuthenticated: false,
                 isLoading: false
             });

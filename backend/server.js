@@ -1,154 +1,112 @@
-require('dotenv').config(); // v2 — user profile routes enabled
-
+require('dotenv').config();
 const express = require('express');
-const http = require('http'); // Required for Socket.io
-const { Server } = require('socket.io'); // Import Socket.io
+const http = require('http');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
 const compression = require('compression');
 const cookieParser = require('cookie-parser');
 const dns = require('dns');
+const mongoSanitize = require('express-mongo-sanitize');
+const morganMiddleware = require('./middlewares/morgan.middleware');
+const logger = require('./utils/logger');
 
-
+// 1. Optimize DNS resolution for faster external APIs/MongoDB
 try {
   dns.setServers(["1.1.1.1", "8.8.8.8", "8.8.4.4"]);
-  console.log("✅ DNS servers set to Cloudflare and Google");
+  logger.info("✅ DNS servers set to Cloudflare and Google");
 } catch (err) {
-  console.error("❌ Failed to set DNS servers:", err.message);
+  logger.error(`❌ Failed to set DNS servers: ${err.message}`);
 }
 
 const app = express();
-const server = http.createServer(app); // Wrap Express with HTTP server
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://klivra.vercel.app',               // production frontend URL (primary)
-  'https://cse-471-project-gamma.vercel.app', // production frontend URL (alternate)
-  process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, '') : null, // dynamically passed in production
-].filter(Boolean);
+const server = http.createServer(app);
+const io = require('./utils/socket').init(server);
 
-const io = new Server(server, {
-  cors: {
-    origin: allowedOrigins, // Allow our Vite React frontend and deployed frontend
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true // Crucial for receiving cookies
-  },
-});
+// 2. Fast allowed origins lookup O(1)
+const allowedOrigins = new Set([
+  'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000',
+  'https://klivra.vercel.app', 'https://cse-471-project-gamma.vercel.app',
+  process.env.FRONTEND_URL?.replace(/\/$/, '')
+].filter(Boolean));
 
-// Pass `io` instance to the request object so controllers can access it if needed
-app.use((req, res, next) => {
-  req.io = io;
-  next();
-});
-
-// Socket.io Connection Logic
-io.on('connection', (socket) => {
-  console.log(`User connected via socket: ${socket.id}`);
-
-  // Listen for frontend drag-and-drop task movements
-  socket.on('task:move', (data) => {
-    // data should contain { taskId, newStatus, projectId, etc. }
-    console.log('Task moved event received:', data);
-
-    // Broadcast the updated task to all OTHER connected clients
-    socket.broadcast.emit('task:moved', data);
-  });
-
-  // Handle collaborative whiteboard joining a room
-  socket.on('join-whiteboard', (roomId) => {
-    socket.join(roomId);
-    console.log(`User ${socket.id} joined whiteboard room ${roomId}`);
-  });
-
-  // Handle incoming drawing data and broadcasting to the specific room
-  socket.on('draw-line', ({ roomId, lineData }) => {
-    socket.to(roomId).emit('draw-line', lineData);
-  });
-
-  // Handle clearing the board
-  socket.on('clear-board', (roomId) => {
-    socket.to(roomId).emit('clear-board');
-  });
-
-  socket.on('disconnect', () => {
-    console.log(`User disconnected: ${socket.id}`);
-  });
-});
-
+// 3. Middlewares
 app.use(helmet());
-// Gzip compress all responses — typically 60-80% smaller JSON payloads
-app.use(compression({ threshold: 1024 })); // Only compress responses > 1 kB
-const corsOptions = {
-  origin: function (origin, callback) {
-    if (!origin) return callback(null, true); // Allow requests with no origin
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+app.use(compression({ threshold: 1024 }));
+app.use(cors({
+  origin: (origin, cb) => {
+    if (!origin || allowedOrigins.has(origin)) cb(null, true);
+    else cb(new Error('Not allowed by CORS'));
   },
-  credentials: true // Crucial: Allows the browser to attach the cookie to the request
-};
-
-app.use(cors(corsOptions));
+  credentials: true
+}));
 app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.get('/', (req, res) => {
-  res.status(200).json({ status: 'success', message: 'API is running successfully.' });
+// Data sanitization against NoSQL query injection
+app.use(mongoSanitize());
+
+// HTTP Request Logging
+app.use(morganMiddleware);
+
+app.use((req, res, next) => { req.io = io; next(); });
+
+// 4. Compact Socket.io Setup
+io.on('connection', (socket) => {
+  socket.on('joinProject', (id) => socket.join(id));
+  socket.on('join-whiteboard', (id) => socket.join(id));
+  socket.on('task:move', (data) => socket.to(data.projectId).emit('task:moved', data));
+  socket.on('draw-line', ({ roomId, lineData }) => socket.to(roomId).emit('draw-line', lineData));
+  socket.on('clear-board', (roomId) => socket.to(roomId).emit('clear-board'));
 });
 
-// Import and mount route files
-const authRoutes = require('./routes/auth.routes');
-const projectRoutes = require('./routes/project.routes');
-const taskRoutes = require('./routes/task.routes');
-const userRoutes = require('./routes/user.routes');
+// 5. Routes
+app.get('/', (req, res) => res.status(200).json({ status: 'success', message: 'API is running successfully.' }));
+app.use('/api/auth', require('./routes/auth.routes'));
+app.use('/api/projects', require('./routes/project.routes'));
+app.use('/api/tasks', require('./routes/task.routes'));
+app.use('/api/users', require('./routes/user.routes'));
+app.use('/api/settings', require('./routes/settings.routes'));
+app.use('/api/audit', require('./routes/audit.routes'));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/projects', projectRoutes);
-app.use('/api/tasks', taskRoutes);
-app.use('/api/users', userRoutes);
-
-// MongoDB Connection with better options
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 10000,
-      socketTimeoutMS: 45000,
-      family: 4 // Still keep IPv4 force as backup
-    });
-    console.log("✅ MongoDB Connected Successfully!");
-  } catch (err) {
-    console.error("❌ MongoDB Connection Error:", err.message);
+// 6. DB Connection
+mongoose.connect(process.env.MONGO_URI, {
+  serverSelectionTimeoutMS: 5000,
+  connectTimeoutMS: 10000,
+  socketTimeoutMS: 45000,
+  maxPoolSize: 50,
+  family: 4
+}).then(() => logger.info("✅ MongoDB Connected Successfully!"))
+  .catch(err => {
+    logger.error(`❌ MongoDB Connection Error: ${err.message}`);
     process.exit(1);
-  }
-};
+  });
 
-connectDB();
-
-app.use(/.*/, (req, res, next) => {
-  const error = new Error(`Not Found - ${req.originalUrl}`);
+// 7. Error Handling
+app.use((req, res, next) => {
   res.status(404);
-  next(error);
+  next(new Error(`Not Found - ${req.originalUrl}`));
 });
 
 app.use((err, req, res, next) => {
-  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
-  res.status(statusCode).json({
+  if (err.status !== 404) {
+    logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
+  }
+
+  res.status(res.statusCode === 200 ? 500 : res.statusCode).json({
     status: 'error',
     message: err.message,
+    requiresReactivation: err.requiresReactivation || false,
     stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
   });
 });
-const PORT = process.env.PORT || 5000;
-// We now listen on the combined HTTP + WebSockets server instead of just the Express app
-server.listen(PORT, () => {
-  console.log(`🚀 Server running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-});
 
-process.on('unhandledRejection', (err, promise) => {
-  console.log(`Error: ${err.message}`);
+// 8. Server Initialization
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => logger.info(`🚀 Server running on port ${PORT}`));
+
+process.on('unhandledRejection', (err) => {
+  logger.error(`Unhandled Rejection Error: ${err.message}`);
   server.close(() => process.exit(1));
 });

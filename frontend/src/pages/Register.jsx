@@ -84,7 +84,7 @@ const Register = () => {
                             <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
                         </svg>
                     </div>
-                    <h1 className="text-4xl font-black tracking-tight mb-2">Sync<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Forge</span><span className="text-gray-500 text-lg font-medium">.io</span></h1>
+                    <h1 className="text-4xl font-black tracking-tight mb-2">Klivra</h1>
                     <p className="text-gray-500 text-[15px] leading-relaxed mt-4 mb-10">Build impossible things, together. Join an elite ecosystem of asynchronous collaboration.</p>
                     <div className="flex items-center justify-center gap-3">
                         <div className="flex -space-x-2">
@@ -102,7 +102,7 @@ const Register = () => {
                 <div className="absolute top-1/3 left-1/4 w-80 h-80 bg-emerald-600 rounded-full opacity-[0.03] blur-[100px] pointer-events-none" />
                 <div className="w-full max-w-[420px]">
                     <div className="lg:hidden text-center mb-10">
-                        <h1 className="text-2xl font-black tracking-tight">Sync<span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-teal-300">Forge</span><span className="text-gray-500 text-sm">.io</span></h1>
+                        <h1 className="text-2xl font-black tracking-tight">Klivra</h1>
                     </div>
                     <div className="mb-8">
                         <h2 className="text-2xl font-bold tracking-tight mb-1.5">Create your account</h2>

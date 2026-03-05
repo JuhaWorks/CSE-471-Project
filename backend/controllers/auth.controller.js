@@ -1,23 +1,29 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 
-// Generate JWT token function
-const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
-        expiresIn: '30d',
-    });
+// Generate JWT Access Token (Short-lived)
+const generateAccessToken = (id) => {
+    return jwt.sign({ id }, process.env.JWT_SECRET, { expiresIn: '15m' });
+};
+
+// Generate JWT Refresh Token (Long-lived)
+const generateRefreshToken = (id) => {
+    // In a production app, use a separate JWT_REFRESH_SECRET. We stick to JWT_SECRET as fallback
+    const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+    return jwt.sign({ id }, secret, { expiresIn: '7d' });
 };
 
 // Utility function to send JWT inside an HttpOnly Cookie
 const sendTokenResponse = (user, statusCode, res) => {
-    const token = generateToken(user._id);
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
 
     const isProd = process.env.NODE_ENV === 'production';
     // sameSite: 'none' requires Secure=true in all modern browsers. Since local dev
     // is HTTP (Secure=false), it would reject the cookie entirely.
     // Thanks to your Vite proxy, dev requests are same-site anyway, so 'lax' works perfectly.
     const options = {
-        expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         httpOnly: true, // Crucial: Cookie cannot be accessed via client-side scripts
         secure: isProd, // HTTPS only in production
         sameSite: isProd ? 'none' : 'lax', // 'none' for cross-site prod, 'lax' for local proxy
@@ -25,9 +31,10 @@ const sendTokenResponse = (user, statusCode, res) => {
 
     res
         .status(statusCode)
-        .cookie('token', token, options)
+        .cookie('refreshToken', refreshToken, options)
         .json({
             status: 'success',
+            accessToken,
             data: {
                 _id: user.id,
                 name: user.name,
@@ -103,7 +110,7 @@ const registerUser = async (req, res, next) => {
 // @access  Public
 const loginUser = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, reactivate } = req.body;
 
         if (!email || !password) {
             res.status(400);
@@ -116,6 +123,25 @@ const loginUser = async (req, res, next) => {
 
         // Check if user exists and password matches
         if (user && (await user.matchPassword(password))) {
+
+            // Handle timed/manual deactivation reactivations
+            if (!user.isActive) {
+                if (reactivate === true) {
+                    // Instantly reactivate the account on demand
+                    user.isActive = true;
+                    user.deactivationDate = null;
+                    user.deactivationDuration = null;
+                    await user.save();
+                } else {
+                    // Pre-flight check: Account is deactivated, tell the frontend to prompt them
+                    res.status(403);
+                    return next({
+                        message: 'Your account is currently deactivated. Would you like to reactivate it and log in?',
+                        requiresReactivation: true
+                    });
+                }
+            }
+
             sendTokenResponse(user, 200, res);
         } else {
             res.status(401);
@@ -131,9 +157,12 @@ const loginUser = async (req, res, next) => {
 // @access  Public
 const logoutUser = async (req, res, next) => {
     try {
-        res.cookie('token', 'none', {
+        const isProd = process.env.NODE_ENV === 'production';
+        res.cookie('refreshToken', 'none', {
             expires: new Date(Date.now() + 10 * 1000), // Expires in 10 seconds
-            httpOnly: true
+            httpOnly: true,
+            secure: isProd,
+            sameSite: isProd ? 'none' : 'lax'
         });
 
         res.status(200).json({
@@ -145,8 +174,47 @@ const logoutUser = async (req, res, next) => {
     }
 };
 
+// @desc    Refresh access token using HTTP-Only refresh token
+// @route   POST /api/auth/refresh
+// @access  Public
+const refreshTokenUser = async (req, res, next) => {
+    try {
+        const refreshToken = req.cookies.refreshToken;
+        if (!refreshToken || refreshToken === 'none') {
+            res.status(401);
+            return next(new Error('Not authorized, no refresh token'));
+        }
+
+        const secret = process.env.JWT_REFRESH_SECRET || process.env.JWT_SECRET;
+        const decoded = jwt.verify(refreshToken, secret);
+
+        // Ensure user actually exists and is active
+        const user = await User.findById(decoded.id).select('-password');
+        if (!user || user.isActive === false) {
+            const isProd = process.env.NODE_ENV === 'production';
+            res.clearCookie('refreshToken', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
+            res.status(401);
+            return next(new Error('Not authorized, user not found or deactivated'));
+        }
+
+        // Issue new short-lived access token
+        const accessToken = generateAccessToken(user._id);
+
+        res.status(200).json({
+            status: 'success',
+            accessToken
+        });
+    } catch (error) {
+        const isProd = process.env.NODE_ENV === 'production';
+        res.clearCookie('refreshToken', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
+        res.status(401);
+        next(new Error('Not authorized, refresh token failed/expired'));
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshTokenUser
 };

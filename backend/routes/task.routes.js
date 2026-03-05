@@ -7,12 +7,13 @@ const {
     deleteTask,
 } = require('../controllers/task.controller');
 const { protect } = require('../middlewares/auth.middleware');
+const { cacheMiddleware } = require('../utils/redis');
 
 // Apply auth middleware to all task routes
 router.use(protect);
 
 router.route('/')
-    .get(getTasks)
+    .get(cacheMiddleware('tasks', 300), getTasks)
     .post(createTask);
 
 router.route('/:id')

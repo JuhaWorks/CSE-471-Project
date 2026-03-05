@@ -8,7 +8,7 @@ const getProjects = async (req, res, next) => {
         // Only return projects where the user is listed in teamMembers
         const projects = await Project.find({
             'teamMembers.user': req.user._id,
-        }).populate('teamMembers.user', 'name email');
+        }).populate('teamMembers.user', 'name email').lean();
 
         res.status(200).json({
             status: 'success',
@@ -26,7 +26,7 @@ const getProjects = async (req, res, next) => {
 const getProject = async (req, res, next) => {
     try {
         const project = await Project.findById(req.params.id)
-            .populate('teamMembers.user', 'name email role');
+            .populate('teamMembers.user', 'name email role').lean();
 
         if (!project) {
             res.status(404);

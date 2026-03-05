@@ -2,7 +2,8 @@ const express = require('express');
 const router = express.Router();
 // bcrypt, multer and schema validation are no longer needed here; they live in user.controller
 const { protect } = require('../middlewares/auth.middleware');
-const { registerUser, loginUser, logoutUser } = require('../controllers/auth.controller');
+const { registerUser, loginUser, logoutUser, refreshTokenUser } = require('../controllers/auth.controller');
+const { authLimiter } = require('../middlewares/rateLimiter.middleware');
 // reuse the helpers from user.controller to keep validation/upload logic in one place
 const { uploadAvatar, updateProfile, changePassword } = require('../controllers/user.controller');
 
@@ -16,8 +17,9 @@ const { uploadAvatar, updateProfile, changePassword } = require('../controllers/
 
 
 // ── Public Auth Routes ─────────────────────────────────────────────────────────
-router.post('/register', registerUser);
-router.post('/login', loginUser);
+router.post('/register', authLimiter, registerUser);
+router.post('/login', authLimiter, loginUser);
+router.post('/refresh', refreshTokenUser);
 router.get('/logout', logoutUser);
 
 // ── GET /api/auth/profile — read current user ──────────────────────────────────
@@ -32,7 +34,7 @@ router.get('/profile', protect, (req, res) => {
 // the same paths (`/auth/...`) so we still need to forward those requests.  the
 // forwarding is intentionally thin – simply delegate to the controllers defined
 // in user.controller.js so we avoid maintaining the same logic twice.
-router.post('/profile/avatar', protect, /* multer middleware defined below */ (req, res, next) => {
+router.post('/profile/avatar', protect, /* multer middleware defined below */(req, res, next) => {
     // re-use uploadSingle from user.routes via require to avoid duplication
     const { uploadSingle } = require('../middlewares/upload.middleware');
     uploadSingle(req, res, (err) => {

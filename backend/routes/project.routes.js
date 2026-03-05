@@ -8,6 +8,7 @@ const {
     deleteProject,
 } = require('../controllers/project.controller');
 const { protect } = require('../middlewares/auth.middleware');
+const { cacheMiddleware } = require('../utils/redis');
 
 // We can re-route requests into the task router for relationships
 // e.g., GET /api/projects/:projectId/tasks
@@ -18,11 +19,11 @@ router.use('/:projectId/tasks', taskRouter);
 router.use(protect);
 
 router.route('/')
-    .get(getProjects)
+    .get(cacheMiddleware('projects', 300), getProjects)
     .post(createProject);
 
 router.route('/:id')
-    .get(getProject)
+    .get(cacheMiddleware('project', 300), getProject)
     .put(updateProject)
     .delete(deleteProject);
 

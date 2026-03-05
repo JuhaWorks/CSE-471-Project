@@ -2,6 +2,15 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 
+// Auto-compress any Cloudinary avatar to a ~10-15kb 100x100 WebP
+const getOptimizedAvatar = (url) => {
+    if (!url) return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    if (url.includes('upload/')) {
+        return url.replace('upload/', 'upload/w_100,h_100,c_fill,f_webp/');
+    }
+    return url;
+};
+
 const TopBar = ({ onMenuToggle }) => {
     const { user } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -33,7 +42,7 @@ const TopBar = ({ onMenuToggle }) => {
                 <div className="w-px h-5 bg-white/[0.06] mx-1 hidden sm:block" />
                 <div className="relative" ref={dropdownRef}>
                     <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 p-1.5 pr-2.5 rounded-xl hover:bg-white/[0.04] transition-colors" aria-expanded={dropdownOpen}>
-                        <img src={user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} alt={user?.name} className="w-7 h-7 rounded-lg border border-white/[0.08] object-cover" />
+                        <img src={getOptimizedAvatar(user?.avatar)} alt={user?.name} className="w-7 h-7 rounded-lg border border-white/[0.08] object-cover" />
                         <div className="hidden sm:block text-left">
                             <p className="text-[13px] font-semibold text-white leading-none">{user?.name || 'User'}</p>
                             <p className="text-[10px] text-gray-600 leading-none mt-0.5">{user?.role || 'Member'}</p>

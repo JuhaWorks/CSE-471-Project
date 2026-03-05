@@ -17,14 +17,23 @@ export default defineConfig({
         // Split heavy vendor libs into separate long-cached chunks.
         // App code changes don't bust the vendor cache.
         manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom') || id.includes('node_modules/react-router')) {
-            return 'react-vendor';
-          }
-          if (id.includes('node_modules/socket.io-client') || id.includes('node_modules/engine.io-client')) {
-            return 'socket-vendor';
-          }
-          if (id.includes('node_modules/zustand')) {
-            return 'zustand-vendor';
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router')) {
+              return 'react-vendor';
+            }
+            if (id.includes('framer-motion')) {
+              return 'framer-motion';
+            }
+            if (id.includes('@tanstack/react-query')) {
+              return 'react-query';
+            }
+            if (id.includes('socket.io-client') || id.includes('engine.io-client')) {
+              return 'socket-vendor';
+            }
+            if (id.includes('zustand')) {
+              return 'zustand-vendor';
+            }
+            return 'vendor'; // Catch-all for other external dependencies
           }
         },
       },
@@ -33,7 +42,7 @@ export default defineConfig({
 
   // Speed up local dev by pre-bundling heavy deps
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand'],
+    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand', '@tanstack/react-query', 'framer-motion'],
   },
 
   // proxy /api requests to the backend during local development so that
@@ -43,7 +52,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
         secure: false,
       },

@@ -1,6 +1,15 @@
 import { useState, useRef } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
 
+// Auto-compress any Cloudinary avatar to a ~10-15kb 100x100 WebP
+const getOptimizedAvatar = (url) => {
+    if (!url) return 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+    if (url.includes('upload/')) {
+        return url.replace('upload/', 'upload/w_100,h_100,c_fill,f_webp/');
+    }
+    return url;
+};
+
 // ─── Status options (must match backend enum) ────────────────────────────────
 const STATUS_OPTIONS = ['Online', 'Away', 'Do Not Disturb', 'Offline'];
 
@@ -22,8 +31,8 @@ const roleColors = {
 const Banner = ({ type, msg }) =>
     msg ? (
         <p className={`text-[13px] px-4 py-2.5 rounded-xl border ${type === 'error'
-                ? 'bg-red-500/10 border-red-500/20 text-red-400'
-                : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
+            ? 'bg-red-500/10 border-red-500/20 text-red-400'
+            : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
             }`}>
             {msg}
         </p>
@@ -67,7 +76,7 @@ const Spinner = () => (
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Profile = () => {
-    const { user, uploadAvatar, updateProfile, changePassword } = useAuthStore();
+    const { user, uploadAvatar, updateProfile } = useAuthStore();
 
     // ── Avatar state ──────────────────────────────────────────────────────────
     const fileRef = useRef(null);
@@ -84,11 +93,6 @@ const Profile = () => {
     const [profileLoading, setProfileLoading] = useState(false);
     const [profileStatus, setProfileStatus] = useState({ type: '', msg: '' });
 
-    // ── Password state ────────────────────────────────────────────────────────
-    const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirm: '' });
-    const [pwLoading, setPwLoading] = useState(false);
-    const [pwStatus, setPwStatus] = useState({ type: '', msg: '' });
-    const [showPw, setShowPw] = useState({ current: false, new: false, confirm: false });
 
     // ── Handlers ──────────────────────────────────────────────────────────────
     const handleFileChange = (e) => {
@@ -133,49 +137,6 @@ const Profile = () => {
         }
     };
 
-    const handlePasswordSave = async (e) => {
-        e.preventDefault();
-        setPwStatus({ type: '', msg: '' });
-        if (pwForm.newPassword !== pwForm.confirm) {
-            setPwStatus({ type: 'error', msg: 'New passwords do not match.' });
-            return;
-        }
-        if (pwForm.newPassword.length < 6) {
-            setPwStatus({ type: 'error', msg: 'New password must be at least 6 characters.' });
-            return;
-        }
-        setPwLoading(true);
-        try {
-            await changePassword(pwForm.currentPassword, pwForm.newPassword);
-            setPwStatus({ type: 'success', msg: 'Password changed successfully!' });
-            setPwForm({ currentPassword: '', newPassword: '', confirm: '' });
-        } catch (err) {
-            setPwStatus({ type: 'error', msg: err.response?.data?.message || 'Password change failed.' });
-        } finally {
-            setPwLoading(false);
-        }
-    };
-
-    // ── Eye toggle helper ─────────────────────────────────────────────────────
-    const EyeIcon = ({ field }) => (
-        <button
-            type="button"
-            onClick={() => setShowPw(s => ({ ...s, [field]: !s[field] }))}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300 transition-colors"
-            aria-label="Toggle password visibility"
-        >
-            {showPw[field] ? (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-                </svg>
-            ) : (
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                </svg>
-            )}
-        </button>
-    );
-
     // ── Render ────────────────────────────────────────────────────────────────
     return (
         <div className="p-5 sm:p-7 lg:p-8 max-w-2xl mx-auto space-y-5">
@@ -187,7 +148,7 @@ const Profile = () => {
                     {/* Preview */}
                     <div className="relative flex-shrink-0">
                         <img
-                            src={avatarPreview || user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
+                            src={avatarPreview || getOptimizedAvatar(user?.avatar)}
                             alt={user?.name}
                             className="w-24 h-24 rounded-2xl border-2 border-white/[0.08] object-cover shadow-xl"
                         />
@@ -255,8 +216,8 @@ const Profile = () => {
                                     type="button"
                                     onClick={() => setProfileForm(f => ({ ...f, status: s }))}
                                     className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-medium border transition-all ${profileForm.status === s
-                                            ? 'bg-violet-500/10 border-violet-500/30 text-violet-300'
-                                            : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:text-white hover:bg-white/[0.05]'
+                                        ? 'bg-violet-500/10 border-violet-500/30 text-violet-300'
+                                        : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:text-white hover:bg-white/[0.05]'
                                         }`}
                                 >
                                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${STATUS_DOT[s]}`} />
@@ -289,45 +250,6 @@ const Profile = () => {
                     >
                         {profileLoading ? <Spinner /> : null}
                         {profileLoading ? 'Saving…' : 'Save Changes'}
-                    </button>
-                </form>
-            </Card>
-
-            {/* ── Change Password Card ─────────────────────────────────────── */}
-            <Card title="Change Password" badge="secure">
-                <form onSubmit={handlePasswordSave} className="space-y-4">
-                    {[
-                        { field: 'current', label: 'Current Password', key: 'currentPassword' },
-                        { field: 'new', label: 'New Password', key: 'newPassword' },
-                        { field: 'confirm', label: 'Confirm New Password', key: 'confirm' },
-                    ].map(({ field, label, key }) => (
-                        <div key={key}>
-                            <label className="block text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-1.5">
-                                {label}
-                            </label>
-                            <div className="relative">
-                                <input
-                                    type={showPw[field] ? 'text' : 'password'}
-                                    value={pwForm[key]}
-                                    onChange={e => setPwForm(s => ({ ...s, [key]: e.target.value }))}
-                                    placeholder="••••••••"
-                                    autoComplete={field === 'current' ? 'current-password' : 'new-password'}
-                                    className="w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 pr-10 text-[14px] text-white placeholder-gray-600 outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/10 transition-all"
-                                />
-                                <EyeIcon field={field} />
-                            </div>
-                        </div>
-                    ))}
-
-                    <Banner {...pwStatus} />
-
-                    <button
-                        type="submit"
-                        disabled={pwLoading}
-                        className="flex items-center gap-2 px-5 py-2.5 text-[13px] font-semibold rounded-xl bg-red-600/80 hover:bg-red-500 text-white transition-all disabled:opacity-60 shadow-lg shadow-red-500/10"
-                    >
-                        {pwLoading ? <Spinner /> : null}
-                        {pwLoading ? 'Updating…' : 'Update Password'}
                     </button>
                 </form>
             </Card>

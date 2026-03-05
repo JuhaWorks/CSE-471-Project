@@ -2,18 +2,24 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'rea
 import { useEffect, lazy, Suspense } from 'react';
 import { useAuthStore } from './store/useAuthStore';
 import Layout from './components/Layout';
+import CommandPalette from './components/ui/CommandPalette';
+import ErrorBoundary from './components/ErrorBoundary';
+import Login from './pages/Login';
+import Home from './pages/Home';
 
-// Code-split every page — they are loaded on demand, not on initial bundle
-const Login = lazy(() => import('./pages/Login'));
+// Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
 const Profile = lazy(() => import('./pages/Profile'));
-const Home = lazy(() => import('./pages/Home'));
 const Whiteboard = lazy(() => import('./components/Whiteboard'));
+const Settings = lazy(() => import('./pages/Settings'));
 
-// Shared page-level loading fallback
+// Sleek, zero-lag loading fallback for code-split chunks
 const PageLoader = () => (
   <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
-    <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-violet-500" />
+    <div className="relative flex items-center justify-center">
+      <div className="absolute w-12 h-12 border-4 border-violet-500/20 rounded-full animate-ping shadow-[0_0_15px_rgba(139,92,246,0.3)]"></div>
+      <div className="w-10 h-10 border-4 border-transparent border-t-violet-500 border-b-blue-500 rounded-full animate-spin"></div>
+    </div>
   </div>
 );
 
@@ -53,6 +59,7 @@ function App() {
 
   return (
     <Router>
+      <CommandPalette />
       <Suspense fallback={<PageLoader />}>
         <Routes>
           {/* Public Native Routes */}
@@ -64,13 +71,16 @@ function App() {
             path="/"
             element={
               <ProtectedRoute>
-                <Layout />
+                <ErrorBoundary>
+                  <Layout />
+                </ErrorBoundary>
               </ProtectedRoute>
             }
           >
             {/* Suspense inside layout so the shell renders instantly */}
-            <Route index element={<Suspense fallback={<PageLoader />}><Home /></Suspense>} />
+            <Route index element={<Home />} />
             <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
+            <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
             <Route path="whiteboard/:roomId" element={<Suspense fallback={<PageLoader />}><WhiteboardWrapper /></Suspense>} />
           </Route>
 
