@@ -6,41 +6,9 @@ export default defineConfig({
   plugins: [react()],
 
   build: {
-    // esbuild is the fastest minifier (default in Vite, but explicit is clear)
     minify: 'esbuild',
-    // No sourcemaps in production — saves ~40% bundle size
     sourcemap: false,
-    // Warn when any individual chunk exceeds 500 kB
-    chunkSizeWarningLimit: 500,
-    rollupOptions: {
-      output: {
-        // Split heavy vendor libs into separate long-cached chunks.
-        // App code changes don't bust the vendor cache.
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('/node_modules/react/') || id.includes('/node_modules/react-dom/') || id.includes('/node_modules/react-router')) {
-              return 'react-vendor';
-            }
-            if (id.includes('/node_modules/framer-motion/')) {
-              return 'framer-motion';
-            }
-            if (id.includes('/node_modules/@tanstack/') || id.includes('/node_modules/react-query/')) {
-              return 'react-query';
-            }
-            if (id.includes('/node_modules/socket.io-client/') || id.includes('/node_modules/engine.io-client/')) {
-              return 'socket-vendor';
-            }
-            if (id.includes('/node_modules/zustand/')) {
-              return 'zustand-vendor';
-            }
-            if (id.includes('/node_modules/@sentry/')) {
-              return 'sentry-vendor';
-            }
-            return 'vendor';
-          }
-        },
-      },
-    },
+    chunkSizeWarningLimit: 1000, // Increase warning limit since we are letting Vite bundle naturally
   },
 
   // Speed up local dev by pre-bundling heavy deps
