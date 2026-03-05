@@ -10,6 +10,9 @@ const dns = require('dns');
 const mongoSanitize = require('express-mongo-sanitize');
 const morganMiddleware = require('./middlewares/morgan.middleware');
 const logger = require('./utils/logger');
+const session = require('express-session');
+const passport = require('./config/passport');
+const seedAdminUser = require('./config/seed');
 
 // 1. Optimize DNS resolution for faster external APIs/MongoDB
 try {
@@ -41,6 +44,23 @@ app.use(cors({
   credentials: true
 }));
 app.use(cookieParser());
+
+// Required for Passport OAuth flow state (nonce, etc)
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'syncforge_super_secure_fallback_secret_7389',
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // Must be none for cross-site OAuth redirects
+    maxAge: 1000 * 60 * 5 // Short lived, only needed for the auth handshake
+  }
+}));
+
+// Initialize Passport and restore authentication state, if any, from the session
+app.use(passport.initialize());
+app.use(passport.session());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -80,6 +100,7 @@ app.use('/api/tasks', require('./routes/task.routes'));
 app.use('/api/users', require('./routes/user.routes'));
 app.use('/api/settings', require('./routes/settings.routes'));
 app.use('/api/audit', require('./routes/audit.routes'));
+app.use('/api/admin', require('./routes/admin.routes'));
 
 // 6. DB Connection
 mongoose.connect(process.env.MONGO_URI, {
@@ -88,7 +109,10 @@ mongoose.connect(process.env.MONGO_URI, {
   socketTimeoutMS: 45000,
   maxPoolSize: 50,
   family: 4
-}).then(() => logger.info("✅ MongoDB Connected Successfully!"))
+}).then(async () => {
+  logger.info("✅ MongoDB Connected Successfully!");
+  await seedAdminUser(); // Bootstraps the dedicated admin account
+})
   .catch(err => {
     logger.error(`❌ MongoDB Connection Error: ${err.message}`);
     process.exit(1);

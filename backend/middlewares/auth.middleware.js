@@ -52,4 +52,15 @@ const authorizeRoles = (...roles) => {
     };
 };
 
-module.exports = { protect, authorizeRoles };
+// Extremely strict middleware explicitly verifying Admin status
+const verifyAdmin = (req, res, next) => {
+    // protect middleware must run before this
+    if (req.user && req.user.role === 'Admin') {
+        next();
+    } else {
+        res.status(403);
+        return next(new Error('Access denied. Administrator privileges required.'));
+    }
+};
+
+module.exports = { protect, authorizeRoles, verifyAdmin };

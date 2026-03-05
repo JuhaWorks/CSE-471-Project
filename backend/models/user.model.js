@@ -20,9 +20,23 @@ const userSchema = new mongoose.Schema(
         },
         password: {
             type: String,
-            required: [true, 'Please add a password'],
             minlength: 6,
             select: false, // Prevents password from being returned in queries by default
+            // Password is not required because OAuth users won't have one initially
+        },
+        googleId: {
+            type: String,
+            unique: true,
+            sparse: true, // Allows multiple null/undefined values
+        },
+        githubId: {
+            type: String,
+            unique: true,
+            sparse: true,
+        },
+        authProviders: {
+            type: [String],
+            default: ['local'] // e.g., 'local', 'google', 'github'
         },
         avatar: {
             type: String,
@@ -34,8 +48,8 @@ const userSchema = new mongoose.Schema(
         },
         role: {
             type: String,
-            enum: ['Admin', 'Manager', 'Developer', 'Guest'],
-            default: 'Guest',
+            enum: ['Admin', 'Manager', 'Developer'],
+            default: 'Developer',
         },
         status: {
             type: String,
@@ -46,6 +60,10 @@ const userSchema = new mongoose.Schema(
             type: String,
             maxlength: [150, 'Custom message cannot exceed 150 characters'],
             default: '',
+        },
+        isBanned: {
+            type: Boolean,
+            default: false,
         },
         isActive: {
             type: Boolean,
@@ -67,9 +85,9 @@ const userSchema = new mongoose.Schema(
 
 // Encrypt password using bcrypt before saving
 userSchema.pre('save', async function () {
-    // If the password field hasn't been modified, skip hashing (e.g., during email updates)
-    if (!this.isModified('password')) {
-        return; // <-- Promise-based: just return to skip
+    // If the password field hasn't been modified, OR doesn't exist (OAuth), skip hashing
+    if (!this.isModified('password') || !this.password) {
+        return;
     }
 
     // Generate a salt with complexity 10 (higher means more secure but slower)

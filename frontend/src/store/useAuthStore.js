@@ -51,7 +51,7 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // 1. Intercept 401 Unauthorized for automated token refresh
-        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh' && originalRequest.url !== '/auth/login' && originalRequest.url !== '/auth/register') {
+        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh' && originalRequest.url !== '/auth/login' && originalRequest.url !== '/auth/register' && originalRequest.url !== '/auth/profile') {
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });
@@ -109,7 +109,11 @@ export const useAuthStore = create((set) => ({
     clearError: () => set({ error: null }),
 
     // 1. Check if the user has an active session
-    checkAuth: async () => {
+    checkAuth: async (forceFetch = false) => {
+        if (window.location.pathname === '/oauth/callback' && !forceFetch) {
+            set({ authChecking: false });
+            return;
+        }
         set({ authChecking: true, error: null });
         try {
             // Because no accessToken is active on refresh/boot, the request interceptor attaches nothing.

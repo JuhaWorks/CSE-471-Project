@@ -17,6 +17,8 @@ const Home = () => {
         staleTime: 1000 * 60 * 60 * 24, // 24 hours cache
     });
 
+    const canViewActivity = user && ['Admin', 'Manager'].includes(user.role);
+
     // Fetch paginated Activity Logs via Audit endpoint
     const { data: activityResponse, isLoading: activityLoading } = useQuery({
         queryKey: ['activityFeed'],
@@ -25,6 +27,7 @@ const Home = () => {
             return res.data;
         },
         staleTime: 1000 * 60 * 5, // 5 min
+        enabled: canViewActivity,
     });
 
     const activity = activityResponse?.data || [];
@@ -115,7 +118,15 @@ const Home = () => {
                         <button className="text-[11px] text-violet-400 hover:text-violet-300 font-semibold transition-colors">View all</button>
                     </div>
 
-                    {activityLoading ? (
+                    {!canViewActivity ? (
+                        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
+                            <div className="w-12 h-12 rounded-full bg-white/[0.04] flex items-center justify-center mb-3">
+                                <svg className="w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
+                            </div>
+                            <p className="text-[13px] text-gray-400 font-medium">Activity logs are restricted</p>
+                            <p className="text-[11px] text-gray-600 mt-1">You must be an Admin or Manager to view the workspace audit trail.</p>
+                        </div>
+                    ) : activityLoading ? (
                         <div className="flex-1 flex items-center justify-center">
                             <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-violet-500"></div>
                         </div>

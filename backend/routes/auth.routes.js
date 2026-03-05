@@ -2,8 +2,9 @@ const express = require('express');
 const router = express.Router();
 // bcrypt, multer and schema validation are no longer needed here; they live in user.controller
 const { protect } = require('../middlewares/auth.middleware');
-const { registerUser, loginUser, logoutUser, refreshTokenUser } = require('../controllers/auth.controller');
+const { registerUser, loginUser, logoutUser, refreshTokenUser, oauthCallback } = require('../controllers/auth.controller');
 const { authLimiter } = require('../middlewares/rateLimiter.middleware');
+const passport = require('passport');
 // reuse the helpers from user.controller to keep validation/upload logic in one place
 const { uploadAvatar, updateProfile, changePassword } = require('../controllers/user.controller');
 
@@ -21,6 +22,13 @@ router.post('/register', authLimiter, registerUser);
 router.post('/login', authLimiter, loginUser);
 router.post('/refresh', refreshTokenUser);
 router.get('/logout', logoutUser);
+
+// ── OAuth Routes ───────────────────────────────────────────────────────────────
+router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
+router.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), oauthCallback);
+
+router.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
+router.get('/github/callback', passport.authenticate('github', { failureRedirect: '/login', session: false }), oauthCallback);
 
 // ── GET /api/auth/profile — read current user ──────────────────────────────────
 // this route just returns `req.user` so the client can populate its store during

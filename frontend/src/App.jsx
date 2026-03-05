@@ -12,6 +12,8 @@ const Register = lazy(() => import('./pages/Register'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Whiteboard = lazy(() => import('./components/Whiteboard'));
 const Settings = lazy(() => import('./pages/Settings'));
+const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 // Sleek, zero-lag loading fallback for code-split chunks
 const PageLoader = () => (
@@ -65,6 +67,7 @@ function App() {
           {/* Public Native Routes */}
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/oauth/callback" element={<OAuthCallback />} />
 
           {/* Secure Layout Routes */}
           <Route
@@ -81,6 +84,7 @@ function App() {
             <Route index element={<Home />} />
             <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
             <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+            <Route path="admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
             <Route path="whiteboard/:roomId" element={<Suspense fallback={<PageLoader />}><WhiteboardWrapper /></Suspense>} />
           </Route>
 

@@ -124,6 +124,11 @@ const loginUser = async (req, res, next) => {
         // Check if user exists and password matches
         if (user && (await user.matchPassword(password))) {
 
+            if (user.isBanned) {
+                res.status(403);
+                return next(new Error('Your account has been suspended for violating terms of service.'));
+            }
+
             // Handle timed/manual deactivation reactivations
             if (!user.isActive) {
                 if (reactivate === true) {
@@ -212,9 +217,41 @@ const refreshTokenUser = async (req, res, next) => {
     }
 };
 
+// @desc    OAuth Callback Handler
+// @route   GET /api/auth/:provider/callback
+// @access  Public
+const oauthCallback = (req, res) => {
+    // req.user is populated by passport
+    const user = req.user;
+
+    // We cannot use sendTokenResponse directly because that sends JSON.
+    // OAuth requires a browser redirect back to the frontend SPA.
+    // We will set the HttpOnly cookie manually, then redirect with the short-lived access token in the URL.
+
+    const accessToken = generateAccessToken(user._id);
+    const refreshToken = generateRefreshToken(user._id);
+
+    const isProd = process.env.NODE_ENV === 'production';
+    const options = {
+        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        httpOnly: true,
+        secure: isProd,
+        sameSite: isProd ? 'none' : 'lax',
+    };
+
+    res.cookie('refreshToken', refreshToken, options);
+
+    const frontendUrl = isProd
+        ? 'https://klivra.vercel.app'
+        : (process.env.FRONTEND_URL || 'http://localhost:5173');
+
+    res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
+};
+
 module.exports = {
     registerUser,
     loginUser,
     logoutUser,
-    refreshTokenUser
+    refreshTokenUser,
+    oauthCallback
 };
