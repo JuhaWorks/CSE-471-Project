@@ -23,6 +23,7 @@ try {
 }
 
 const app = express();
+app.set('trust proxy', 1); // Trust Render's load balancer to correctly read `https` protocol headers
 const server = http.createServer(app);
 const io = require('./utils/socket').init(server);
 
