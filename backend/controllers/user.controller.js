@@ -101,6 +101,40 @@ const updateProfile = async (req, res, next) => {
     }
 };
 
+// @desc    Remove profile picture
+// @route   DELETE /api/users/profile/avatar
+// @access  Private
+const removeAvatar = async (req, res, next) => {
+    try {
+        const defaultAvatar = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { avatar: defaultAvatar },
+            { new: true, runValidators: true }
+        );
+
+        if (!user) {
+            res.status(404);
+            return next(new Error('User not found'));
+        }
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                avatar: user.avatar,
+                role: user.role,
+                status: user.status,
+                customMessage: user.customMessage,
+            },
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // @desc    Change password (requires current password verification)
 // @route   PUT /api/users/profile/password
 // @access  Private
@@ -139,4 +173,4 @@ const changePassword = async (req, res, next) => {
     }
 };
 
-module.exports = { uploadAvatar, updateProfile, changePassword };
+module.exports = { uploadAvatar, updateProfile, changePassword, removeAvatar };

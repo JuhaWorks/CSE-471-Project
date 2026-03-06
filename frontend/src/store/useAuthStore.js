@@ -8,8 +8,8 @@ let BASE_URL;
 if (import.meta.env.VITE_API_URL) {
     BASE_URL = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`;
 } else if (import.meta.env.DEV) {
-    // Keep local host proxy for local development
-    BASE_URL = '/api';
+    // Explicitly use localhost link for local development
+    BASE_URL = 'http://localhost:5000/api';
 } else {
     // Production fallback for Vercel
     BASE_URL = 'https://syncforge-io.onrender.com/api';
@@ -202,6 +202,14 @@ export const useAuthStore = create((set) => ({
         set((state) => ({ user: { ...state.user, ...response.data.data } }));
         return response.data;
     },
+
+    // 5.5. Remove avatar image
+    removeAvatar: async () => {
+        const response = await api.delete('/auth/profile/avatar');
+        set((state) => ({ user: { ...state.user, ...response.data.data } }));
+        return response.data;
+    },
+
 
     // 6. Update profile info (name, status, customMessage)
     updateProfile: async (updates) => {

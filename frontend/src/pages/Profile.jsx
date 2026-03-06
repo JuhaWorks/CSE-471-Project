@@ -1,5 +1,7 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '../utils/getCroppedImg';
 
 // Auto-compress any Cloudinary avatar to a ~10-15kb 100x100 WebP
 const getOptimizedAvatar = (url) => {
@@ -76,13 +78,19 @@ const Spinner = () => (
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Profile = () => {
-    const { user, uploadAvatar, updateProfile } = useAuthStore();
+    const { user, uploadAvatar, updateProfile, removeAvatar } = useAuthStore();
 
     // ── Avatar state ──────────────────────────────────────────────────────────
     const fileRef = useRef(null);
     const [avatarPreview, setAvatarPreview] = useState(null);
     const [avatarLoading, setAvatarLoading] = useState(false);
     const [avatarStatus, setAvatarStatus] = useState({ type: '', msg: '' });
+
+    // ── Cropping state ────────────────────────────────────────────────────────
+    const [crop, setCrop] = useState({ x: 0, y: 0 });
+    const [zoom, setZoom] = useState(1);
+    const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+    const [isCropping, setIsCropping] = useState(false);
 
     // ── Edit profile state ────────────────────────────────────────────────────
     const [profileForm, setProfileForm] = useState({
@@ -103,23 +111,53 @@ const Profile = () => {
             return;
         }
         setAvatarPreview(URL.createObjectURL(file));
+        setIsCropping(true);
         setAvatarStatus({ type: '', msg: '' });
     };
 
-    const handleAvatarUpload = async () => {
-        const file = fileRef.current?.files[0];
-        if (!file) return;
-        setAvatarLoading(true);
-        setAvatarStatus({ type: '', msg: '' });
+    const onCropComplete = useCallback((croppedArea, croppedAreaPixels) => {
+        setCroppedAreaPixels(croppedAreaPixels);
+    }, []);
+
+    const handleCropSave = async () => {
         try {
+            setAvatarLoading(true);
+            const croppedImageBlob = await getCroppedImg(
+                avatarPreview,
+                croppedAreaPixels
+            );
+
+            // convert blob to file
+            const file = new File([croppedImageBlob], 'avatar.jpg', { type: 'image/jpeg' });
+
             await uploadAvatar(file);
             setAvatarPreview(null);
+            setIsCropping(false);
             setAvatarStatus({ type: 'success', msg: 'Profile picture updated!' });
         } catch (err) {
-            setAvatarStatus({ type: 'error', msg: err.response?.data?.message || 'Upload failed.' });
+            setAvatarStatus({ type: 'error', msg: err?.response?.data?.message || err?.message || 'Upload failed.' });
         } finally {
             setAvatarLoading(false);
             if (fileRef.current) fileRef.current.value = '';
+        }
+    };
+
+    const handleCropCancel = () => {
+        setAvatarPreview(null);
+        setIsCropping(false);
+        if (fileRef.current) fileRef.current.value = '';
+    };
+
+    const handleRemoveAvatar = async () => {
+        setAvatarLoading(true);
+        setAvatarStatus({ type: '', msg: '' });
+        try {
+            await removeAvatar();
+            setAvatarStatus({ type: 'success', msg: 'Profile picture removed!' });
+        } catch (err) {
+            setAvatarStatus({ type: 'error', msg: err.response?.data?.message || 'Remove failed.' });
+        } finally {
+            setAvatarLoading(false);
         }
     };
 
@@ -141,6 +179,69 @@ const Profile = () => {
     return (
         <div className="p-5 sm:p-7 lg:p-8 max-w-2xl mx-auto space-y-5">
             <h1 className="text-2xl font-bold tracking-tight">Edit Profile</h1>
+
+            {/* Cropping Modal */}
+            {isCropping && avatarPreview && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                    <div className="bg-[#12121a] border border-white/[0.08] rounded-2xl w-full max-w-md overflow-hidden flex flex-col shadow-2xl">
+                        <div className="p-4 border-b border-white/[0.08] flex items-center justify-between">
+                            <h3 className="font-bold text-white text-[15px]">Crop Profile Picture</h3>
+                            <button onClick={handleCropCancel} className="text-gray-400 hover:text-white transition-colors">
+                                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                </svg>
+                            </button>
+                        </div>
+
+                        <div className="relative w-full h-80 bg-black">
+                            <Cropper
+                                image={avatarPreview}
+                                crop={crop}
+                                zoom={zoom}
+                                aspect={1}
+                                cropShape="round"
+                                showGrid={false}
+                                onCropChange={setCrop}
+                                onCropComplete={onCropComplete}
+                                onZoomChange={setZoom}
+                            />
+                        </div>
+
+                        <div className="p-4 space-y-4">
+                            <div>
+                                <label className="block text-[11px] text-gray-500 uppercase tracking-wider font-medium mb-2">Zoom</label>
+                                <input
+                                    type="range"
+                                    value={zoom}
+                                    min={1}
+                                    max={3}
+                                    step={0.1}
+                                    aria-labelledby="Zoom"
+                                    onChange={(e) => setZoom(e.target.value)}
+                                    className="w-full accent-violet-500"
+                                />
+                            </div>
+
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={handleCropCancel}
+                                    className="flex-1 px-4 py-2 bg-white/[0.05] hover:bg-white/[0.08] text-white rounded-xl text-[13px] font-semibold transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleCropSave}
+                                    disabled={avatarLoading}
+                                    className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-xl text-[13px] font-semibold transition-colors disabled:opacity-60"
+                                >
+                                    {avatarLoading ? <Spinner /> : null}
+                                    {avatarLoading ? 'Saving...' : 'Crop & Save'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* ── Avatar Card ──────────────────────────────────────────────── */}
             <Card title="Profile Picture" badge="optional">
@@ -175,14 +276,14 @@ const Profile = () => {
                                     onChange={handleFileChange}
                                 />
                             </label>
-                            {avatarPreview && (
+                            {user?.avatar && !user.avatar.includes('149071.png') && (
                                 <button
-                                    onClick={handleAvatarUpload}
+                                    type="button"
+                                    onClick={handleRemoveAvatar}
                                     disabled={avatarLoading}
-                                    className="flex items-center gap-2 px-4 py-2 text-[13px] font-semibold rounded-xl bg-violet-600 hover:bg-violet-500 text-white transition-all disabled:opacity-60"
+                                    className="px-4 py-2 text-[13px] font-semibold rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-500 transition-all disabled:opacity-60 border border-red-500/20"
                                 >
-                                    {avatarLoading ? <Spinner /> : null}
-                                    {avatarLoading ? 'Uploading…' : 'Save Photo'}
+                                    {avatarLoading ? 'Removing…' : 'Remove Picture'}
                                 </button>
                             )}
                         </div>
