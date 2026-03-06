@@ -90,16 +90,14 @@ const registerUser = async (req, res, next) => {
                     </div>
                 `;
 
-                // Send email FIRST, then respond (await ensures Render doesn't kill the process)
                 try {
                     await sendEmail({
                         to: userExists.email,
                         subject: 'Verify your Klivra account',
                         html: message
                     });
-                    console.log(`[RENDER-DEBUG] ✅ Resend verification email SENT to: ${userExists.email}`);
                 } catch (emailErr) {
-                    console.error(`[RENDER-DEBUG] ❌ Resend verification email FAILED for ${userExists.email}:`, emailErr.message, emailErr.stack);
+                    console.error(`Email resend failed for ${userExists.email}:`, emailErr.message);
                 }
 
                 return res.status(200).json({
@@ -150,19 +148,14 @@ const registerUser = async (req, res, next) => {
                 </div>
             `;
 
-            // Send email BEFORE responding (await ensures Render completes the send)
             try {
-                console.log(`[RENDER-DEBUG] 📧 Attempting to send registration email to: ${user.email}`);
-                console.log(`[RENDER-DEBUG] EMAIL_USER=${process.env.EMAIL_USER}, EMAIL_HOST=${process.env.EMAIL_HOST}, EMAIL_PORT=${process.env.EMAIL_PORT}`);
                 await sendEmail({
                     to: user.email,
                     subject: 'Verify your Klivra account',
                     html: message
                 });
-                console.log(`[RENDER-DEBUG] ✅ Registration email SENT to: ${user.email}`);
             } catch (emailErr) {
-                console.error(`[RENDER-DEBUG] ❌ Registration email FAILED for ${user.email}:`, emailErr.message);
-                console.error(`[RENDER-DEBUG] Full error:`, JSON.stringify({ code: emailErr.code, command: emailErr.command, response: emailErr.response, responseCode: emailErr.responseCode }, null, 2));
+                console.error(`Registration email failed for ${user.email}:`, emailErr.message);
             }
 
             res.status(201).json({

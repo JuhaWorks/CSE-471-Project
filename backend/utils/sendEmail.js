@@ -1,106 +1,59 @@
-const nodemailer = require('nodemailer');
-
 /**
- * Production-grade email utility with connection pooling and retry logic.
+ * Production-grade email utility using Brevo (formerly Sendinblue) HTTP API.
+ * 
+ * Why Brevo? Render's free tier blocks ALL outbound SMTP ports (587, 465).
+ * Brevo's HTTP API sends via HTTPS (port 443), which Render allows.
+ * Free tier: 300 emails/day, no custom domain required.
+ *
+ * Uses Node's built-in fetch API (Node 18+) — zero extra dependencies.
  *
  * Required environment variables:
- * - EMAIL_USER  (e.g., klivramailer@gmail.com)
- * - EMAIL_PASS  (Gmail App Password — NOT your regular password)
- * - EMAIL_HOST  (default: smtp.gmail.com)
- * - EMAIL_PORT  (default: 587)
+ * - BREVO_API_KEY (get one at https://app.brevo.com/settings/keys/api)
+ * - EMAIL_USER   (your verified sender email on Brevo, e.g. klivramailer@gmail.com)
  */
 
-// Singleton transporter — reuse TCP connection pool across all emails
-let transporter = null;
-
-function getTransporter() {
-    if (!transporter) {
-        const host = process.env.EMAIL_HOST || 'smtp.gmail.com';
-        const port = Number(process.env.EMAIL_PORT) || 587;
-
-        transporter = nodemailer.createTransport({
-            host,
-            port,
-            secure: port === 465,
-            auth: {
-                user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_PASS,
-            },
-            // Connection pool for better performance on cloud platforms
-            pool: true,
-            maxConnections: 3,
-            maxMessages: 100,
-            // Timeouts to prevent hanging on Render/cloud environments
-            connectionTimeout: 10000,  // 10s to establish connection
-            greetingTimeout: 10000,    // 10s for SMTP greeting
-            socketTimeout: 15000,      // 15s for socket inactivity
-            // TLS settings for cloud environments
-            tls: {
-                rejectUnauthorized: true,
-                minVersion: 'TLSv1.2',
-            },
-        });
-
-        console.log(`📧 Email transporter created: ${process.env.EMAIL_USER} via ${host}:${port}`);
-    }
-    return transporter;
-}
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 /**
- * Send an email with automatic retry (up to 3 attempts).
+ * Send an email via Brevo's transactional email HTTP API.
  * @param {Object} options - { to, subject, html }
- * @returns {Promise<Object>} nodemailer info object
+ * @returns {Promise<Object>} Brevo response data
  */
 const sendEmail = async ({ to, subject, html }) => {
-    // Validate environment
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.error('❌ EMAIL_USER or EMAIL_PASS not set in environment variables!');
-        throw new Error('Email service is not configured. Missing EMAIL_USER or EMAIL_PASS.');
+    if (!process.env.BREVO_API_KEY) {
+        throw new Error('BREVO_API_KEY is not set in environment variables!');
     }
 
-    const transport = getTransporter();
+    const senderEmail = process.env.EMAIL_USER || 'klivramailer@gmail.com';
 
-    // Build the "from" address safely (avoid dotenv parsing issues with angle brackets)
-    const fromAddress = `"Klivra Team" <${process.env.EMAIL_USER}>`;
+    console.log(`[EMAIL] Sending to: ${to}, Subject: "${subject}", via Brevo HTTP API`);
 
-    const mailOptions = {
-        from: fromAddress,
-        to,
+    const body = JSON.stringify({
+        sender: { name: 'Klivra', email: senderEmail },
+        to: [{ email: to }],
         subject,
-        html,
-    };
+        htmlContent: html,
+    });
 
-    // Retry logic: 3 attempts with exponential backoff
-    const MAX_RETRIES = 3;
-    let lastError = null;
+    const response = await fetch(BREVO_API_URL, {
+        method: 'POST',
+        headers: {
+            'api-key': process.env.BREVO_API_KEY,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body,
+    });
 
-    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-        try {
-            const info = await transport.sendMail(mailOptions);
-            console.log(`✉️  Email sent to ${to} (attempt ${attempt}). MessageID: ${info.messageId}`);
-            return info;
-        } catch (error) {
-            lastError = error;
-            console.error(`❌ Email attempt ${attempt}/${MAX_RETRIES} to ${to} failed:`, error.message);
+    const data = await response.json();
 
-            if (attempt < MAX_RETRIES) {
-                // Reset the transporter if it's a connection error
-                if (error.code === 'ESOCKET' || error.code === 'ECONNECTION' || error.code === 'ETIMEDOUT') {
-                    console.log('🔄 Resetting transporter due to connection error...');
-                    transporter = null;
-                }
-
-                // Exponential backoff: 1s, 2s, 4s
-                const delay = 1000 * Math.pow(2, attempt - 1);
-                console.log(`⏳ Retrying in ${delay}ms...`);
-                await new Promise(resolve => setTimeout(resolve, delay));
-            }
-        }
+    if (!response.ok) {
+        console.error(`[EMAIL] ❌ Brevo API error: ${JSON.stringify(data)}`);
+        throw new Error(`Brevo API error: ${data.message || response.statusText}`);
     }
 
-    // All retries exhausted
-    console.error(`❌ All ${MAX_RETRIES} email attempts to ${to} failed. Last error: ${lastError.message}`);
-    throw new Error(`Email could not be sent after ${MAX_RETRIES} attempts: ${lastError.message}`);
+    console.log(`[EMAIL] ✅ Sent to ${to}. MessageId: ${data.messageId}`);
+    return data;
 };
 
 module.exports = sendEmail;
