@@ -1,5 +1,7 @@
 const User = require('../models/user.model');
 const { z } = require('zod');
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 
@@ -12,6 +14,11 @@ const updateProfileSchema = z.object({
 const changePasswordSchema = z.object({
     currentPassword: z.string().min(1, 'Current password is required'),
     newPassword: z.string().min(6, 'New password must be at least 6 characters'),
+});
+
+const verifyEmailChangeSchema = z.object({
+    otp: z.string().length(6, 'OTP must be 6 digits'),
+    newEmail: z.string().email('Please enter a valid email address'),
 });
 
 // ─── Controllers ─────────────────────────────────────────────────────────────
@@ -173,4 +180,154 @@ const changePassword = async (req, res, next) => {
     }
 };
 
-module.exports = { uploadAvatar, updateProfile, changePassword, removeAvatar };
+// ─── Secure Email Change Flow ────────────────────────────────────────────────
+
+// @desc    Step 1: Request OTP to current email for email change
+// @route   POST /api/users/email/request-otp
+// @access  Private
+const requestEmailChangeOTP = async (req, res, next) => {
+    try {
+        const user = await User.findById(req.user._id);
+
+        // Generate 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+        // Hash and save
+        user.emailChangeOTP = crypto.createHash('sha256').update(otp).digest('hex');
+        user.emailChangeOTPExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+        await user.save();
+
+        const message = `
+            <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
+                <h2 style="color: #060612;">Email Change Request</h2>
+                <p style="color: #44445a; line-height: 1.6;">You requested to change your email address. Here is your 6-digit verification code:</p>
+                <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #7B52FF; margin: 20px 0;">${otp}</div>
+                <p style="color: #44445a;">This code will expire in 10 minutes.</p>
+                <p style="color: #8888aa; font-size: 13px; margin-top: 25px;">If you did not request this, please ignore this email and your email will remain unchanged.</p>
+            </div>
+        `;
+
+        await sendEmail({
+            to: user.email,
+            subject: 'Your Klivra Verification Code',
+            html: message
+        });
+
+        res.status(200).json({ status: 'success', message: 'OTP sent to current email' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Step 2: Verify OTP & Propose New Email
+// @route   POST /api/users/email/verify-otp
+// @access  Private
+const verifyEmailChangeOTP = async (req, res, next) => {
+    try {
+        const parsed = verifyEmailChangeSchema.safeParse(req.body);
+        if (!parsed.success) {
+            res.status(400);
+            return next(new Error(parsed.error.errors.map(e => e.message).join(', ')));
+        }
+
+        const { otp, newEmail } = parsed.data;
+
+        // Check if new email is already in use by another user
+        const existingUser = await User.findOne({ email: newEmail });
+        if (existingUser) {
+            res.status(400);
+            return next(new Error('This email address is already in use'));
+        }
+
+        const user = await User.findById(req.user._id);
+
+        const hashedOTP = crypto.createHash('sha256').update(otp).digest('hex');
+
+        if (!user.emailChangeOTP || user.emailChangeOTP !== hashedOTP || user.emailChangeOTPExpires < Date.now()) {
+            res.status(400);
+            return next(new Error('Invalid or expired OTP'));
+        }
+
+        // OTP is valid, generate Confirmation Token for new email
+        const token = crypto.randomBytes(32).toString('hex');
+
+        user.emailChangeToken = crypto.createHash('sha256').update(token).digest('hex');
+        user.emailChangeTokenExpires = Date.now() + 2 * 60 * 60 * 1000; // 2 hours
+        user.pendingNewEmail = newEmail;
+        // clear OTP fields
+        user.emailChangeOTP = undefined;
+        user.emailChangeOTPExpires = undefined;
+        await user.save();
+
+        const isProd = process.env.NODE_ENV === 'production';
+        const frontendUrl = isProd
+            ? 'https://klivra.vercel.app'
+            : (process.env.FRONTEND_URL || 'http://localhost:5173');
+
+        const confirmUrl = `${frontendUrl}/settings?confirmEmailToken=${token}`;
+
+        const message = `
+            <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
+                <h2 style="color: #060612;">Confirm New Email</h2>
+                <p style="color: #44445a; line-height: 1.6;">You requested to change your Klivra email to this address. Please click below to confirm:</p>
+                <a href="${confirmUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Confirm Email</a>
+                <p style="color: #8888aa; font-size: 13px; margin-top: 25px;">If you did not initiate this change, please ignore this email.</p>
+            </div>
+        `;
+
+        await sendEmail({
+            to: newEmail,
+            subject: 'Confirm your new Klivra email',
+            html: message
+        });
+
+        res.status(200).json({ status: 'success', message: 'Confirmation link sent to new email' });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Step 3: Confirm New Email via Token
+// @route   GET /api/users/email/confirm-new/:token
+// @access  Public (so user can just click from email client)
+const confirmEmailChange = async (req, res, next) => {
+    try {
+        const { token } = req.params;
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+            emailChangeToken: hashedToken,
+            emailChangeTokenExpires: { $gt: Date.now() }
+        });
+
+        if (!user || !user.pendingNewEmail) {
+            res.status(400);
+            return next(new Error('Invalid or expired token'));
+        }
+
+        user.email = user.pendingNewEmail;
+        user.isEmailVerified = true;
+        // wipe fields
+        user.pendingNewEmail = undefined;
+        user.emailChangeToken = undefined;
+        user.emailChangeTokenExpires = undefined;
+        await user.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Email address updated successfully'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+module.exports = {
+    uploadAvatar,
+    updateProfile,
+    changePassword,
+    removeAvatar,
+    requestEmailChangeOTP,
+    verifyEmailChangeOTP,
+    confirmEmailChange
+};

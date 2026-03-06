@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config({ override: true });
 const express = require('express');
 const http = require('http');
 const mongoose = require('mongoose');
@@ -13,6 +13,7 @@ const logger = require('./utils/logger');
 const session = require('express-session');
 const passport = require('./config/passport');
 const seedAdminUser = require('./config/seed');
+const startGarbageCollection = require('./cron/gc');
 
 // 1. Optimize DNS resolution for faster external APIs/MongoDB
 try {
@@ -30,7 +31,7 @@ const io = require('./utils/socket').init(server);
 // 2. Fast allowed origins lookup O(1)
 const allowedOrigins = new Set([
   'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000',
-  'https://klivra.vercel.app', 'https://cse-471-project-gamma.vercel.app',
+  'https://klivra.vercel.app',
   process.env.FRONTEND_URL?.replace(/\/$/, '')
 ].filter(Boolean));
 
@@ -113,6 +114,7 @@ mongoose.connect(process.env.MONGO_URI, {
 }).then(async () => {
   logger.info("✅ MongoDB Connected Successfully!");
   await seedAdminUser(); // Bootstraps the dedicated admin account
+  startGarbageCollection(); // Boots the daily unverified users cleanup job
 })
   .catch(err => {
     logger.error(`❌ MongoDB Connection Error: ${err.message}`);

@@ -150,10 +150,10 @@ export const useAuthStore = create((set) => ({
     },
 
     // 3. Login user
-    login: async (email, password, reactivate = false) => {
+    login: async (email, password, rememberMe = false, reactivate = false) => {
         set({ isLoading: true, error: null });
         try {
-            const response = await api.post('/auth/login', { email, password, reactivate });
+            const response = await api.post('/auth/login', { email, password, rememberMe, reactivate });
             set({
                 user: response.data.data,
                 accessToken: response.data.accessToken,

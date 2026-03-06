@@ -71,6 +71,7 @@ const linkOrCreateUser = async (profile, provider, providerIdKey, done) => {
             // No password needed
             [providerIdKey]: profile.id,
             authProviders: [provider],
+            isEmailVerified: true, // OAuth providers have already verified the email
             avatar: profile.photos && profile.photos.length > 0 ? profile.photos[0].value : undefined
         });
 

@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { protect } = require('../middlewares/auth.middleware');
 const { uploadSingle } = require('../middlewares/upload.middleware');
-const { uploadAvatar, updateProfile, changePassword, removeAvatar } = require('../controllers/user.controller');
+const { uploadAvatar, updateProfile, changePassword, removeAvatar, requestEmailChangeOTP, verifyEmailChangeOTP, confirmEmailChange } = require('../controllers/user.controller');
 
 // POST   /api/users/profile/avatar  — upload / replace profile picture
 router.post('/profile/avatar', protect, uploadSingle, uploadAvatar);
@@ -16,5 +16,16 @@ router.put('/profile', protect, updateProfile);
 
 // PUT    /api/users/profile/password — change password (requires current password)
 router.put('/profile/password', protect, changePassword);
+
+// ─── Secure Email Change Flow ────────────────────────────────────────────────
+
+// POST   /api/users/email/request-otp    — step 1: request code to current email
+router.post('/email/request-otp', protect, requestEmailChangeOTP);
+
+// POST   /api/users/email/verify-otp     — step 2: verify code and send link
+router.post('/email/verify-otp', protect, verifyEmailChangeOTP);
+
+// GET    /api/users/email/confirm-new/:token — step 3: confirm token and swap
+router.get('/email/confirm-new/:token', confirmEmailChange);
 
 module.exports = router;

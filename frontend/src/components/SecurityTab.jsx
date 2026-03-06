@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -6,10 +6,10 @@ import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Mail, Lock } from 'lucide-react';
 import { useAuthStore, api } from '../store/useAuthStore';
+import EmailUpdateModal from './EmailUpdateModal';
 
 const securitySchema = z
     .object({
-        email: z.string().email('Please enter a valid email address'),
         currentPassword: z.string().optional(),
         newPassword: z.string().optional(),
         confirmNewPassword: z.string().optional(),
@@ -56,6 +56,7 @@ const securitySchema = z
 
 export default function SecurityTab() {
     const { user } = useAuthStore();
+    const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
 
     const {
         register,
@@ -65,7 +66,6 @@ export default function SecurityTab() {
     } = useForm({
         resolver: zodResolver(securitySchema),
         defaultValues: {
-            email: user?.email || '',
             currentPassword: '',
             newPassword: '',
             confirmNewPassword: '',
@@ -75,7 +75,6 @@ export default function SecurityTab() {
     const securityMutation = useMutation({
         mutationFn: async (data) => {
             const response = await api.put('/settings/security', {
-                email: data.email,
                 currentPassword: data.currentPassword || undefined,
                 newPassword: data.newPassword || undefined,
             });
@@ -114,22 +113,35 @@ export default function SecurityTab() {
             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                 {/* Email Section */}
                 <div className="pb-6 border-b border-white/[0.06]">
-                    <label htmlFor="email" className="block text-[13px] font-semibold text-gray-300 mb-1.5">
-                        Email Address
-                    </label>
+                    <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-[13px] font-semibold text-gray-300">
+                            Email Address
+                        </label>
+                        <button
+                            type="button"
+                            onClick={() => setIsEmailModalOpen(true)}
+                            className="text-[12px] font-medium text-violet-400 hover:text-violet-300 transition-colors px-3 py-1 bg-violet-500/10 hover:bg-violet-500/20 rounded-lg"
+                        >
+                            Update Email
+                        </button>
+                    </div>
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
                             <Mail className="h-4 w-4 text-gray-500" />
                         </div>
                         <input
-                            id="email"
                             type="email"
-                            placeholder="juhayer@example.com"
-                            {...register('email')}
-                            className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-violet-500/50 focus:border-violet-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
+                            disabled
+                            value={user?.email || ''}
+                            className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.04] rounded-xl text-[13px] bg-white/[0.02] text-gray-400 cursor-not-allowed shadow-inner shadow-black/20"
                         />
                     </div>
-                    {errors.email && <p className="text-xs text-red-400 mt-1.5">{errors.email.message}</p>}
+                    {user?.pendingNewEmail && (
+                        <p className="text-xs text-amber-400 mt-2 flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
+                            Change pending confirmation: <strong>{user.pendingNewEmail}</strong>
+                        </p>
+                    )}
                 </div>
 
                 {/* Password Section */}
@@ -206,6 +218,8 @@ export default function SecurityTab() {
                     </button>
                 </div>
             </form>
+
+            <EmailUpdateModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} />
         </div>
     );
 }

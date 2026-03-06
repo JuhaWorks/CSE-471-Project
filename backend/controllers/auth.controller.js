@@ -1,5 +1,7 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const sendEmail = require('../utils/sendEmail');
 
 // Generate JWT Access Token (Short-lived)
 const generateAccessToken = (id) => {
@@ -14,7 +16,7 @@ const generateRefreshToken = (id) => {
 };
 
 // Utility function to send JWT inside an HttpOnly Cookie
-const sendTokenResponse = (user, statusCode, res) => {
+const sendTokenResponse = (user, statusCode, res, rememberMe = false) => {
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
 
@@ -23,11 +25,15 @@ const sendTokenResponse = (user, statusCode, res) => {
     // is HTTP (Secure=false), it would reject the cookie entirely.
     // Thanks to your Vite proxy, dev requests are same-site anyway, so 'lax' works perfectly.
     const options = {
-        expires: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
         httpOnly: true, // Crucial: Cookie cannot be accessed via client-side scripts
         secure: isProd, // HTTPS only in production
         sameSite: isProd ? 'none' : 'lax', // 'none' for cross-site prod, 'lax' for local proxy
     };
+
+    // If rememberMe is true, cookie lasts 30 days. Otherwise, it's a session cookie defaults to browser session length.
+    if (rememberMe) {
+        options.expires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    }
 
     res
         .status(statusCode)
@@ -40,7 +46,8 @@ const sendTokenResponse = (user, statusCode, res) => {
                 name: user.name,
                 email: user.email,
                 role: user.role,
-                avatar: user.avatar
+                avatar: user.avatar,
+                isEmailVerified: user.isEmailVerified
             }
         });
 };
@@ -52,13 +59,60 @@ const sendTokenResponse = (user, statusCode, res) => {
 const registerUser = async (req, res, next) => {
     try {
         const { name, email, password, role, avatar } = req.body;
+        console.log(`[DEBUG] Registration attempt for: ${email}`);
 
         // Check if user already exists
         const userExists = await User.findOne({ email });
 
         if (userExists) {
-            res.status(400);
-            throw new Error('User already exists');
+            if (userExists.isEmailVerified) {
+                res.status(400);
+                throw new Error('User already exists. Please log in.');
+            } else {
+                // The Unverified Lockout Fix: Treat this as a resend request
+                const verificationToken = crypto.randomBytes(32).toString('hex');
+                userExists.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+                userExists.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+                await userExists.save();
+
+                const isProd = process.env.NODE_ENV === 'production';
+                const frontendUrl = isProd
+                    ? 'https://klivra.vercel.app'
+                    : (process.env.FRONTEND_URL || 'http://localhost:5173');
+
+                const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+                const message = `
+                    <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
+                        <h2 style="color: #060612;">Welcome back to Klivra!</h2>
+                        <p style="color: #44445a; line-height: 1.6;">It looks like you previously signed up but didn't verify your account. Please verify your email address to access your workspace.</p>
+                        <a href="${verifyUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Verify Account</a>
+                    </div>
+                `;
+
+                try {
+                    await sendEmail({
+                        to: userExists.email,
+                        subject: 'Verify your Klivra account',
+                        html: message
+                    });
+                } catch (err) {
+                    console.error('Email could not be resent during duplicate registration', err);
+                }
+
+                return res.status(200).json({
+                    status: 'success',
+                    message: 'Verification email resent. Please check your inbox.',
+                    data: {
+                        _id: userExists.id,
+                        name: userExists.name,
+                        email: userExists.email,
+                        role: userExists.role,
+                        avatar: userExists.avatar,
+                        isEmailVerified: userExists.isEmailVerified
+                    }
+                });
+            }
         }
 
         // Create user. The password will be hashed via the pre-save hook in the User model.
@@ -71,15 +125,51 @@ const registerUser = async (req, res, next) => {
         });
 
         if (user) {
+            // --- Email Verification Implementation ---
+            const verificationToken = crypto.randomBytes(32).toString('hex');
+
+            user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+            user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
+            await user.save();
+
+            const isProd = process.env.NODE_ENV === 'production';
+            const frontendUrl = isProd
+                ? 'https://klivra.vercel.app'
+                : (process.env.FRONTEND_URL || 'http://localhost:5173');
+
+            const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+            const message = `
+                <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
+                    <h2 style="color: #060612;">Welcome to Klivra!</h2>
+                    <p style="color: #44445a; line-height: 1.6;">Thanks for signing up. Please verify your email address to access your workspace.</p>
+                    <a href="${verifyUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Verify Account</a>
+                    <p style="color: #8888aa; font-size: 13px; margin-top: 25px;">If you did not request this, please ignore this email.</p>
+                </div>
+            `;
+
+            try {
+                console.log(`[DEBUG] Attempting to send registration email to: ${user.email}`);
+                await sendEmail({
+                    to: user.email,
+                    subject: 'Verify your Klivra account',
+                    html: message
+                });
+                console.log(`[DEBUG] Registration email sent successfully to: ${user.email}`);
+            } catch (err) {
+                console.error('[DEBUG] Registration email failed to send:', err);
+            }
+
             res.status(201).json({
                 status: 'success',
-                message: 'Registration successful. Please log in.',
+                message: 'Registration successful. Please verify your email.',
                 data: {
                     _id: user.id,
                     name: user.name,
                     email: user.email,
                     role: user.role,
-                    avatar: user.avatar
+                    avatar: user.avatar,
+                    isEmailVerified: user.isEmailVerified
                 }
             });
         } else {
@@ -110,7 +200,7 @@ const registerUser = async (req, res, next) => {
 // @access  Public
 const loginUser = async (req, res, next) => {
     try {
-        const { email, password, reactivate } = req.body;
+        const { email, password, reactivate, rememberMe } = req.body;
 
         if (!email || !password) {
             res.status(400);
@@ -147,7 +237,7 @@ const loginUser = async (req, res, next) => {
                 }
             }
 
-            sendTokenResponse(user, 200, res);
+            sendTokenResponse(user, 200, res, rememberMe);
         } else {
             res.status(401);
             throw new Error('Invalid email or password');
@@ -248,10 +338,117 @@ const oauthCallback = (req, res) => {
     res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
 };
 
+// @desc    Verify email address
+// @route   GET /api/auth/verify-email/:token
+// @access  Public
+const verifyEmail = async (req, res, next) => {
+    try {
+        const { token } = req.params;
+
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        let user = await User.findOne({
+            emailVerificationToken: hashedToken
+        });
+
+        if (!user) {
+            res.status(400);
+            return next(new Error('Invalid verification token.'));
+        }
+
+        // The Pre-Click Ghost Fix: Idempotency
+        // If an enterprise firewall's bot pre-clicked the link, the user is already verified.
+        // We do not throw an error if humans click it a second time.
+        if (user.isEmailVerified) {
+            return res.status(200).json({
+                status: 'success',
+                message: 'Email successfully verified!' // Soft pass
+            });
+        }
+
+        if (user.emailVerificationExpires < Date.now()) {
+            res.status(400);
+            return next(new Error('Token has expired. Please request a new one.'));
+        }
+
+        // We mark them as verified, but we DO NOT instantly delete the token from the DB.
+        // If we delete the token, the next click (by the real user) will yield "Invalid Token" (!user).
+        // The token will just sit harmlessly until the Garbage Collector wipes it, or it expires.
+        user.isEmailVerified = true;
+        await user.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Email successfully verified'
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
+// @desc    Resend verification email
+// @route   POST /api/auth/resend-verification
+// @access  Public (Expects email in body)
+const resendVerification = async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        console.log(`[DEBUG] Resend verification requested for: ${email}`);
+
+        const user = await User.findOne({ email });
+        if (!user) {
+            res.status(404);
+            return next(new Error('User not found'));
+        }
+
+        if (user.isEmailVerified) {
+            res.status(400);
+            return next(new Error('Email is already verified'));
+        }
+
+        const verificationToken = crypto.randomBytes(32).toString('hex');
+        user.emailVerificationToken = crypto.createHash('sha256').update(verificationToken).digest('hex');
+        user.emailVerificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+        await user.save();
+
+        const isProd = process.env.NODE_ENV === 'production';
+        const frontendUrl = isProd
+            ? 'https://klivra.vercel.app'
+            : (process.env.FRONTEND_URL || 'http://localhost:5173');
+
+        const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
+
+        const message = `
+            <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">
+                <h2 style="color: #060612;">Verify it's you</h2>
+                <p style="color: #44445a; line-height: 1.6;">You requested a new verification link. Please click below to verify your email address.</p>
+                <a href="${verifyUrl}" style="display: inline-block; margin-top: 15px; padding: 12px 24px; background-color: #7B52FF; color: white; text-decoration: none; border-radius: 8px; font-weight: bold;">Verify Account</a>
+            </div>
+        `;
+
+        console.log(`[DEBUG] Attempting to resend verification email to: ${user.email}`);
+        await sendEmail({
+            to: user.email,
+            subject: 'Verify your Klivra account',
+            html: message
+        });
+        console.log(`[DEBUG] Verification email resent successfully to: ${user.email}`);
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Verification email resent'
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     registerUser,
     loginUser,
     logoutUser,
     refreshTokenUser,
-    oauthCallback
+    oauthCallback,
+    verifyEmail,
+    resendVerification
 };

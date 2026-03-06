@@ -77,6 +77,21 @@ const userSchema = new mongoose.Schema(
             type: Number,
             default: null, // Number of days, null means deactivated indefinitely
         },
+
+        // --- Email Verification ---
+        isEmailVerified: {
+            type: Boolean,
+            default: false,
+        },
+        emailVerificationToken: String,
+        emailVerificationExpires: Date,
+
+        // --- Secure Email Change Flow ---
+        emailChangeOTP: String,
+        emailChangeOTPExpires: Date,
+        pendingNewEmail: String,
+        emailChangeToken: String,
+        emailChangeTokenExpires: Date,
     },
     {
         timestamps: true, // Automatically add createdAt and updatedAt fields

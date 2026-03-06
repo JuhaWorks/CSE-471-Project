@@ -6,9 +6,11 @@ import CommandPalette from './components/ui/CommandPalette';
 import ErrorBoundary from './components/ErrorBoundary';
 import Login from './pages/Login';
 import Home from './pages/Home';
+import RequireVerification from './components/RequireVerification';
 
 // Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
+const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Whiteboard = lazy(() => import('./components/Whiteboard'));
 const Settings = lazy(() => import('./pages/Settings'));
@@ -68,15 +70,18 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
+          <Route path="/verify-email" element={<Suspense fallback={<PageLoader />}><VerifyEmail /></Suspense>} />
 
           {/* Secure Layout Routes */}
           <Route
             path="/"
             element={
               <ProtectedRoute>
-                <ErrorBoundary>
-                  <Layout />
-                </ErrorBoundary>
+                <RequireVerification>
+                  <ErrorBoundary>
+                    <Layout />
+                  </ErrorBoundary>
+                </RequireVerification>
               </ProtectedRoute>
             }
           >
