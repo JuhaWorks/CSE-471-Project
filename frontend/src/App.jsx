@@ -55,8 +55,20 @@ function App() {
 
   if (authChecking) {
     return (
-      <div className="min-h-screen bg-[#0a0a12] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-violet-500"></div>
+      <div className="min-h-screen bg-[#0a0a12] flex flex-col items-center justify-center gap-6">
+        {/* Pulsing brand logo */}
+        <div className="relative">
+          <div className="absolute inset-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/30 to-blue-500/30 blur-xl animate-pulse" />
+          <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-2xl shadow-violet-500/25">
+            <span className="text-white font-black text-xl">K</span>
+          </div>
+        </div>
+        {/* Elegant loading bar */}
+        <div className="w-32 h-0.5 bg-white/[0.06] rounded-full overflow-hidden">
+          <div className="h-full w-full bg-gradient-to-r from-violet-500 via-blue-500 to-violet-500 rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]"
+            style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+        </div>
+        <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`}</style>
       </div>
     );
   }

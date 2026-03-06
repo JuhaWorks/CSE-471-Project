@@ -2,17 +2,17 @@ import { create } from 'zustand';
 import axios from 'axios';
 
 // Resolve the API base URL once.
-// We explicitly keep localhost active for local development via Vite proxy, 
-// and fallback to Render for production if no env var is provided.
+// Local dev: Vite proxy handles /api -> localhost:5000 (same-origin, cookies work)
+// Production: vercel.json rewrites /api -> Render backend (same-origin, cookies work)
+// Only set VITE_API_URL if you need to bypass both proxies (rare).
 let BASE_URL;
 if (import.meta.env.VITE_API_URL) {
     BASE_URL = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`;
 } else if (import.meta.env.DEV) {
-    // Explicitly use localhost link for local development
     BASE_URL = 'http://localhost:5000/api';
 } else {
-    // Production fallback for Vercel
-    BASE_URL = 'https://syncforge-io.onrender.com/api';
+    // Production: relative URL works because vercel.json rewrites /api/* to Render
+    BASE_URL = '/api';
 }
 
 // Create a configured Axios instance
@@ -20,12 +20,11 @@ if (import.meta.env.VITE_API_URL) {
 export const api = axios.create({
     baseURL: BASE_URL,
     withCredentials: true,
-    timeout: 15000, // 15s hard timeout — prevents hanging requests
+    timeout: 30000, // 30s — Render cold starts can take 15-20s
 });
 
 // Add Request Interceptor to inject the access token
 api.interceptors.request.use((config) => {
-    // Safely get state avoiding circular dependency
     const token = useAuthStore.getState().accessToken;
     if (token) {
         config.headers.Authorization = `Bearer ${token}`;
@@ -45,13 +44,22 @@ const processQueue = (error, token = null) => {
     failedQueue = [];
 };
 
+// Routes that should NEVER trigger a token refresh attempt
+const NO_REFRESH_ROUTES = ['/auth/refresh', '/auth/login', '/auth/register'];
+
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
         const originalRequest = error.config;
 
         // 1. Intercept 401 Unauthorized for automated token refresh
-        if (error.response?.status === 401 && !originalRequest._retry && originalRequest.url !== '/auth/refresh' && originalRequest.url !== '/auth/login' && originalRequest.url !== '/auth/register' && originalRequest.url !== '/auth/profile') {
+        // CRITICAL: /auth/me MUST be allowed to trigger refresh — that's how page reload works.
+        const shouldRefresh =
+            error.response?.status === 401 &&
+            !originalRequest._retry &&
+            !NO_REFRESH_ROUTES.some(route => originalRequest.url === route);
+
+        if (shouldRefresh) {
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });
@@ -66,7 +74,6 @@ api.interceptors.response.use(
 
             try {
                 // Securely request a new short-lived access token using the HttpOnly refresh cookie
-                // Use plain axios to avoid hitting interceptors recursively
                 const response = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
                 const newAccessToken = response.data.accessToken;
 
@@ -78,18 +85,17 @@ api.interceptors.response.use(
                 return api(originalRequest);
             } catch (refreshError) {
                 processQueue(refreshError, null);
-                // Refresh failed; meaning session is completely dead/expired. Clear client state.
-                useAuthStore.getState().logout(true); // Call logout client-side only
+                useAuthStore.getState().logout(true);
                 return Promise.reject(refreshError);
             } finally {
                 isRefreshing = false;
             }
         }
 
-        // 2. Original auto-retry logic for transient network blips
+        // 2. Auto-retry for transient network blips
         if (!originalRequest._retried && (error.code === 'ECONNABORTED' || !error.response)) {
             originalRequest._retried = true;
-            await new Promise((r) => setTimeout(r, 400)); // 400 ms back-off
+            await new Promise((r) => setTimeout(r, 400));
             return api(originalRequest);
         }
 
@@ -100,15 +106,17 @@ api.interceptors.response.use(
 
 export const useAuthStore = create((set) => ({
     user: null,
-    accessToken: null, // Short-lived token stored only in memory
+    accessToken: null,
     isAuthenticated: false,
-    isLoading: false, // Start as false so Login/Register buttons are immediately interactive
-    authChecking: true, // Separate flag for the initial auth check (prevents protected route flash)
+    isLoading: false,
+    authChecking: true, // Defaults true — App.jsx gatekeeper blocks rendering until resolved
     error: null,
     setAccessToken: (token) => set({ accessToken: token }),
     clearError: () => set({ error: null }),
 
-    // 1. Check if the user has an active session
+    // 1. Session validation on page reload
+    // Uses /auth/me which IS allowed to trigger the 401 refresh interceptor.
+    // Flow: GET /me → 401 (no token) → interceptor calls /refresh with cookie → gets token → retries /me → success
     checkAuth: async (forceFetch = false) => {
         if (window.location.pathname === '/oauth/callback' && !forceFetch) {
             set({ authChecking: false });
@@ -116,10 +124,7 @@ export const useAuthStore = create((set) => ({
         }
         set({ authChecking: true, error: null });
         try {
-            // Because no accessToken is active on refresh/boot, the request interceptor attaches nothing.
-            // The backend responds with 401. The response interceptor catches it, hits `/auth/refresh` using
-            // the HttpOnly cookie, gets the token, updates zustand state, and seamlessly retries this.
-            const response = await api.get('/auth/profile');
+            const response = await api.get('/auth/me');
             set({
                 user: response.data.data,
                 isAuthenticated: true,
@@ -164,7 +169,6 @@ export const useAuthStore = create((set) => ({
         } catch (error) {
             set({ isLoading: false });
             if (error.response?.data?.requiresReactivation) {
-                // Return the specific object to trigger the modal in Login.jsx
                 throw error.response.data;
             }
             const errorMessage = error.response?.data?.message || 'Invalid email or password';
@@ -173,7 +177,7 @@ export const useAuthStore = create((set) => ({
         }
     },
 
-    // 4. Logout user (Destroys the server-side cookie and clears client state)
+    // 4. Logout user
     logout: async (forceClientSide = false) => {
         set({ isLoading: true, error: null });
         try {
@@ -192,7 +196,7 @@ export const useAuthStore = create((set) => ({
         }
     },
 
-    // 5. Upload avatar image (multipart/form-data)
+    // 5. Upload avatar image
     uploadAvatar: async (file) => {
         const formData = new FormData();
         formData.append('avatar', file);
@@ -210,15 +214,14 @@ export const useAuthStore = create((set) => ({
         return response.data;
     },
 
-
-    // 6. Update profile info (name, status, customMessage)
+    // 6. Update profile info
     updateProfile: async (updates) => {
         const response = await api.put('/auth/profile', updates);
         set((state) => ({ user: { ...state.user, ...response.data.data } }));
         return response.data;
     },
 
-    // 7. Change password (requires currentPassword + newPassword)
+    // 7. Change password
     changePassword: async (currentPassword, newPassword) => {
         const response = await api.put('/auth/profile/password', { currentPassword, newPassword });
         return response.data;

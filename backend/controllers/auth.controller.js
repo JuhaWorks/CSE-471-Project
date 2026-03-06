@@ -90,17 +90,9 @@ const registerUser = async (req, res, next) => {
                     </div>
                 `;
 
-                try {
-                    await sendEmail({
-                        to: userExists.email,
-                        subject: 'Verify your Klivra account',
-                        html: message
-                    });
-                } catch (err) {
-                    console.error('Email could not be resent during duplicate registration', err);
-                }
-
-                return res.status(200).json({
+                // Fire-and-forget: Send response immediately, email in background
+                // This prevents Vercel proxy timeouts on Render cold starts
+                res.status(200).json({
                     status: 'success',
                     message: 'Verification email resent. Please check your inbox.',
                     data: {
@@ -112,6 +104,19 @@ const registerUser = async (req, res, next) => {
                         isEmailVerified: userExists.isEmailVerified
                     }
                 });
+
+                // Send email in background (don't await — response already sent)
+                sendEmail({
+                    to: userExists.email,
+                    subject: 'Verify your Klivra account',
+                    html: message
+                }).then(() => {
+                    console.log(`[DEBUG] Resend verification email sent to: ${userExists.email}`);
+                }).catch((err) => {
+                    console.error('[DEBUG] Resend verification email failed:', err.message);
+                });
+
+                return;
             }
         }
 
@@ -148,18 +153,7 @@ const registerUser = async (req, res, next) => {
                 </div>
             `;
 
-            try {
-                console.log(`[DEBUG] Attempting to send registration email to: ${user.email}`);
-                await sendEmail({
-                    to: user.email,
-                    subject: 'Verify your Klivra account',
-                    html: message
-                });
-                console.log(`[DEBUG] Registration email sent successfully to: ${user.email}`);
-            } catch (err) {
-                console.error('[DEBUG] Registration email failed to send:', err);
-            }
-
+            // Send response IMMEDIATELY so the frontend doesn't time out
             res.status(201).json({
                 status: 'success',
                 message: 'Registration successful. Please verify your email.',
@@ -171,6 +165,18 @@ const registerUser = async (req, res, next) => {
                     avatar: user.avatar,
                     isEmailVerified: user.isEmailVerified
                 }
+            });
+
+            // Fire-and-forget: email sent in background AFTER response
+            console.log(`[DEBUG] Dispatching registration email to: ${user.email}`);
+            sendEmail({
+                to: user.email,
+                subject: 'Verify your Klivra account',
+                html: message
+            }).then(() => {
+                console.log(`[DEBUG] Registration email sent successfully to: ${user.email}`);
+            }).catch((err) => {
+                console.error('[DEBUG] Registration email failed to send:', err.message);
             });
         } else {
             res.status(400);
@@ -386,6 +392,14 @@ const verifyEmail = async (req, res, next) => {
     }
 };
 
+// @desc    Get current user (session check for page reloads)
+// @route   GET /api/auth/me
+// @access  Private (Protected by JWT middleware)
+const getMe = async (req, res) => {
+    // req.user is already populated by the protect middleware
+    res.status(200).json({ status: 'success', data: req.user });
+};
+
 // @desc    Resend verification email
 // @route   POST /api/auth/resend-verification
 // @access  Public (Expects email in body)
@@ -450,5 +464,6 @@ module.exports = {
     refreshTokenUser,
     oauthCallback,
     verifyEmail,
-    resendVerification
+    resendVerification,
+    getMe
 };
