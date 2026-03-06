@@ -21,8 +21,7 @@ const Register = () => {
     const pw = watch('password', '');
 
     // Derive the correct cross-environment API URL for OAuth redirects
-    // Explicitly target local backend for OAuth
-    const API_URL = 'http://localhost:5000';
+    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://klivra-backend.onrender.com' : 'http://localhost:5000');
 
     const getStrength = (p) => {
         if (!p) return { s: 0, l: '', c: '' };
