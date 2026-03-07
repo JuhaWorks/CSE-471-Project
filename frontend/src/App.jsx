@@ -11,10 +11,13 @@ import RequireVerification from './components/RequireVerification';
 // Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
+const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage'));
 const Profile = lazy(() => import('./pages/Profile'));
 const Whiteboard = lazy(() => import('./components/Whiteboard'));
 const Settings = lazy(() => import('./pages/Settings'));
+const ProjectSettings = lazy(() => import('./pages/ProjectSettings'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
+
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 
 // Sleek, zero-lag loading fallback for code-split chunks
@@ -27,13 +30,31 @@ const PageLoader = () => (
   </div>
 );
 
+const GlobalLoadingScreen = () => (
+  <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950 flex flex-col items-center justify-center gap-6">
+    {/* Pulsing brand logo */}
+    <div className="relative">
+      <div className="absolute inset-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/30 to-blue-500/30 blur-xl animate-pulse" />
+      <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-2xl shadow-violet-500/25">
+        <span className="text-white font-black text-xl">K</span>
+      </div>
+    </div>
+    {/* Elegant loading bar */}
+    <div className="w-32 h-0.5 bg-zinc-200 dark:bg-white/[0.06] rounded-full overflow-hidden">
+      <div className="h-full w-full bg-gradient-to-r from-violet-500 via-blue-500 to-violet-500 rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]"
+        style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
+    </div>
+    <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`}</style>
+  </div>
+);
+
 // Protected Route Wrapper Component
 const ProtectedRoute = ({ children }) => {
-  const { user, authChecking } = useAuthStore();
+  const { isAuthenticated, isCheckingAuth } = useAuthStore();
 
-  if (authChecking) return null; // Still verifying session cookie
+  if (isCheckingAuth) return null; // Gatekeeper in App.jsx handles the loading screen
 
-  if (!user) {
+  if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
   }
 
@@ -47,30 +68,14 @@ const WhiteboardWrapper = () => {
 };
 
 function App() {
-  const { checkAuth, authChecking } = useAuthStore();
+  const { checkAuth, isCheckingAuth } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  if (authChecking) {
-    return (
-      <div className="min-h-screen bg-[#0a0a12] flex flex-col items-center justify-center gap-6">
-        {/* Pulsing brand logo */}
-        <div className="relative">
-          <div className="absolute inset-0 w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-500/30 to-blue-500/30 blur-xl animate-pulse" />
-          <div className="relative w-14 h-14 rounded-2xl bg-gradient-to-br from-violet-600 to-blue-600 flex items-center justify-center shadow-2xl shadow-violet-500/25">
-            <span className="text-white font-black text-xl">K</span>
-          </div>
-        </div>
-        {/* Elegant loading bar */}
-        <div className="w-32 h-0.5 bg-white/[0.06] rounded-full overflow-hidden">
-          <div className="h-full w-full bg-gradient-to-r from-violet-500 via-blue-500 to-violet-500 rounded-full animate-[shimmer_1.5s_ease-in-out_infinite]"
-            style={{ backgroundSize: '200% 100%', animation: 'shimmer 1.5s ease-in-out infinite' }} />
-        </div>
-        <style>{`@keyframes shimmer { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }`}</style>
-      </div>
-    );
+  if (isCheckingAuth) {
+    return <GlobalLoadingScreen />;
   }
 
   return (
@@ -83,6 +88,7 @@ function App() {
           <Route path="/register" element={<Register />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
           <Route path="/verify-email" element={<Suspense fallback={<PageLoader />}><VerifyEmail /></Suspense>} />
+          <Route path="/verify-email-change/:token" element={<Suspense fallback={<PageLoader />}><VerifyEmailChangePage /></Suspense>} />
 
           {/* Secure Layout Routes */}
           <Route
@@ -101,7 +107,9 @@ function App() {
             <Route index element={<Home />} />
             <Route path="profile" element={<Suspense fallback={<PageLoader />}><Profile /></Suspense>} />
             <Route path="settings" element={<Suspense fallback={<PageLoader />}><Settings /></Suspense>} />
+            <Route path="projects/:id/settings" element={<Suspense fallback={<PageLoader />}><ProjectSettings /></Suspense>} />
             <Route path="admin" element={<Suspense fallback={<PageLoader />}><AdminDashboard /></Suspense>} />
+
             <Route path="whiteboard/:roomId" element={<Suspense fallback={<PageLoader />}><WhiteboardWrapper /></Suspense>} />
           </Route>
 

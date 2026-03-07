@@ -5,541 +5,501 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
-const STYLES = `
-    @import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300&family=DM+Sans:wght@300;400;500;600;700;800;900&display=swap');
+// ─── Config ──────────────────────────────────────────────────────────────────
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+const API = import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
 
-    :root {
-        --v: #7B52FF; --b: #2563EB;
-        --bg: #060612; --panel: #08081e; --card: rgba(255,255,255,0.022);
-        --border: rgba(255,255,255,0.06); --border-h: rgba(255,255,255,0.12); --border-f: rgba(123,82,255,0.5);
-        --t1: #eeeeff; --t2: #8888aa; --t3: #44445a; --err: #ff6b75;
-        --r: 13px; --ff: 'DM Sans', system-ui, sans-serif; --ffd: 'Fraunces', Georgia, serif;
-    }
+const WORDS = ['extraordinary products.', 'the future, together.', 'what matters most.'];
+const FEATURES = [['⚡', 'Real-time Sync'], ['◫', 'Kanban Boards'], ['◻', 'Whiteboards'], ['⬡', 'E2E Encrypted']];
+const TEAM = ['AJ', 'KL', 'MP', 'SR'];
 
-    @keyframes kFadeUp  { from { opacity:0; transform:translateY(20px) } to { opacity:1; transform:translateY(0) } }
-    @keyframes kFadeIn  { from { opacity:0 } to { opacity:1 } }
-    @keyframes kSlideIn { from { opacity:0; transform:translateX(-20px) } to { opacity:1; transform:translateX(0) } }
-    @keyframes kModalIn { from { opacity:0; transform:scale(.93) translateY(10px) } to { opacity:1; transform:none } }
-    @keyframes kSpin    { to { transform:rotate(360deg) } }
-    @keyframes kOrb     { 0%,100% { transform:translate(0,0) scale(1) } 40% { transform:translate(28px,-18px) scale(1.04) } 75% { transform:translate(-18px,14px) scale(.97) } }
-    @keyframes kFloat   { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-5px) } }
-    @keyframes kGrow    { from { transform:scaleX(0) } to { transform:scaleX(1) } }
-    @keyframes kShimmer { 0% { background-position:-200% center } 100% { background-position:200% center } }
-    @keyframes kChipIn  { from { opacity:0; transform:translateY(6px) scale(.96) } to { opacity:1; transform:none } }
-
-    .au { animation: kFadeUp  .55s cubic-bezier(.22,1,.36,1) both }
-    .as { animation: kSlideIn .5s  cubic-bezier(.22,1,.36,1) both }
-    .af { animation: kFadeIn  .4s  ease both }
-    .d0 { animation-delay:0ms }   .d1 { animation-delay:70ms }  .d2 { animation-delay:140ms }
-    .d3 { animation-delay:210ms } .d4 { animation-delay:280ms } .d5 { animation-delay:350ms }
-    .d6 { animation-delay:420ms } .d7 { animation-delay:490ms }
-
-    /* ── Layout ── */
-    .root { min-height:100vh; display:flex; font-family:var(--ff); background:var(--bg); color:var(--t1); -webkit-font-smoothing:antialiased; overflow:hidden; }
-
-    /* ── Brand panel ── */
-    .brand { display:none; position:relative; overflow:hidden; flex-direction:column; justify-content:space-between; padding:3.5rem; background:var(--panel); }
-    @media(min-width:1024px) { .brand { display:flex; width:43%; } }
-
-    .orb { position:absolute; border-radius:50%; filter:blur(80px); pointer-events:none; }
-    .orb-a { width:440px; height:440px; background:rgba(123,82,255,.11); top:-100px; left:-80px; animation:kOrb 19s ease-in-out infinite; }
-    .orb-b { width:300px; height:300px; background:rgba(37,99,235,.09); bottom:40px; right:-60px; animation:kOrb 23s ease-in-out -7s infinite; }
-    .orb-c { width:180px; height:180px; background:rgba(123,82,255,.06); top:55%; left:35%; animation:kOrb 17s ease-in-out -4s infinite; }
-
-    .grid-bg {
-        position:absolute; inset:0; opacity:.018;
-        background-image: linear-gradient(rgba(255,255,255,.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.1) 1px, transparent 1px);
-        background-size: 50px 50px;
-    }
-    .vignette { position:absolute; inset:0; background:radial-gradient(ellipse at center, transparent 40%, rgba(8,8,30,.6)); }
-    .brand-rule { height:1px; background:linear-gradient(90deg,transparent,var(--border) 30%,var(--border) 70%,transparent); transform-origin:left; animation:kGrow .9s cubic-bezier(.22,1,.36,1) .5s both; margin-bottom:1.5rem; }
-
-    .chip { display:flex; align-items:center; gap:10px; padding:9px 13px; border-radius:11px; background:rgba(255,255,255,.025); border:1px solid var(--border); transition:border-color .25s, background .25s, transform .25s; cursor:default; animation:kChipIn .5s cubic-bezier(.22,1,.36,1) both; }
-    .chip:hover { border-color:rgba(123,82,255,.28); background:rgba(123,82,255,.07); transform:translateY(-2px); }
-    .chip-icon { width:28px; height:28px; border-radius:8px; flex-shrink:0; background:rgba(123,82,255,.14); border:1px solid rgba(123,82,255,.22); display:flex; align-items:center; justify-content:center; font-size:12px; }
-
-    .avatar { width:32px; height:32px; border-radius:50%; flex-shrink:0; background:linear-gradient(135deg,var(--v),var(--b)); display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; color:#fff; animation:kFloat 4.5s ease-in-out infinite; }
-
-    /* ── Form panel ── */
-    .form-panel { flex:1; display:flex; align-items:center; justify-content:center; padding:3rem 1.5rem; position:relative; overflow:hidden; }
-    @media(min-width:640px)  { .form-panel { padding:4rem 3rem; } }
-    @media(min-width:1280px) { .form-panel { padding:5rem; } }
-    .form-inner { width:100%; max-width:390px; position:relative; z-index:1; }
-    .glow-a { position:absolute; border-radius:50%; pointer-events:none; filter:blur(110px); }
-
-    /* ── Logo ── */
-    .logo { border-radius:14px; background:linear-gradient(135deg,var(--v),var(--b)); display:flex; align-items:center; justify-content:center; flex-shrink:0; box-shadow:0 8px 30px rgba(123,82,255,.32); transition:transform .3s cubic-bezier(.34,1.56,.64,1), box-shadow .3s; cursor:default; }
-    .logo:hover { transform:scale(1.08) rotate(-2deg); box-shadow:0 14px 44px rgba(123,82,255,.46); }
-    .logo span { font-weight:900; color:#fff; line-height:1; font-size:inherit; }
-    .logo-sm { width:36px; height:36px; }
-    .logo-md { width:48px; height:48px; }
-
-    /* ── Card ── */
-    .card { background:var(--card); backdrop-filter:blur(28px); border:1px solid var(--border); border-radius:20px; padding:26px; box-shadow:0 0 0 .5px rgba(255,255,255,.025) inset, 0 24px 80px rgba(0,0,0,.38), 0 4px 16px rgba(0,0,0,.18); transition:border-color .4s; }
-    .card:focus-within { border-color:rgba(123,82,255,.16); }
-
-    /* ── Field ── */
-    .field { display:flex; flex-direction:column; gap:6px; }
-    .flabel { font-size:11px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--t2); }
-    .fwrap  { position:relative; }
-    .finput {
-        width:100%; padding:11px 15px; border-radius:var(--r);
-        background:rgba(255,255,255,.03); border:1px solid var(--border);
-        color:var(--t1); font-family:var(--ff); font-size:14px; font-weight:500;
-        outline:none; -webkit-appearance:none;
-        transition:border-color .2s, box-shadow .2s, background .2s;
-    }
-    .finput::placeholder { color:var(--t3); }
-    .finput:hover  { border-color:var(--border-h); background:rgba(255,255,255,.04); }
-    .finput:focus  { border-color:var(--border-f); box-shadow:0 0 0 3px rgba(123,82,255,.13); background:rgba(255,255,255,.05); }
-    .finput.has-r  { padding-right:44px; }
-    .finput.err    { border-color:rgba(255,107,117,.4); }
-    .finput.err:focus { border-color:rgba(255,107,117,.65); box-shadow:0 0 0 3px rgba(255,107,117,.1); }
-    .fright { position:absolute; right:10px; top:50%; transform:translateY(-50%); }
-    .ferr   { display:flex; align-items:center; gap:5px; font-size:11px; font-weight:500; color:var(--err); animation:kFadeUp .2s ease both; }
-
-    /* ── Icon button ── */
-    .ibtn { padding:6px; border-radius:8px; background:transparent; border:none; cursor:pointer; color:var(--t3); transition:color .2s, background .2s; display:flex; align-items:center; justify-content:center; }
-    .ibtn:hover { color:var(--t2); background:rgba(255,255,255,.05); }
-
-    /* ── Error banner ── */
-    .err-banner { display:flex; align-items:flex-start; gap:10px; padding:12px 13px; border-radius:12px; background:rgba(255,107,117,.07); border:1px solid rgba(255,107,117,.18); color:#ff9999; animation:kFadeUp .3s cubic-bezier(.22,1,.36,1) both; }
-
-    /* ── Submit button ── */
-    .sbtn { width:100%; padding:12px; border-radius:var(--r); font-family:var(--ff); font-size:14px; font-weight:700; cursor:pointer; border:none; outline:none; display:flex; align-items:center; justify-content:center; gap:8px; transition:opacity .2s, transform .15s, box-shadow .2s; position:relative; overflow:hidden; }
-    .sbtn.on { background:linear-gradient(135deg, var(--v) 0%, #5c3de8 45%, var(--b) 100%); color:#fff; box-shadow:0 8px 30px rgba(123,82,255,.32), 0 2px 8px rgba(0,0,0,.2); }
-    .sbtn.on::after { content:''; position:absolute; inset:0; background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.13) 50%, transparent 70%); background-size:200% auto; opacity:0; transition:opacity .3s; }
-    .sbtn.on:hover { opacity:.9; box-shadow:0 12px 40px rgba(123,82,255,.42); }
-    .sbtn.on:hover::after { opacity:1; animation:kShimmer 1.6s linear infinite; }
-    .sbtn.on:active { transform:scale(.985); }
-    .sbtn.off { background:rgba(255,255,255,.04); color:var(--t3); cursor:not-allowed; border:1px solid var(--border); }
-
-    /* ── Spinner ── */
-    .spin { width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.22); border-top-color:#fff; animation:kSpin .65s linear infinite; flex-shrink:0; }
-
-    /* ── OAuth ── */
-    .divider { display:flex; align-items:center; gap:12px; }
-    .dline   { flex:1; height:1px; background:var(--border); }
-    .dlabel  { font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--t3); }
-    .obtn { display:flex; align-items:center; justify-content:center; gap:9px; padding:10px 15px; border-radius:11px; font-family:var(--ff); font-size:13px; font-weight:600; text-decoration:none; transition:transform .2s cubic-bezier(.34,1.56,.64,1), box-shadow .2s, background .2s; }
-    .obtn:active { transform:scale(.97) !important; }
-    .og { background:#fff; color:#3a3a55; box-shadow:0 1px 4px rgba(0,0,0,.1); }
-    .og:hover { background:#f4f4ff; box-shadow:0 4px 16px rgba(0,0,0,.12); transform:translateY(-2px); }
-    .gh { background:#161b22; color:#fff; border:1px solid rgba(255,255,255,.08); }
-    .gh:hover { background:#1c2430; box-shadow:0 4px 16px rgba(0,0,0,.3); transform:translateY(-2px); }
-
-    /* ── Checkbox ── */
-    .cbox { width:15px; height:15px; border-radius:5px; border:1px solid rgba(255,255,255,.11); background:rgba(255,255,255,.03); display:flex; align-items:center; justify-content:center; transition:border-color .2s, background .2s; flex-shrink:0; }
-    .clabel { display:flex; align-items:center; gap:8px; cursor:pointer; }
-    .clabel:hover .cbox { border-color:rgba(123,82,255,.4); background:rgba(123,82,255,.07); }
-
-    /* ── Modal ── */
-    .modal-wrap { position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center; padding:1rem; }
-    .modal-bg   { position:fixed; inset:0; background:rgba(0,0,0,.65); backdrop-filter:blur(8px); animation:kFadeIn .25s ease both; }
-    .modal-box  { position:relative; width:100%; max-width:350px; background:#0e0e2a; border:1px solid rgba(255,255,255,.09); border-radius:20px; padding:24px; box-shadow:0 32px 100px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.02) inset; animation:kModalIn .35s cubic-bezier(.22,1,.36,1) both; }
-    .modal-icon { width:42px; height:42px; border-radius:12px; background:rgba(251,191,36,.1); border:1px solid rgba(251,191,36,.22); display:flex; align-items:center; justify-content:center; margin-bottom:14px; }
-
-    /* ── Utility ── */
-    .row  { display:flex; align-items:center; justify-content:space-between; }
-    .col  { display:flex; flex-direction:column; }
-    .g8   { gap:8px; }  .g10 { gap:10px; }  .g16 { gap:16px; }  .g18 { gap:18px; }
-    .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    .z1     { position:relative; z-index:1; }
-    .serif  { font-family:var(--ffd); }
-    .grad   { background:linear-gradient(120deg,#b39dff,#7c9fff); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
-    .link-v { color:#9b7fff; font-weight:600; text-decoration:none; transition:color .2s; } .link-v:hover { color:#bcaaff; }
-    .link-s { color:var(--t2); text-decoration:underline; text-underline-offset:2px; transition:color .2s; } .link-s:hover { color:var(--t1); }
-    .forgot { background:none; border:none; font-family:var(--ff); font-size:12px; font-weight:600; color:var(--t3); cursor:pointer; padding:0; transition:color .2s; } .forgot:hover { color:#9b7fff; }
-    .footer-row { text-align:center; font-size:11px; color:var(--t3); line-height:1.7; margin-top:14px; }
-    .mobile-logo { display:flex; align-items:center; gap:12px; margin-bottom:2.5rem; }
-    @media(min-width:1024px) { .mobile-logo { display:none; } }
-`;
-
-const GlobalStyles = () => {
-    useEffect(() => {
-        const el = document.createElement('style');
-        el.id = 'klivra-login-styles';
-        el.textContent = STYLES;
-        document.head.appendChild(el);
-        return () => el.remove();
-    }, []);
-    return null;
-};
-
-// ══════════════════════════════════════════════════════════════════════════════
-// § VALIDATION
-// ══════════════════════════════════════════════════════════════════════════════
-
-const loginSchema = z.object({
-    email: z.string().min(1, 'Email is required').email('Enter a valid email address'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    rememberMe: z.boolean().optional(),
+const schema = z.object({
+    email: z.string().min(1, 'Required').email('Invalid email'),
+    password: z.string().min(8, 'Min 8 characters'),
+    remember: z.boolean().optional(),
 });
 
-// ══════════════════════════════════════════════════════════════════════════════
-// § STATIC CONFIG
-// ══════════════════════════════════════════════════════════════════════════════
+// ─── Styles ──────────────────────────────────────────────────────────────────
 
-const FEATURES = [
-    { icon: '⚡', label: 'Real-time Sync', d: 'd2' },
-    { icon: '◫', label: 'Kanban Boards', d: 'd3' },
-    { icon: '◻', label: 'Whiteboards', d: 'd4' },
-    { icon: '⬡', label: 'End-to-End Secure', d: 'd5' },
-];
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
 
-const OAUTH_PROVIDERS = [
-    {
-        key: 'google', label: 'Google', cls: 'og', path: '/api/auth/google',
-        icon: (
-            <svg width="17" height="17" viewBox="0 0 24 24">
-                <g transform="matrix(1,0,0,1,27.009,-39.239)">
-                    <path fill="#4285F4" d="M-3.264 51.509c0-.79-.07-1.54-.19-2.27H-14.754v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
-                    <path fill="#34A853" d="M-14.754 63.239c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96l-3.98 3.09c1.97 3.92 6.02 6.62 10.71 6.62z" />
-                    <path fill="#FBBC05" d="M-21.484 53.529c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.28v-3.09h-3.98c-.82 1.62-1.29 3.44-1.29 5.37s.47 3.75 1.29 5.37l3.98-3.08z" />
-                    <path fill="#EA4335" d="M-14.754 43.989c1.77 0 3.35.61 4.6 1.8l3.42-3.42c-2.07-1.94-4.78-3.13-8.02-3.13-4.69 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z" />
-                </g>
-            </svg>
-        ),
-    },
-    {
-        key: 'github', label: 'GitHub', cls: 'gh', path: '/api/auth/github',
-        icon: (
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-            </svg>
-        ),
-    },
-];
+:root{
+  --a:#4f6ef7; --a2:#7b96ff;
+  --bg:#090a14; --surface:#07080f;
+  --b:rgba(255,255,255,.06); --bh:rgba(255,255,255,.1); --bf:rgba(79,110,247,.42);
+  --t1:#cdd0ec; --t2:#464878; --t3:#222340;
+  --card:rgba(7,8,16,.95);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,*{cursor:none!important}
+body{background:var(--bg);color:var(--t1);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.serif{font-family:'Instrument Serif',Georgia,serif}
 
-// ══════════════════════════════════════════════════════════════════════════════
-// § ICON ATOMS
-// ══════════════════════════════════════════════════════════════════════════════
+/* cursor */
+#cur{
+  position:fixed;z-index:9999;pointer-events:none;
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.92);
+  mix-blend-mode:difference;
+  will-change:transform;
+  transition:width .1s,height .1s,border-radius .1s,opacity .1s;
+}
+#cur.h{width:11px;height:11px}
+#cur.t{width:2px;height:15px;border-radius:1px}
+#cur.p{opacity:.4;width:3px;height:3px}
 
-const AlertIcon = ({ size = 15 }) => (
-    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+/* page anims */
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes si{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes drift{0%,100%{transform:translate(0,0)}40%{transform:translate(18px,-12px)}75%{transform:translate(-10px,8px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes borderspin{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes shimmer{from{background-position:-300% center}to{background-position:300% center}}
+@keyframes oauthglow{from{opacity:0}to{opacity:1}}
+
+.au{animation:up .42s cubic-bezier(.22,1,.36,1) both}
+.as{animation:si .4s cubic-bezier(.22,1,.36,1) both}
+.d1{animation-delay:.07s}.d2{animation-delay:.14s}.d3{animation-delay:.21s}
+.d4{animation-delay:.28s}.d5{animation-delay:.35s}.d6{animation-delay:.42s}
+
+/* card border */
+.cb{
+  border-radius:16px;padding:1px;
+  background:linear-gradient(135deg,rgba(79,110,247,.15),rgba(255,255,255,.04),rgba(79,110,247,.08));
+  background-size:300% 300%;
+  animation:borderspin 8s ease infinite;
+}
+.cb:focus-within{
+  background:linear-gradient(135deg,rgba(79,110,247,.26),rgba(255,255,255,.05),rgba(79,110,247,.16));
+  background-size:300% 300%;
+  animation:borderspin 4s ease infinite;
+}
+
+/* inputs */
+.inp{width:100%;padding:10px 14px;border-radius:9px;background:rgba(255,255,255,.024);border:1px solid var(--b);color:var(--t1);font-family:'DM Sans',system-ui,sans-serif;font-size:13.5px;outline:none;transition:border-color .16s,box-shadow .16s,background .16s}
+.inp::placeholder{color:var(--t3)}
+.inp:hover{border-color:var(--bh);background:rgba(255,255,255,.03)}
+.inp:focus{border-color:var(--bf);box-shadow:0 0 0 3px rgba(79,110,247,.09);background:rgba(79,110,247,.026)}
+.inp.r{padding-right:40px}
+.inp.e{border-color:rgba(248,113,113,.32)}
+.inp.e:focus{border-color:rgba(248,113,113,.52);box-shadow:0 0 0 3px rgba(248,113,113,.08)}
+
+/* submit */
+.sbtn{
+  width:100%;padding:11px;border-radius:9px;border:none;
+  font-family:'DM Sans',system-ui,sans-serif;font-size:13.5px;font-weight:600;
+  display:flex;align-items:center;justify-content:center;gap:7px;
+  position:relative;overflow:hidden;
+  background:linear-gradient(110deg,#3350c8,var(--a),var(--a2));
+  color:#fff;box-shadow:0 4px 18px rgba(79,110,247,.2);
+  transition:opacity .12s,transform .12s cubic-bezier(.34,1.56,.64,1),box-shadow .14s;
+}
+.sbtn::before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.09) 50%,transparent 75%);background-size:300%;opacity:0;transition:opacity .2s}
+.sbtn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 7px 24px rgba(79,110,247,.28)}
+.sbtn:hover::before{opacity:1;animation:shimmer 1.5s linear infinite}
+.sbtn:active{transform:scale(.98)}
+.sbtn:disabled{background:rgba(255,255,255,.04);color:var(--t3);border:1px solid var(--b);box-shadow:none}
+.sbtn:disabled::before{display:none}
+
+/* oauth — glow on hover */
+.obtn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 14px;border-radius:9px;
+  font-family:'DM Sans',system-ui,sans-serif;font-size:13px;font-weight:500;
+  text-decoration:none;position:relative;overflow:hidden;
+  transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,background .14s;
+}
+.obtn::after{
+  content:'';position:absolute;inset:0;border-radius:9px;
+  opacity:0;transition:opacity .2s;
+}
+.og{background:rgba(255,255,255,.91);color:#1a1d2e}
+.og::after{box-shadow:inset 0 0 0 1px rgba(79,110,247,.3),0 0 20px rgba(79,110,247,.12),0 0 40px rgba(79,110,247,.06)}
+.og:hover{background:#fff;transform:translateY(-2px)}
+.og:hover::after{opacity:1}
+.gh{background:#0d1117;color:#c9d1d9;border:1px solid rgba(255,255,255,.07)}
+.gh::after{box-shadow:inset 0 0 0 1px rgba(123,150,255,.28),0 0 20px rgba(79,110,247,.14),0 0 40px rgba(79,110,247,.06)}
+.gh:hover{background:#161b22;transform:translateY(-2px)}
+.gh:hover::after{opacity:1}
+
+/* misc */
+.ib{padding:6px;border-radius:7px;border:none;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:color .12s,background .12s,transform .14s cubic-bezier(.34,1.56,.64,1)}
+.ib:hover{color:#8090c0;background:rgba(255,255,255,.05);transform:scale(1.08)}
+.chip{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,.018);border:1px solid var(--b);transition:border-color .16s,background .16s,transform .18s cubic-bezier(.34,1.56,.64,1)}
+.chip:hover{border-color:rgba(79,110,247,.22);background:rgba(79,110,247,.044);transform:translateY(-2px)}
+.tw{display:inline-block;width:2px;height:.8em;background:var(--a);margin-left:1px;border-radius:1px;animation:blink .9s step-end infinite;vertical-align:text-bottom}
+.sdot{width:5px;height:5px;border-radius:50%;background:#34d399;box-shadow:0 0 5px #34d399;animation:blink 2.2s ease infinite}
+.sp{width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,.18);border-top-color:#fff;animation:spin .6s linear infinite;flex-shrink:0}
+.sbar{flex:1;height:2px;border-radius:2px;background:var(--b);transition:background .22s}
+.sbar.w{background:#f87171}.sbar.f{background:#fb923c}.sbar.g{background:#facc15}.sbar.s{background:#34d399;box-shadow:0 0 5px rgba(52,211,153,.26)}
+.ferr{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:#f08090;animation:up .12s ease both}
+.ebanner{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;border-radius:10px;background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.14);color:#fca5a5;animation:up .18s ease both}
+.lnk{color:var(--a2);font-weight:500;text-decoration:none;position:relative;transition:color .12s}
+.lnk::after{content:'';position:absolute;bottom:-1px;left:0;width:0;height:1px;background:var(--a2);transition:width .15s}
+.lnk:hover{color:#a0b4ff}.lnk:hover::after{width:100%}
+.cbox{width:15px;height:15px;border-radius:4px;border:1px solid rgba(255,255,255,.09);background:rgba(255,255,255,.025);display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .16s cubic-bezier(.34,1.56,.64,1)}
+.cbox.on{border-color:var(--a);background:rgba(79,110,247,.14);box-shadow:0 0 0 3px rgba(79,110,247,.07)}
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.55);backdrop-filter:blur(10px);z-index:50;animation:up .16s ease both}
+.mbox{position:relative;z-index:51;width:100%;max-width:334px;background:linear-gradient(155deg,#0c0e1e,#08091a);border:1px solid rgba(255,255,255,.07);border-radius:16px;padding:24px;box-shadow:0 28px 70px rgba(0,0,0,.5);animation:up .26s cubic-bezier(.22,1,.36,1) both}
+.noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.017;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px}
+`;
+
+const useStyles = () => useEffect(() => {
+    const el = Object.assign(document.createElement('style'), { id: 'klv', textContent: CSS });
+    document.head.appendChild(el);
+    return () => el.remove();
+}, []);
+
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
+function useTypewriter(spd = 68, pause = 2000) {
+    const [st, set] = useState({ wi: 0, ci: 0, del: false, txt: '' });
+    useEffect(() => {
+        const word = WORDS[st.wi];
+        const delay = st.del ? spd / 2 : st.ci === word.length ? pause : spd;
+        const t = setTimeout(() => {
+            if (!st.del && st.ci < word.length) return set(s => ({ ...s, ci: s.ci + 1, txt: word.slice(0, s.ci + 1) }));
+            if (!st.del) return set(s => ({ ...s, del: true }));
+            if (st.ci > 0) return set(s => ({ ...s, ci: s.ci - 1, txt: word.slice(0, s.ci - 1) }));
+            set(s => ({ ...s, del: false, wi: (s.wi + 1) % WORDS.length, ci: 0 }));
+        }, delay);
+        return () => clearTimeout(t);
+    }, [st, spd, pause]);
+    return st.txt;
+}
+
+function useCursor() {
+    useEffect(() => {
+        const el = document.getElementById('cur');
+        if (!el) return;
+        const mv = ({ clientX: x, clientY: y }) => { el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`; };
+        const md = () => el.classList.add('p');
+        const mu = () => el.classList.remove('p');
+        document.addEventListener('mousemove', mv, { passive: true });
+        document.addEventListener('mousedown', md);
+        document.addEventListener('mouseup', mu);
+        const bind = () => {
+            document.querySelectorAll('a,button').forEach(n => {
+                n.addEventListener('mouseenter', () => el.classList.add('h'));
+                n.addEventListener('mouseleave', () => el.classList.remove('h'));
+            });
+            document.querySelectorAll('input').forEach(n => {
+                n.addEventListener('mouseenter', () => el.classList.add('t'));
+                n.addEventListener('mouseleave', () => el.classList.remove('t'));
+            });
+        };
+        setTimeout(bind, 200);
+        return () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mousedown', md); document.removeEventListener('mouseup', mu); };
+    }, []);
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+
+const pwStr = pw => [pw?.length >= 8, /[A-Z]/.test(pw || ''), /[0-9]/.test(pw || ''), /[^A-Za-z0-9]/.test(pw || '')].filter(Boolean).length;
+const STR = [null, { l: 'Weak', c: '#f87171', k: 'w' }, { l: 'Fair', c: '#fb923c', k: 'f' }, { l: 'Good', c: '#facc15', k: 'g' }, { l: 'Strong', c: '#34d399', k: 's' }];
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+const Ico = ({ d, size = 14, sw = 2, stroke = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d={d} /></svg>
+);
+const EyeIco = ({ open }) => open
+    ? <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+    : <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+
+const GoogleSVG = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24">
+        <g transform="matrix(1,0,0,1,27.009,-39.239)">
+            <path fill="#4285F4" d="M-3.264 51.509c0-.79-.07-1.54-.19-2.27H-14.754v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
+            <path fill="#34A853" d="M-14.754 63.239c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96l-3.98 3.09c1.97 3.92 6.02 6.62 10.71 6.62z" />
+            <path fill="#FBBC05" d="M-21.484 53.529c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.28v-3.09h-3.98c-.82 1.62-1.29 3.44-1.29 5.37s.47 3.75 1.29 5.37l3.98-3.08z" />
+            <path fill="#EA4335" d="M-14.754 43.989c1.77 0 3.35.61 4.6 1.8l3.42-3.42c-2.07-1.94-4.78-3.13-8.02-3.13-4.69 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z" />
+        </g>
+    </svg>
+);
+const GithubSVG = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
     </svg>
 );
 
-const XIcon = ({ size = 13 }) => (
-    <svg width={size} height={size} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-        <path d="M18 6L6 18M6 6l12 12" />
-    </svg>
+// ─── Atoms ────────────────────────────────────────────────────────────────────
+
+const Logo = ({ size = 36 }) => (
+    <div className="serif flex items-center justify-center text-white flex-shrink-0"
+        style={{ width: size, height: size, borderRadius: size * .3, background: 'linear-gradient(135deg,#3350c8,#4f6ef7)', boxShadow: '0 4px 16px rgba(79,110,247,.22)', fontSize: size * .44 }}>K</div>
 );
 
-const EyeIcon = ({ open }) => (
-    <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        {open
-            ? <><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></>
-            : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></>
-        }
-    </svg>
-);
-
-const WarnIcon = () => (
-    <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-    </svg>
-);
-
-// ══════════════════════════════════════════════════════════════════════════════
-// § PRIMITIVES
-// ══════════════════════════════════════════════════════════════════════════════
-
-const Spinner = () => <div className="spin" aria-hidden="true" />;
-
-const Logo = ({ size = 'md' }) => (
-    <div className={`logo logo-${size}`} style={{ fontSize: size === 'sm' ? 15 : 22 }}>
-        <span>K</span>
-    </div>
-);
-
-// ══════════════════════════════════════════════════════════════════════════════
-// § FORM PRIMITIVES
-// ══════════════════════════════════════════════════════════════════════════════
-
-const PasswordToggle = ({ show, onToggle }) => (
-    <button type="button" className="ibtn" onClick={onToggle} tabIndex={-1} aria-label={show ? 'Hide password' : 'Show password'}>
-        <EyeIcon open={show} />
-    </button>
-);
-
-const InputField = ({ id, label, type = 'text', placeholder, register, error, autoComplete, rightElement, delay = 'd0' }) => (
-    <div className={`field au ${delay}`}>
-        <label htmlFor={id} className="flabel">{label}</label>
-        <div className="fwrap">
-            <input
-                id={id} type={type} autoComplete={autoComplete} placeholder={placeholder}
-                aria-invalid={error ? 'true' : 'false'}
-                aria-describedby={error ? `${id}-err` : undefined}
-                {...register}
-                className={['finput', rightElement ? 'has-r' : '', error ? 'err' : ''].filter(Boolean).join(' ')}
-            />
-            {rightElement && <div className="fright">{rightElement}</div>}
-        </div>
-        {error && (
-            <p id={`${id}-err`} role="alert" className="ferr">
-                <AlertIcon size={12} />{error.message}
-            </p>
-        )}
-    </div>
-);
-
-const ErrorBanner = ({ message, onDismiss }) => (
-    <div role="alert" className="err-banner au d0">
-        <AlertIcon size={14} style={{ marginTop: 1 }} />
-        <span style={{ fontSize: 13, fontWeight: 500, flex: 1 }}>{message}</span>
-        <button className="ibtn" onClick={onDismiss} aria-label="Dismiss" style={{ padding: 4 }}><XIcon /></button>
-    </div>
-);
-
-const SubmitButton = ({ isLoading, isValid, isModalOpen }) => {
-    const loading = isLoading && !isModalOpen;
-    const disabled = isLoading || !isValid;
+const StrBars = ({ value }) => {
+    const s = pwStr(value), m = STR[s];
     return (
-        <button type="submit" disabled={disabled} className={`sbtn ${disabled ? 'off' : 'on'}`}>
-            {loading ? <><Spinner />Signing in…</> : 'Sign In'}
-        </button>
+        <div className="flex flex-col gap-1.5">
+            <div className="flex gap-1">{[0, 1, 2, 3].map(i => <div key={i} className={`sbar${i < s ? ` ${STR[s].k}` : ''}`} />)}</div>
+            {m && <span style={{ fontSize: 10, fontWeight: 600, color: m.c }}>{m.l}</span>}
+        </div>
     );
 };
 
-// ══════════════════════════════════════════════════════════════════════════════
-// § OAUTH SECTION
-// ══════════════════════════════════════════════════════════════════════════════
-
-const OAuthDivider = () => (
-    <div className="divider">
-        <div className="dline" /><span className="dlabel">or continue with</span><div className="dline" />
+const Field = ({ id, label, type = 'text', placeholder, reg, error, autoComplete, right, delay = '', showStr, strVal }) => (
+    <div className={`flex flex-col gap-1.5 au ${delay}`}>
+        <label htmlFor={id} className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--t2)' }}>{label}</label>
+        <div className="relative">
+            <input id={id} type={type} autoComplete={autoComplete} placeholder={placeholder} aria-invalid={!!error} {...reg}
+                className={`inp${right ? ' r' : ''}${error ? ' e' : ''}`} />
+            {right && <div className="absolute right-2.5 top-1/2 -translate-y-1/2">{right}</div>}
+        </div>
+        {showStr && strVal?.length > 0 && <StrBars value={strVal} />}
+        {error && <p className="ferr"><Ico d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" size={11} />{error.message}</p>}
     </div>
 );
 
-const OAuthButton = ({ href, label, icon, cls }) => (
-    <a href={href} className={`obtn ${cls}`}>{icon}{label}</a>
-);
+// ─── Modal ────────────────────────────────────────────────────────────────────
 
-const OAuthSection = ({ apiUrl }) => (
-    <div className="col g16 au d7">
-        <OAuthDivider />
-        <div className="grid-2">
-            {OAUTH_PROVIDERS.map(({ key, label, cls, path, icon }) => (
-                <OAuthButton key={key} href={`${apiUrl}${path}`} label={label} icon={icon} cls={cls} />
-            ))}
+const Modal = ({ open, loading, onConfirm, onClose }) => !open ? null : (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="mbg" onClick={onClose} />
+        <div className="mbox">
+            <div className="flex items-center justify-center w-9 h-9 rounded-[10px] mb-4"
+                style={{ background: 'rgba(251,191,36,.07)', border: '1px solid rgba(251,191,36,.15)' }}>
+                <Ico d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0zM12 9v4M12 17h.01" size={16} stroke="#fbbf24" />
+            </div>
+            <h3 className="serif text-[15px] tracking-tight mb-2" style={{ color: 'var(--t1)' }}>Account Deactivated</h3>
+            <p className="text-[13px] leading-relaxed" style={{ color: 'var(--t2)' }}>Reactivate to restore full access to your workspace and projects.</p>
+            <div className="flex gap-2.5 mt-5">
+                <button onClick={onClose} disabled={loading}
+                    className="flex-1 py-2.5 text-[12.5px] font-medium rounded-[8px] transition-all duration-[120ms]"
+                    style={{ background: 'rgba(255,255,255,.04)', border: '1px solid var(--b)', color: 'var(--t2)' }}
+                    onMouseEnter={e => Object.assign(e.currentTarget.style, { color: 'var(--t1)', background: 'rgba(255,255,255,.07)' })}
+                    onMouseLeave={e => Object.assign(e.currentTarget.style, { color: 'var(--t2)', background: 'rgba(255,255,255,.04)' })}>
+                    Cancel
+                </button>
+                <button onClick={onConfirm} disabled={loading} className="sbtn flex-1 py-2.5 text-[12.5px]">
+                    {loading ? <><div className="sp" />Reactivating…</> : 'Reactivate & Sign In'}
+                </button>
+            </div>
         </div>
     </div>
 );
 
-// ══════════════════════════════════════════════════════════════════════════════
-// § REACTIVATION MODAL
-// ══════════════════════════════════════════════════════════════════════════════
+// ─── Brand Panel ─────────────────────────────────────────────────────────────
 
-const ReactivationModal = ({ isOpen, isLoading, onConfirm, onClose }) => {
-    if (!isOpen) return null;
+function Brand() {
+    const typed = useTypewriter();
     return (
-        <div className="modal-wrap" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <div className="modal-bg" onClick={onClose} aria-hidden="true" />
-            <div className="modal-box">
-                <div className="modal-icon"><WarnIcon /></div>
-                <h3 id="modal-title" style={{ fontSize: 16, fontWeight: 800, color: 'var(--t1)', letterSpacing: '-.02em', marginBottom: 8 }}>
-                    Account Deactivated
-                </h3>
-                <p style={{ fontSize: 13, color: 'var(--t2)', lineHeight: 1.65 }}>
-                    Your account is currently deactivated. Reactivate now to restore access to your workspace and all projects.
-                </p>
-                <div className="row g10" style={{ marginTop: 20 }}>
-                    <button
-                        onClick={onClose} disabled={isLoading}
-                        style={{ flex: 1, padding: '10px', borderRadius: 10, fontSize: 13, fontWeight: 600, fontFamily: 'DM Sans,sans-serif', cursor: 'pointer', background: 'rgba(255,255,255,.04)', border: '1px solid var(--border)', color: 'var(--t2)', transition: 'all .2s' }}
-                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.08)'; e.currentTarget.style.color = 'var(--t1)'; }}
-                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,.04)'; e.currentTarget.style.color = 'var(--t2)'; }}
-                    >Cancel</button>
-                    <button onClick={onConfirm} disabled={isLoading} className="sbtn on" style={{ flex: 1, padding: '10px', fontSize: 13 }}>
-                        {isLoading ? <><Spinner />Reactivating…</> : 'Reactivate & Sign In'}
-                    </button>
+        <aside className="hidden lg:flex flex-col justify-between w-[42%] min-h-screen p-14 relative overflow-hidden"
+            style={{ background: 'var(--surface)', borderRight: '1px solid var(--b)' }}>
+
+            {/* orbs */}
+            <div style={{ position: 'absolute', width: 400, height: 400, top: -90, left: -70, borderRadius: '50%', background: 'rgba(79,110,247,.065)', filter: 'blur(90px)', animation: 'drift 22s ease-in-out infinite', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 240, height: 240, bottom: 20, right: -50, borderRadius: '50%', background: 'rgba(79,110,247,.045)', filter: 'blur(80px)', animation: 'drift 27s ease-in-out -9s infinite', pointerEvents: 'none' }} />
+            {/* grid */}
+            <div style={{ position: 'absolute', inset: 0, opacity: .016, backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '44px 44px', maskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%,black,transparent)' }} />
+
+            {/* header */}
+            <header className="flex items-center gap-3 as relative z-10">
+                <Logo size={36} />
+                <div>
+                    <div className="serif text-[16px] tracking-tight" style={{ color: 'var(--t1)' }}>Klivra</div>
+                    <div className="text-[9px] uppercase tracking-[.14em] font-semibold" style={{ color: 'var(--t3)' }}>Enterprise</div>
                 </div>
+                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9.5px] font-semibold uppercase tracking-wider"
+                    style={{ background: 'rgba(52,211,153,.05)', border: '1px solid rgba(52,211,153,.11)', color: '#5eead4' }}>
+                    <div className="sdot" />All systems go
+                </div>
+            </header>
+
+            {/* hero */}
+            <div className="flex flex-col relative z-10">
+                <p className="au d1 text-[10px] uppercase tracking-[.2em] font-semibold mb-5" style={{ color: 'var(--a)' }}>
+                    Enterprise Collaboration
+                </p>
+                <h2 className="au d2 serif leading-[1.1] tracking-tight mb-5"
+                    style={{ fontSize: 'clamp(1.7rem,2.5vw,2.3rem)', color: 'var(--t1)' }}>
+                    Build great things,<br />
+                    <span style={{ background: 'linear-gradient(120deg,#7a93e0,#5060a8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                        {typed}<span className="tw" />
+                    </span>
+                </h2>
+                <p className="au d3 text-[13px] leading-[1.75] mb-7 max-w-[255px]" style={{ color: 'var(--t2)' }}>
+                    Real-time collaboration for teams that move fast and ship with confidence.
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 mb-8">
+                    {FEATURES.map(([icon, label], i) => (
+                        <div key={label} className={`chip au d${i + 3}`}>
+                            <div className="w-[25px] h-[25px] rounded-[7px] flex items-center justify-center text-[11px] flex-shrink-0"
+                                style={{ background: 'rgba(79,110,247,.08)', border: '1px solid rgba(79,110,247,.13)' }}>
+                                {icon}
+                            </div>
+                            <span className="text-[11.5px] font-medium" style={{ color: 'var(--t2)' }}>{label}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="h-px" style={{ background: 'linear-gradient(90deg,transparent,var(--b) 30%,var(--b) 70%,transparent)' }} />
             </div>
-        </div>
+
+            {/* social proof */}
+            <footer className="flex items-center gap-3 au d6 relative z-10">
+                <div className="flex">
+                    {TEAM.map((s, i) => (
+                        <div key={s} className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
+                            style={{ marginLeft: i ? -6 : 0, background: 'linear-gradient(135deg,#3350c8,#4f6ef7)', border: '1.5px solid var(--surface)' }}>
+                            {s[0]}
+                        </div>
+                    ))}
+                </div>
+                <span className="text-[11px]" style={{ color: 'var(--t3)' }}>
+                    <span style={{ color: '#6878a8', fontWeight: 500 }}>2,400+</span> teams this month
+                </span>
+            </footer>
+        </aside>
     );
-};
+}
 
-// ══════════════════════════════════════════════════════════════════════════════
-// § BRAND PANEL
-// ══════════════════════════════════════════════════════════════════════════════
+// ─── Form Panel ───────────────────────────────────────────────────────────────
 
-const BrandPanel = () => (
-    <aside className="brand">
-        <div className="orb orb-a" /><div className="orb orb-b" /><div className="orb orb-c" />
-        <div className="grid-bg" /><div className="vignette" />
-
-        <div className="row g10 z1 as d0">
-            <Logo size="md" />
-            <span style={{ fontWeight: 900, fontSize: 20, letterSpacing: '-.03em', flex: 1 }}>Klivra</span>
-        </div>
-
-        <div className="col z1" style={{ flex: 1, justifyContent: 'center', paddingBlock: '3rem' }}>
-            <p className="au d1" style={{ fontSize: 11, fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--v)', marginBottom: 18 }}>
-                Enterprise Collaboration
-            </p>
-            <h2 className="serif au d2" style={{ fontSize: 'clamp(1.9rem,3.2vw,2.75rem)', fontWeight: 700, color: 'var(--t1)', lineHeight: 1.08, marginBottom: 18 }}>
-                Build great things,<br />
-                <span className="grad">together.</span>
-            </h2>
-            <p className="au d3" style={{ fontSize: 14, color: 'var(--t2)', lineHeight: 1.7, maxWidth: 275, marginBottom: 28 }}>
-                Real-time collaboration for teams that move fast and ship extraordinary products.
-            </p>
-            <div className="grid-2">
-                {FEATURES.map(({ icon, label, d }) => (
-                    <div key={label} className={`chip au ${d}`}>
-                        <div className="chip-icon">{icon}</div>
-                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--t2)' }}>{label}</span>
-                    </div>
-                ))}
-            </div>
-        </div>
-    </aside>
-);
-
-// ══════════════════════════════════════════════════════════════════════════════
-// § LOGIN FORM
-// ══════════════════════════════════════════════════════════════════════════════
-
-const LoginForm = ({ onSubmit, isLoading, error, clearError, isModalOpen }) => {
-    const [showPass, setShowPass] = useState(false);
-    const togglePass = useCallback(() => setShowPass(v => !v), []);
-
+function FormPanel({ onSubmit, loading, error, clearError, modalOpen }) {
+    const [showPw, setShowPw] = useState(false);
     const { register, handleSubmit, watch, formState: { errors, isValid } } = useForm({
-        resolver: zodResolver(loginSchema),
-        mode: 'onChange',
-        defaultValues: { rememberMe: false },
+        resolver: zodResolver(schema), mode: 'onChange', defaultValues: { remember: false },
     });
-
-    const rememberMe = watch('rememberMe');
+    const remember = watch('remember'), pw = watch('password');
 
     return (
-        <form onSubmit={handleSubmit(onSubmit)} noValidate className="col g18">
-            {error && <ErrorBanner message={error} onDismiss={clearError} />}
+        <main className="flex-1 flex items-center justify-center px-6 py-16 relative overflow-hidden">
+            {/* soft bg glow */}
+            <div style={{ position: 'absolute', top: '8%', right: '4%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(79,110,247,.038),transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
 
-            <InputField
-                id="email" label="Email address" type="email"
-                placeholder="name@company.com" autoComplete="email"
-                register={register('email')} error={errors.email} delay="d2"
-            />
-            <InputField
-                id="password" label="Password"
-                type={showPass ? 'text' : 'password'}
-                placeholder="••••••••••" autoComplete="current-password"
-                register={register('password')} error={errors.password}
-                rightElement={<PasswordToggle show={showPass} onToggle={togglePass} />}
-                delay="d3"
-            />
+            <div className="w-full max-w-[385px] relative z-10">
 
-            <div className="row au d4">
-                <label className="clabel">
-                    <div className="cbox">
-                        <input type="checkbox" {...register('rememberMe')} style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }} />
-                        {rememberMe && (
-                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                                <polyline points="20 6 9 17 4 12" />
-                            </svg>
-                        )}
+                {/* mobile logo */}
+                <div className="flex items-center gap-3 mb-9 lg:hidden as">
+                    <Logo size={32} />
+                    <span className="serif text-[15px] tracking-tight" style={{ color: 'var(--t1)' }}>Klivra</span>
+                </div>
+
+                {/* heading */}
+                <div className="mb-7">
+                    <h1 className="au serif leading-none mb-2"
+                        style={{ fontSize: 'clamp(22px,2.8vw,27px)', color: 'var(--t1)', letterSpacing: '-.02em' }}>
+                        Welcome back
+                    </h1>
+                    <p className="au d1 text-[13px]" style={{ color: 'var(--t2)' }}>
+                        New to Klivra? <Link to="/register" className="lnk">Create account</Link>
+                    </p>
+                </div>
+
+                {/* card */}
+                <div className="cb au d1 mb-3.5">
+                    <div className="rounded-[15px] p-7" style={{ background: 'var(--card)', backdropFilter: 'blur(28px)' }}>
+                        <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+
+                            {error && (
+                                <div className="ebanner">
+                                    <Ico d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" size={13} />
+                                    <span className="flex-1 text-[12.5px] font-medium">{error}</span>
+                                    <button className="ib p-1" onClick={clearError}><Ico d="M18 6L6 18M6 6l12 12" size={11} sw={2.5} /></button>
+                                </div>
+                            )}
+
+                            <Field id="email" label="Email" type="email" placeholder="name@company.com"
+                                autoComplete="email" reg={register('email')} error={errors.email} delay="d2" />
+
+                            <Field id="password" label="Password" type={showPw ? 'text' : 'password'} placeholder="••••••••"
+                                autoComplete="current-password" reg={register('password')} error={errors.password} delay="d3"
+                                right={<button type="button" className="ib" onClick={() => setShowPw(v => !v)} tabIndex={-1}><EyeIco open={showPw} /></button>}
+                                showStr strVal={pw} />
+
+                            <div className="flex items-center justify-between au d4">
+                                <label className="flex items-center gap-2" style={{ cursor: 'none' }}>
+                                    <div className={`cbox${remember ? ' on' : ''}`} style={{ position: 'relative' }}>
+                                        <input type="checkbox" {...register('remember')} style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', inset: 0 }} />
+                                        {remember && <svg width="8" height="8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12" /></svg>}
+                                    </div>
+                                    <span className="text-[12px] font-medium" style={{ color: 'var(--t2)' }}>Remember me</span>
+                                </label>
+                                <button type="button"
+                                    className="text-[12px] font-medium bg-transparent border-none transition-colors duration-[120ms]"
+                                    style={{ color: 'var(--t3)' }}
+                                    onMouseEnter={e => { e.currentTarget.style.color = 'var(--a2)' }}
+                                    onMouseLeave={e => { e.currentTarget.style.color = 'var(--t3)' }}>
+                                    Forgot password?
+                                </button>
+                            </div>
+
+                            <div className="au d5">
+                                <button type="submit" disabled={loading || !isValid} className="sbtn">
+                                    {loading && !modalOpen
+                                        ? <><div className="sp" />Authenticating…</>
+                                        : <><span>Sign in to Klivra</span><Ico d="M5 12h14M12 5l7 7-7 7" size={13} sw={2.2} /></>}
+                                </button>
+                            </div>
+                        </form>
+
+                        {/* oauth */}
+                        <div className="mt-6 flex flex-col gap-3.5 au d6">
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 h-px" style={{ background: 'var(--b)' }} />
+                                <span className="text-[9.5px] uppercase tracking-[.14em] font-semibold" style={{ color: 'var(--t3)' }}>or continue with</span>
+                                <div className="flex-1 h-px" style={{ background: 'var(--b)' }} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2.5">
+                                <a href={`${API}/api/auth/google`} className="obtn og"><GoogleSVG />Google</a>
+                                <a href={`${API}/api/auth/github`} className="obtn gh"><GithubSVG />GitHub</a>
+                            </div>
+                        </div>
                     </div>
-                    <span style={{ fontSize: 12, color: 'var(--t3)', fontWeight: 500 }}>Remember me</span>
-                </label>
-                <button type="button" className="forgot">Forgot password?</button>
-            </div>
+                </div>
 
-            <div className="au d5">
-                <SubmitButton isLoading={isLoading} isValid={isValid} isModalOpen={isModalOpen} />
-            </div>
-        </form>
-    );
-};
-const FormPanel = ({ apiUrl, onSubmit, isLoading, error, clearError, isModalOpen }) => (
-    <main className="form-panel">
-        <div className="glow-a" style={{ width: 340, height: 340, top: '-8%', right: '-8%', background: 'rgba(123,82,255,.045)' }} />
-        <div className="glow-a" style={{ width: 260, height: 260, bottom: '-5%', left: '-5%', background: 'rgba(37,99,235,.04)' }} />
-
-        <div className="form-inner">
-            <div className="mobile-logo as d0">
-                <Logo size="sm" />
-                <span style={{ fontWeight: 900, fontSize: 18, letterSpacing: '-.03em' }}>Klivra</span>
-            </div>
-
-            <div className="col g8" style={{ marginBottom: 26 }}>
-                <h1 className="au d0" style={{ fontSize: 'clamp(22px,3vw,30px)', fontWeight: 900, letterSpacing: '-.03em', color: 'var(--t1)', lineHeight: 1.1 }}>Welcome back</h1>
-                <p className="au d1" style={{ fontSize: 14, color: 'var(--t2)' }}>
-                    New to Klivra? <Link to="/register" className="link-v">Create an account</Link>
+                <p className="au d6 text-center text-[11px] leading-[1.8]" style={{ color: 'var(--t3)' }}>
+                    By signing in you agree to our{' '}
+                    <a href="#" className="underline underline-offset-[3px] transition-colors duration-[120ms] hover:text-[#7080a8]">Terms</a>
+                    {' '}and{' '}
+                    <a href="#" className="underline underline-offset-[3px] transition-colors duration-[120ms] hover:text-[#7080a8]">Privacy Policy</a>.
                 </p>
             </div>
+        </main>
+    );
+}
 
-            <div className="card au d1" style={{ marginBottom: 12 }}>
-                <LoginForm
-                    onSubmit={onSubmit} isLoading={isLoading}
-                    error={error} clearError={clearError} isModalOpen={isModalOpen}
-                />
-                <div style={{ marginTop: 20 }}>
-                    <OAuthSection apiUrl={apiUrl} />
-                </div>
-            </div>
+// ─── Root ─────────────────────────────────────────────────────────────────────
 
-            <p className="footer-row au d7">
-                By signing in you agree to our <a href="#" className="link-s">Terms of Service</a> and <a href="#" className="link-s">Privacy Policy</a>.
-            </p>
-        </div>
-    </main>
-);
+export default function Login() {
+    useStyles();
+    useCursor();
 
-const Login = () => {
     const navigate = useNavigate();
     const { login, isLoading, error, clearError, user } = useAuthStore();
-    const [showModal, setShowModal] = useState(false);
-    const [reactivationData, setReactivationData] = useState(null);
-
-    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
-
+    const [modal, setModal] = useState(false);
+    const [rxData, setRxData] = useState(null);
 
     useEffect(() => { if (user) navigate('/'); }, [user, navigate]);
     useEffect(() => { clearError(); }, [clearError]);
 
-    const onSubmit = useCallback(async (data) => {
+    const onSubmit = useCallback(async d => {
         clearError();
-        try {
-            await login(data.email, data.password, data.rememberMe);
-            navigate('/');
-        } catch (err) {
-            if (err?.requiresReactivation) {
-                setReactivationData(data);
-                setShowModal(true);
-            }
-        }
+        try { await login(d.email, d.password, d.remember); navigate('/'); }
+        catch (e) { if (e?.requiresReactivation) { setRxData(d); setModal(true); } }
     }, [clearError, login, navigate]);
 
-    const handleReactivate = useCallback(async () => {
-        try {
-            await login(reactivationData.email, reactivationData.password, reactivationData.rememberMe, true);
-            setShowModal(false);
-            navigate('/');
-        } catch {
-            setShowModal(false);
-        }
-    }, [login, navigate, reactivationData]);
+    const onReactivate = useCallback(async () => {
+        try { await login(rxData.email, rxData.password, rxData.remember, true); setModal(false); navigate('/'); }
+        catch { setModal(false); }
+    }, [login, navigate, rxData]);
 
     return (
         <>
-            <GlobalStyles />
-            <div className="root">
-                <ReactivationModal isOpen={showModal} isLoading={isLoading} onConfirm={handleReactivate} onClose={() => setShowModal(false)} />
-                <BrandPanel />
-                <FormPanel
-                    apiUrl={API_URL} onSubmit={onSubmit}
-                    isLoading={isLoading} error={error}
-                    clearError={clearError} isModalOpen={showModal}
-                />
+            <div id="cur" style={{ left: 0, top: 0 }} />
+            <div className="noise" />
+            <div className="flex min-h-screen relative z-10">
+                <Modal open={modal} loading={isLoading} onConfirm={onReactivate} onClose={() => setModal(false)} />
+                <Brand />
+                <FormPanel onSubmit={onSubmit} loading={isLoading} error={error} clearError={clearError} modalOpen={modal} />
             </div>
         </>
     );
-};
-
-export default Login;
+}

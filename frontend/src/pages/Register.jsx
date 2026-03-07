@@ -1,197 +1,466 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-import { useNavigate, Link, Navigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 
-const registerSchema = z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-    email: z.string().min(1, 'Email is required').email('Please enter a valid email'),
-    password: z.string().min(8, 'Password must be at least 8 characters'),
-    confirmPassword: z.string().min(1, 'Please confirm your password'),
-}).refine((data) => data.password === data.confirmPassword, { message: 'Passwords do not match', path: ['confirmPassword'] });
+// ─── Config ──────────────────────────────────────────────────────────────────
 
-const Register = () => {
+const API = import.meta.env.VITE_API_URL ||
+    (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
+
+const WORDS = ['extraordinary products.', 'the future, together.', 'what matters most.'];
+const FEATURES = [['⚡', 'Real-time Sync'], ['◫', 'Kanban Boards'], ['◻', 'Whiteboards'], ['⬡', 'E2E Encrypted']];
+const TEAM = ['AJ', 'KL', 'MP', 'SR'];
+
+const schema = z.object({
+    name: z.string().min(2, 'At least 2 characters'),
+    email: z.string().min(1, 'Required').email('Invalid email'),
+    password: z.string().min(8, 'Min 8 characters'),
+    confirmPassword: z.string().min(1, 'Required'),
+}).refine(d => d.password === d.confirmPassword, { message: 'Passwords do not match', path: ['confirmPassword'] });
+
+// ─── Styles ──────────────────────────────────────────────────────────────────
+
+const CSS = `
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap');
+
+:root{
+  --a:#4f6ef7; --a2:#7b96ff;
+  --bg:#090a14; --surface:#07080f;
+  --b:rgba(255,255,255,.06); --bh:rgba(255,255,255,.1); --bf:rgba(79,110,247,.42);
+  --t1:#cdd0ec; --t2:#464878; --t3:#222340;
+  --card:rgba(7,8,16,.95);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body,*{cursor:none!important}
+body{background:var(--bg);color:var(--t1);font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+.serif{font-family:'Instrument Serif',Georgia,serif}
+
+/* cursor */
+#cur{
+  position:fixed;z-index:9999;pointer-events:none;
+  width:5px;height:5px;border-radius:50%;
+  background:rgba(255,255,255,.92);
+  mix-blend-mode:difference;
+  will-change:transform;
+  transition:width .1s,height .1s,border-radius .1s,opacity .1s;
+}
+#cur.h{width:11px;height:11px}
+#cur.t{width:2px;height:15px;border-radius:1px}
+#cur.p{opacity:.4;width:3px;height:3px}
+
+/* anims */
+@keyframes up{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes si{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:translateX(0)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes drift{0%,100%{transform:translate(0,0)}40%{transform:translate(18px,-12px)}75%{transform:translate(-10px,8px)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes borderspin{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+@keyframes shimmer{from{background-position:-300% center}to{background-position:300% center}}
+@keyframes grow{from{width:0}to{width:100%}}
+
+.au{animation:up .42s cubic-bezier(.22,1,.36,1) both}
+.as{animation:si .4s cubic-bezier(.22,1,.36,1) both}
+.d1{animation-delay:.07s}.d2{animation-delay:.14s}.d3{animation-delay:.21s}
+.d4{animation-delay:.28s}.d5{animation-delay:.35s}.d6{animation-delay:.42s}.d7{animation-delay:.49s}
+
+/* card border */
+.cb{border-radius:16px;padding:1px;background:linear-gradient(135deg,rgba(79,110,247,.15),rgba(255,255,255,.04),rgba(79,110,247,.08));background-size:300% 300%;animation:borderspin 8s ease infinite}
+.cb:focus-within{background:linear-gradient(135deg,rgba(79,110,247,.26),rgba(255,255,255,.05),rgba(79,110,247,.16));background-size:300% 300%;animation:borderspin 4s ease infinite}
+
+/* inputs */
+.inp{width:100%;padding:10px 14px;border-radius:9px;background:rgba(255,255,255,.024);border:1px solid var(--b);color:var(--t1);font-family:'DM Sans',system-ui,sans-serif;font-size:13.5px;outline:none;transition:border-color .16s,box-shadow .16s,background .16s}
+.inp::placeholder{color:var(--t3)}
+.inp:hover{border-color:var(--bh);background:rgba(255,255,255,.03)}
+.inp:focus{border-color:var(--bf);box-shadow:0 0 0 3px rgba(79,110,247,.09);background:rgba(79,110,247,.026)}
+.inp.r{padding-right:40px}
+.inp.e{border-color:rgba(248,113,113,.32)}
+.inp.e:focus{border-color:rgba(248,113,113,.52);box-shadow:0 0 0 3px rgba(248,113,113,.08)}
+
+/* submit */
+.sbtn{width:100%;padding:11px;border-radius:9px;border:none;font-family:'DM Sans',system-ui,sans-serif;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:7px;position:relative;overflow:hidden;background:linear-gradient(110deg,#3350c8,var(--a),var(--a2));color:#fff;box-shadow:0 4px 18px rgba(79,110,247,.2);transition:opacity .12s,transform .12s cubic-bezier(.34,1.56,.64,1),box-shadow .14s}
+.sbtn::before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 25%,rgba(255,255,255,.09) 50%,transparent 75%);background-size:300%;opacity:0;transition:opacity .2s}
+.sbtn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 7px 24px rgba(79,110,247,.28)}
+.sbtn:hover::before{opacity:1;animation:shimmer 1.5s linear infinite}
+.sbtn:active{transform:scale(.98)}
+.sbtn:disabled{background:rgba(255,255,255,.04);color:var(--t3);border:1px solid var(--b);box-shadow:none}
+.sbtn:disabled::before{display:none}
+
+/* oauth — glow on hover */
+.obtn{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:9px;font-family:'DM Sans',system-ui,sans-serif;font-size:13px;font-weight:500;text-decoration:none;position:relative;overflow:hidden;transition:transform .2s cubic-bezier(.34,1.56,.64,1),box-shadow .2s,background .14s}
+.obtn::after{content:'';position:absolute;inset:0;border-radius:9px;opacity:0;transition:opacity .2s}
+.og{background:rgba(255,255,255,.91);color:#1a1d2e}
+.og::after{box-shadow:inset 0 0 0 1px rgba(79,110,247,.3),0 0 20px rgba(79,110,247,.12),0 0 40px rgba(79,110,247,.06)}
+.og:hover{background:#fff;transform:translateY(-2px)}
+.og:hover::after{opacity:1}
+.gh{background:#0d1117;color:#c9d1d9;border:1px solid rgba(255,255,255,.07)}
+.gh::after{box-shadow:inset 0 0 0 1px rgba(123,150,255,.28),0 0 20px rgba(79,110,247,.14),0 0 40px rgba(79,110,247,.06)}
+.gh:hover{background:#161b22;transform:translateY(-2px)}
+.gh:hover::after{opacity:1}
+
+/* misc */
+.ib{padding:6px;border-radius:7px;border:none;background:transparent;color:var(--t2);display:flex;align-items:center;justify-content:center;transition:color .12s,background .12s,transform .14s cubic-bezier(.34,1.56,.64,1)}
+.ib:hover{color:#8090c0;background:rgba(255,255,255,.05);transform:scale(1.08)}
+.chip{display:flex;align-items:center;gap:9px;padding:9px 12px;border-radius:9px;background:rgba(255,255,255,.018);border:1px solid var(--b);transition:border-color .16s,background .16s,transform .18s cubic-bezier(.34,1.56,.64,1)}
+.chip:hover{border-color:rgba(79,110,247,.22);background:rgba(79,110,247,.044);transform:translateY(-2px)}
+.tw{display:inline-block;width:2px;height:.8em;background:var(--a);margin-left:1px;border-radius:1px;animation:blink .9s step-end infinite;vertical-align:text-bottom}
+.sdot{width:5px;height:5px;border-radius:50%;background:#34d399;box-shadow:0 0 5px #34d399;animation:blink 2.2s ease infinite}
+.sp{width:13px;height:13px;border-radius:50%;border:2px solid rgba(255,255,255,.18);border-top-color:#fff;animation:spin .6s linear infinite;flex-shrink:0}
+.sbar{flex:1;height:2px;border-radius:2px;background:var(--b);transition:background .22s}
+.sbar.w{background:#f87171}.sbar.f{background:#fb923c}.sbar.g{background:#facc15}.sbar.s{background:#34d399;box-shadow:0 0 5px rgba(52,211,153,.26)}.sbar.x{background:#6ee7b7;box-shadow:0 0 6px rgba(110,231,183,.3)}
+.ferr{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:500;color:#f08090;animation:up .12s ease both}
+.ebanner{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;border-radius:10px;background:rgba(248,113,113,.05);border:1px solid rgba(248,113,113,.14);color:#fca5a5;animation:up .18s ease both}
+.lnk{color:var(--a2);font-weight:500;text-decoration:none;position:relative;transition:color .12s}
+.lnk::after{content:'';position:absolute;bottom:-1px;left:0;width:0;height:1px;background:var(--a2);transition:width .15s}
+.lnk:hover{color:#a0b4ff}.lnk:hover::after{width:100%}
+.noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.017;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:160px}
+
+/* success screen progress */
+.prog-track{width:120px;height:2px;border-radius:2px;background:rgba(255,255,255,.06);overflow:hidden;margin:0 auto}
+.prog-bar{height:100%;background:linear-gradient(90deg,#3350c8,#4f6ef7,#7b96ff);border-radius:2px;animation:grow 1.5s linear forwards}
+`;
+
+const useStyles = () => useEffect(() => {
+    const el = Object.assign(document.createElement('style'), { id: 'klv-reg', textContent: CSS });
+    document.head.appendChild(el);
+    return () => el.remove();
+}, []);
+
+// ─── Hooks ────────────────────────────────────────────────────────────────────
+
+function useTypewriter(spd = 68, pause = 2000) {
+    const [st, set] = useState({ wi: 0, ci: 0, del: false, txt: '' });
+    useEffect(() => {
+        const word = WORDS[st.wi];
+        const delay = st.del ? spd / 2 : st.ci === word.length ? pause : spd;
+        const t = setTimeout(() => {
+            if (!st.del && st.ci < word.length) return set(s => ({ ...s, ci: s.ci + 1, txt: word.slice(0, s.ci + 1) }));
+            if (!st.del) return set(s => ({ ...s, del: true }));
+            if (st.ci > 0) return set(s => ({ ...s, ci: s.ci - 1, txt: word.slice(0, s.ci - 1) }));
+            set(s => ({ ...s, del: false, wi: (s.wi + 1) % WORDS.length, ci: 0 }));
+        }, delay);
+        return () => clearTimeout(t);
+    }, [st, spd, pause]);
+    return st.txt;
+}
+
+function useCursor() {
+    useEffect(() => {
+        const el = document.getElementById('cur');
+        if (!el) return;
+        const mv = ({ clientX: x, clientY: y }) => { el.style.transform = `translate(${x}px,${y}px) translate(-50%,-50%)`; };
+        const md = () => el.classList.add('p');
+        const mu = () => el.classList.remove('p');
+        document.addEventListener('mousemove', mv, { passive: true });
+        document.addEventListener('mousedown', md);
+        document.addEventListener('mouseup', mu);
+        const bind = () => {
+            document.querySelectorAll('a,button').forEach(n => {
+                n.addEventListener('mouseenter', () => el.classList.add('h'));
+                n.addEventListener('mouseleave', () => el.classList.remove('h'));
+            });
+            document.querySelectorAll('input').forEach(n => {
+                n.addEventListener('mouseenter', () => el.classList.add('t'));
+                n.addEventListener('mouseleave', () => el.classList.remove('t'));
+            });
+        };
+        setTimeout(bind, 200);
+        return () => { document.removeEventListener('mousemove', mv); document.removeEventListener('mousedown', md); document.removeEventListener('mouseup', mu); };
+    }, []);
+}
+
+// ─── Utils ────────────────────────────────────────────────────────────────────
+
+const pwStr = pw => {
+    if (!pw) return 0;
+    let s = 0;
+    if (pw.length >= 8) s++; if (pw.length >= 12) s++;
+    if (/[A-Z]/.test(pw)) s++; if (/[0-9]/.test(pw)) s++; if (/[^A-Za-z0-9]/.test(pw)) s++;
+    return s;
+};
+const STR = [null, { l: 'Weak', c: '#f87171', k: 'w' }, { l: 'Fair', c: '#fb923c', k: 'f' }, { l: 'Good', c: '#facc15', k: 'g' }, { l: 'Strong', c: '#34d399', k: 's' }, { l: 'Excellent', c: '#6ee7b7', k: 'x' }];
+
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+const Ico = ({ d, size = 14, sw = 2, stroke = 'currentColor' }) => (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={stroke} strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}><path d={d} /></svg>
+);
+const EyeIco = ({ open }) => open
+    ? <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94" /><path d="M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19" /><line x1="1" y1="1" x2="23" y2="23" /></svg>
+    : <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>;
+
+const GoogleSVG = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24">
+        <g transform="matrix(1,0,0,1,27.009,-39.239)">
+            <path fill="#4285F4" d="M-3.264 51.509c0-.79-.07-1.54-.19-2.27H-14.754v4.51h6.47c-.29 1.48-1.14 2.73-2.4 3.58v3h3.86c2.26-2.09 3.56-5.17 3.56-8.82z" />
+            <path fill="#34A853" d="M-14.754 63.239c3.24 0 5.95-1.08 7.93-2.91l-3.86-3c-1.08.72-2.45 1.16-4.07 1.16-3.13 0-5.78-2.11-6.73-4.96l-3.98 3.09c1.97 3.92 6.02 6.62 10.71 6.62z" />
+            <path fill="#FBBC05" d="M-21.484 53.529c-.25-.72-.38-1.49-.38-2.29s.13-1.57.38-2.28v-3.09h-3.98c-.82 1.62-1.29 3.44-1.29 5.37s.47 3.75 1.29 5.37l3.98-3.08z" />
+            <path fill="#EA4335" d="M-14.754 43.989c1.77 0 3.35.61 4.6 1.8l3.42-3.42c-2.07-1.94-4.78-3.13-8.02-3.13-4.69 0-8.74 2.7-10.71 6.62l3.98 3.09c.95-2.85 3.6-4.96 6.73-4.96z" />
+        </g>
+    </svg>
+);
+const GithubSVG = () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
+    </svg>
+);
+
+// ─── Atoms ────────────────────────────────────────────────────────────────────
+
+const Logo = ({ size = 36 }) => (
+    <div className="serif flex items-center justify-center text-white flex-shrink-0"
+        style={{ width: size, height: size, borderRadius: size * .3, background: 'linear-gradient(135deg,#3350c8,#4f6ef7)', boxShadow: '0 4px 16px rgba(79,110,247,.22)', fontSize: size * .44 }}>K</div>
+);
+
+const Field = ({ id, label, type = 'text', placeholder, reg, error, autoComplete, right, delay = '' }) => (
+    <div className={`flex flex-col gap-1.5 au ${delay}`}>
+        <label htmlFor={id} className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--t2)' }}>{label}</label>
+        <div className="relative">
+            <input id={id} type={type} autoComplete={autoComplete} placeholder={placeholder} aria-invalid={!!error} {...reg}
+                className={`inp${right ? ' r' : ''}${error ? ' e' : ''}`} />
+            {right && <div className="absolute right-2.5 top-1/2 -translate-y-1/2">{right}</div>}
+        </div>
+        {error && <p className="ferr"><Ico d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" size={11} />{error.message}</p>}
+    </div>
+);
+
+const StrBars = ({ value }) => {
+    const s = pwStr(value), m = STR[Math.min(s, 5)];
+    return (
+        <div className="flex flex-col gap-1.5">
+            <div className="flex gap-1">{[1, 2, 3, 4, 5].map(i => <div key={i} className={`sbar${i <= s && m ? ` ${m.k}` : ''}`} />)}</div>
+            {m && <span style={{ fontSize: 10, fontWeight: 600, color: m.c }}>{m.l}</span>}
+        </div>
+    );
+};
+
+// ─── Success Screen ───────────────────────────────────────────────────────────
+
+const SuccessScreen = () => (
+    <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--bg)' }}>
+        <div className="text-center au" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+            <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(52,211,153,.07)', border: '1px solid rgba(52,211,153,.16)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#34d399" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6L9 17l-5-5" /></svg>
+            </div>
+            <div>
+                <h2 className="serif text-[20px] tracking-tight" style={{ color: 'var(--t1)', marginBottom: 6 }}>Account created!</h2>
+                <p style={{ fontSize: 13, color: 'var(--t2)' }}>Redirecting you to sign in…</p>
+            </div>
+            <div className="prog-track"><div className="prog-bar" /></div>
+        </div>
+    </div>
+);
+
+// ─── Brand Panel ─────────────────────────────────────────────────────────────
+
+function Brand() {
+    const typed = useTypewriter();
+    return (
+        <aside className="hidden lg:flex flex-col justify-between w-[42%] min-h-screen p-14 relative overflow-hidden"
+            style={{ background: 'var(--surface)', borderLeft: '1px solid var(--b)' }}>
+
+            <div style={{ position: 'absolute', width: 400, height: 400, top: -90, right: -70, borderRadius: '50%', background: 'rgba(79,110,247,.065)', filter: 'blur(90px)', animation: 'drift 22s ease-in-out infinite', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', width: 240, height: 240, bottom: 20, left: -50, borderRadius: '50%', background: 'rgba(79,110,247,.045)', filter: 'blur(80px)', animation: 'drift 27s ease-in-out -9s infinite', pointerEvents: 'none' }} />
+            <div style={{ position: 'absolute', inset: 0, opacity: .016, backgroundImage: 'linear-gradient(rgba(255,255,255,.1) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.1) 1px,transparent 1px)', backgroundSize: '44px 44px', maskImage: 'radial-gradient(ellipse 70% 70% at 50% 50%,black,transparent)' }} />
+
+            <header className="flex items-center gap-3 as relative z-10">
+                <Logo size={36} />
+                <div>
+                    <div className="serif text-[16px] tracking-tight" style={{ color: 'var(--t1)' }}>Klivra</div>
+                    <div className="text-[9px] uppercase tracking-[.14em] font-semibold" style={{ color: 'var(--t3)' }}>Enterprise</div>
+                </div>
+                <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9.5px] font-semibold uppercase tracking-wider"
+                    style={{ background: 'rgba(52,211,153,.05)', border: '1px solid rgba(52,211,153,.11)', color: '#5eead4' }}>
+                    <div className="sdot" />All systems go
+                </div>
+            </header>
+
+            <div className="flex flex-col relative z-10">
+                <p className="au d1 text-[10px] uppercase tracking-[.2em] font-semibold mb-5" style={{ color: 'var(--a)' }}>
+                    Enterprise Collaboration
+                </p>
+                <h2 className="au d2 serif leading-[1.1] tracking-tight mb-5"
+                    style={{ fontSize: 'clamp(1.7rem,2.5vw,2.3rem)', color: 'var(--t1)' }}>
+                    Build great things,<br />
+                    <span style={{ background: 'linear-gradient(120deg,#7a93e0,#5060a8)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text' }}>
+                        {typed}<span className="tw" />
+                    </span>
+                </h2>
+                <p className="au d3 text-[13px] leading-[1.75] mb-7 max-w-[255px]" style={{ color: 'var(--t2)' }}>
+                    Real-time collaboration for teams that move fast and ship with confidence.
+                </p>
+
+                <div className="grid grid-cols-2 gap-2 mb-8">
+                    {FEATURES.map(([icon, label], i) => (
+                        <div key={label} className={`chip au d${i + 3}`}>
+                            <div className="w-[25px] h-[25px] rounded-[7px] flex items-center justify-center text-[11px] flex-shrink-0"
+                                style={{ background: 'rgba(79,110,247,.08)', border: '1px solid rgba(79,110,247,.13)' }}>
+                                {icon}
+                            </div>
+                            <span className="text-[11.5px] font-medium" style={{ color: 'var(--t2)' }}>{label}</span>
+                        </div>
+                    ))}
+                </div>
+
+                <div className="h-px" style={{ background: 'linear-gradient(90deg,transparent,var(--b) 30%,var(--b) 70%,transparent)' }} />
+            </div>
+
+            <footer className="flex items-center gap-3 au d6 relative z-10">
+                <div className="flex">
+                    {TEAM.map((s, i) => (
+                        <div key={s} className="w-[22px] h-[22px] rounded-full flex items-center justify-center text-[8px] font-bold text-white flex-shrink-0"
+                            style={{ marginLeft: i ? -6 : 0, background: 'linear-gradient(135deg,#3350c8,#4f6ef7)', border: '1.5px solid var(--surface)' }}>
+                            {s[0]}
+                        </div>
+                    ))}
+                </div>
+                <span className="text-[11px]" style={{ color: 'var(--t3)' }}>
+                    <span style={{ color: '#6878a8', fontWeight: 500 }}>2,400+</span> teams this month
+                </span>
+            </footer>
+        </aside>
+    );
+}
+
+// ─── Form Panel ───────────────────────────────────────────────────────────────
+
+function FormPanel({ onSubmit, loading, error, clearError }) {
+    const [showPw, setShowPw] = useState(false);
+    const { register, handleSubmit, watch, formState: { errors, isValid, isSubmitting } } = useForm({
+        resolver: zodResolver(schema), mode: 'onChange',
+    });
+    const pw = watch('password');
+
+    return (
+        <main className="flex-1 flex items-center justify-center px-6 py-16 relative overflow-hidden">
+            <div style={{ position: 'absolute', top: '8%', left: '4%', width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(79,110,247,.036),transparent 70%)', filter: 'blur(40px)', pointerEvents: 'none' }} />
+
+            <div className="w-full max-w-[390px] relative z-10">
+
+                {/* mobile logo */}
+                <div className="flex items-center gap-3 mb-9 lg:hidden as">
+                    <Logo size={32} />
+                    <span className="serif text-[15px] tracking-tight" style={{ color: 'var(--t1)' }}>Klivra</span>
+                </div>
+
+                <div className="mb-7">
+                    <h1 className="au serif leading-none mb-2"
+                        style={{ fontSize: 'clamp(22px,2.8vw,27px)', color: 'var(--t1)', letterSpacing: '-.02em' }}>
+                        Create your account
+                    </h1>
+                    <p className="au d1 text-[13px]" style={{ color: 'var(--t2)' }}>
+                        Already have access? <Link to="/login" className="lnk">Sign in</Link>
+                    </p>
+                </div>
+
+                <div className="cb au d1 mb-3.5">
+                    <div className="rounded-[15px] p-7" style={{ background: 'var(--card)', backdropFilter: 'blur(28px)' }}>
+                        <form onSubmit={handleSubmit(onSubmit)} noValidate className="flex flex-col gap-5">
+
+                            {error && (
+                                <div className="ebanner">
+                                    <Ico d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" size={13} />
+                                    <span className="flex-1 text-[12.5px] font-medium">{error}</span>
+                                    <button className="ib p-1" onClick={clearError}><Ico d="M18 6L6 18M6 6l12 12" size={11} sw={2.5} /></button>
+                                </div>
+                            )}
+
+                            <Field id="r-name" label="Full name" type="text" placeholder="Jane Smith"
+                                autoComplete="name" reg={register('name')} error={errors.name} delay="d2" />
+
+                            <Field id="r-email" label="Email" type="email" placeholder="name@company.com"
+                                autoComplete="email" reg={register('email')} error={errors.email} delay="d3" />
+
+                            <div className="flex flex-col gap-1.5 au d4">
+                                <label htmlFor="r-pass" className="text-[10px] font-semibold uppercase tracking-widest" style={{ color: 'var(--t2)' }}>Password</label>
+                                <div className="relative">
+                                    <input id="r-pass" type={showPw ? 'text' : 'password'} autoComplete="new-password"
+                                        placeholder="••••••••" aria-invalid={!!errors.password} {...register('password')}
+                                        className={`inp r${errors.password ? ' e' : ''}`} />
+                                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
+                                        <button type="button" className="ib" onClick={() => setShowPw(v => !v)} tabIndex={-1}>
+                                            <EyeIco open={showPw} />
+                                        </button>
+                                    </div>
+                                </div>
+                                {pw && <StrBars value={pw} />}
+                                {errors.password && <p className="ferr"><Ico d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10zM12 8v4M12 16h.01" size={11} />{errors.password.message}</p>}
+                            </div>
+
+                            <Field id="r-confirm" label="Confirm password" type="password" placeholder="••••••••"
+                                autoComplete="new-password" reg={register('confirmPassword')} error={errors.confirmPassword} delay="d5" />
+
+                            <div className="au d6">
+                                <button type="submit" disabled={loading || isSubmitting || !isValid} className="sbtn">
+                                    {loading || isSubmitting
+                                        ? <><div className="sp" />Creating account…</>
+                                        : <><span>Create account</span><Ico d="M5 12h14M12 5l7 7-7 7" size={13} sw={2.2} /></>}
+                                </button>
+                            </div>
+                        </form>
+
+                        <div className="mt-6 flex flex-col gap-3.5 au d7">
+                            <div className="flex items-center gap-3">
+                                <div className="flex-1 h-px" style={{ background: 'var(--b)' }} />
+                                <span className="text-[9.5px] uppercase tracking-[.14em] font-semibold" style={{ color: 'var(--t3)' }}>or continue with</span>
+                                <div className="flex-1 h-px" style={{ background: 'var(--b)' }} />
+                            </div>
+                            <div className="grid grid-cols-2 gap-2.5">
+                                <a href={`${API}/api/auth/google`} className="obtn og"><GoogleSVG />Google</a>
+                                <a href={`${API}/api/auth/github`} className="obtn gh"><GithubSVG />GitHub</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <p className="au d7 text-center text-[11px] leading-[1.8]" style={{ color: 'var(--t3)' }}>
+                    By creating an account you agree to our{' '}
+                    <a href="#" className="underline underline-offset-[3px] transition-colors duration-[120ms] hover:text-[#7080a8]">Terms</a>
+                    {' '}and{' '}
+                    <a href="#" className="underline underline-offset-[3px] transition-colors duration-[120ms] hover:text-[#7080a8]">Privacy Policy</a>.
+                </p>
+            </div>
+        </main>
+    );
+}
+
+// ─── Root ─────────────────────────────────────────────────────────────────────
+
+export default function Register() {
+    useStyles();
+    useCursor();
+
     const navigate = useNavigate();
     const { register: registerAction, isLoading, error, clearError, user } = useAuthStore();
-    const [showPassword, setShowPassword] = useState(false);
-
-    const { register, handleSubmit, formState: { errors, isValid, isSubmitting }, watch } = useForm({ resolver: zodResolver(registerSchema), mode: 'onChange' });
-    const pw = watch('password', '');
-
-    // Derive the correct cross-environment API URL for OAuth redirects
-    // Unified API URL logic from environment with local development fallback
-    const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://syncforge-io.onrender.com' : 'http://localhost:5000');
-
-    const getStrength = (p) => {
-        if (!p) return { s: 0, l: '', c: '' };
-        let s = 0;
-        if (p.length >= 8) s++; if (p.length >= 12) s++; if (/[A-Z]/.test(p)) s++; if (/[0-9]/.test(p)) s++; if (/[^A-Za-z0-9]/.test(p)) s++;
-        if (s <= 1) return { s: 1, l: 'Weak', c: 'bg-red-500' };
-        if (s <= 2) return { s: 2, l: 'Fair', c: 'bg-orange-500' };
-        if (s <= 3) return { s: 3, l: 'Good', c: 'bg-yellow-500' };
-        if (s <= 4) return { s: 4, l: 'Strong', c: 'bg-emerald-500' };
-        return { s: 5, l: 'Excellent', c: 'bg-emerald-400' };
-    };
-    const str = getStrength(pw);
-
-    const [successMsg, setSuccessMsg] = useState('');
+    const [success, setSuccess] = useState(false);
 
     useEffect(() => { if (user) navigate('/'); }, [user, navigate]);
     useEffect(() => { clearError(); }, [clearError]);
 
-    // Show success banner then redirect
-    if (successMsg) {
-        return (
-            <div className="min-h-screen bg-[#05050a] flex items-center justify-center">
-                <div className="text-center space-y-4">
-                    <div className="w-16 h-16 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mx-auto">
-                        <svg className="w-8 h-8 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
-                    </div>
-                    <h2 className="text-xl font-bold text-white">Account created!</h2>
-                    <p className="text-gray-500 text-sm">Redirecting you to login...</p>
-                    <div className="w-32 h-0.5 bg-gray-800 mx-auto rounded-full overflow-hidden">
-                        <div className="h-full bg-emerald-500 animate-[widthGrow_1.5s_ease-in-out_forwards]" style={{ animation: 'width 1.5s linear forwards', width: '100%' }} />
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    const onSubmit = async (data) => {
+    const onSubmit = useCallback(async d => {
         clearError();
         try {
-            await registerAction({ name: data.name, email: data.email, password: data.password, role: 'Developer' });
-            setSuccessMsg('Account created!');
-            setTimeout(() => {
-                window.location.href = '/login'; // Hard redirect — most reliable
-            }, 1500);
-        } catch (err) {
-            // Error is already in the store via useAuthStore, it will render in the {error && ...} block
-            console.error('Registration failed:', err?.response?.data?.message || err?.message);
+            await registerAction({ name: d.name, email: d.email, password: d.password, role: 'Developer' });
+            setSuccess(true);
+            setTimeout(() => { window.location.href = '/login'; }, 1500);
+        } catch (e) {
+            console.error('Registration failed:', e?.response?.data?.message || e?.message);
         }
-    };
+    }, [clearError, registerAction]);
 
-    const inputCls = (err) => `w-full px-4 py-3 rounded-xl bg-white/[0.03] border text-white placeholder-gray-600 outline-none transition-all text-sm ${err ? 'border-red-500/40 focus:ring-2 focus:ring-red-500/10' : 'border-white/[0.06] hover:border-white/[0.12] focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/10'}`;
+    if (success) return <SuccessScreen />;
 
     return (
-        <div className="min-h-screen flex flex-row-reverse bg-[#05050a] text-white font-sans selection:bg-emerald-500/30">
-            {/* Right Brand Panel */}
-            <div className="hidden lg:flex lg:w-[45%] relative overflow-hidden items-center justify-center bg-gradient-to-br from-[#0d0d1a] via-[#0f1828] to-[#05050a]">
-                <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(255,255,255,0.5) 1px, transparent 0)', backgroundSize: '32px 32px' }} />
-                <div className="absolute top-1/4 right-1/3 w-[400px] h-[400px] bg-emerald-600 rounded-full opacity-[0.07] blur-[150px]" />
-                <div className="absolute bottom-1/4 left-1/4 w-[300px] h-[300px] bg-blue-500 rounded-full opacity-[0.05] blur-[120px]" />
-                <div className="relative z-10 text-center px-14 max-w-md">
-                    <div className="mx-auto mb-8 w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-600 flex items-center justify-center shadow-2xl shadow-emerald-500/30">
-                        <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
-                        </svg>
-                    </div>
-                    <h1 className="text-4xl font-black tracking-tight mb-2">Klivra</h1>
-                    <p className="text-gray-500 text-[15px] leading-relaxed mt-4 mb-10">Build impossible things, together. Join an elite ecosystem of asynchronous collaboration.</p>
-                    <div className="flex items-center justify-center gap-3">
-                        <div className="flex -space-x-2">
-                            {['from-violet-400 to-violet-600', 'from-blue-400 to-blue-600', 'from-emerald-400 to-emerald-600', 'from-amber-400 to-amber-600'].map((g, i) => (
-                                <div key={i} className={`w-7 h-7 rounded-full border-2 border-[#0d0d1a] bg-gradient-to-br ${g}`} />
-                            ))}
-                        </div>
-                        <span className="text-gray-500 text-xs font-medium">Join 2,400+ developers</span>
-                    </div>
-                </div>
+        <>
+            <div id="cur" style={{ left: 0, top: 0 }} />
+            <div className="noise" />
+            {/* form-left, brand-right — mirrors Login but reversed */}
+            <div className="flex flex-row min-h-screen relative z-10">
+                <FormPanel onSubmit={onSubmit} loading={isLoading} error={error} clearError={clearError} />
+                <Brand />
             </div>
-
-            {/* Left Form */}
-            <div className="w-full lg:w-[55%] flex items-center justify-center p-6 sm:p-12 lg:p-20 relative">
-                <div className="absolute top-1/3 left-1/4 w-80 h-80 bg-emerald-600 rounded-full opacity-[0.03] blur-[100px] pointer-events-none" />
-                <div className="w-full max-w-[420px]">
-                    <div className="lg:hidden text-center mb-10">
-                        <h1 className="text-2xl font-black tracking-tight">Klivra</h1>
-                    </div>
-                    <div className="mb-8">
-                        <h2 className="text-2xl font-bold tracking-tight mb-1.5">Create your account</h2>
-                        <p className="text-gray-500 text-sm">Already have access? <Link to="/login" className="text-emerald-400 font-semibold hover:text-emerald-300 transition-colors">Sign in</Link></p>
-                    </div>
-                    <div className="bg-white/[0.02] backdrop-blur-2xl border border-white/[0.06] rounded-2xl p-7 shadow-2xl shadow-black/20">
-                        {error && (
-                            <div className="mb-5 flex items-center gap-3 p-3.5 rounded-xl bg-red-500/[0.08] border border-red-500/15 text-red-400" role="alert">
-                                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                                <span className="text-sm font-medium flex-1">{error}</span>
-                                <button onClick={clearError} className="p-1 hover:bg-red-500/20 rounded-lg transition-colors" aria-label="Dismiss"><svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" /></svg></button>
-                            </div>
-                        )}
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" noValidate>
-                            <div>
-                                <label htmlFor="r-name" className="block text-[13px] font-semibold mb-2 text-gray-400">Full name</label>
-                                <input id="r-name" type="text" autoComplete="name" {...register('name')} className={inputCls(errors.name)} placeholder="John Doe" />
-                                {errors.name && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.name.message}</p>}
-                            </div>
-                            <div>
-                                <label htmlFor="r-email" className="block text-[13px] font-semibold mb-2 text-gray-400">Email</label>
-                                <input id="r-email" type="email" autoComplete="email" {...register('email')} className={inputCls(errors.email)} placeholder="you@company.com" />
-                                {errors.email && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.email.message}</p>}
-                            </div>
-                            <div>
-                                <label htmlFor="r-pass" className="block text-[13px] font-semibold mb-2 text-gray-400">Password</label>
-                                <div className="relative">
-                                    <input id="r-pass" type={showPassword ? 'text' : 'password'} autoComplete="new-password" {...register('password')} className={`${inputCls(errors.password)} pr-12`} placeholder="••••••••" />
-                                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-gray-600 hover:text-gray-300 rounded transition-colors" tabIndex={-1}>
-                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d={showPassword ? "M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M3 3l18 18" : "M15 12a3 3 0 11-6 0 3 3 0 016 0zM2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"} /></svg>
-                                    </button>
-                                </div>
-                                {errors.password && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.password.message}</p>}
-                                {pw && (
-                                    <div className="mt-2.5">
-                                        <div className="flex gap-1 mb-1"><div />{[1, 2, 3, 4, 5].map(i => (<div key={i} className={`h-0.5 flex-1 rounded-full transition-all ${i <= str.s ? str.c : 'bg-gray-800'}`} />))}</div>
-                                        <p className="text-[11px] text-gray-500">Strength: <span className={`font-semibold ${str.s <= 2 ? 'text-red-400' : str.s <= 3 ? 'text-yellow-400' : 'text-emerald-400'}`}>{str.l}</span></p>
-                                    </div>
-                                )}
-                            </div>
-                            <div>
-                                <label htmlFor="r-confirm" className="block text-[13px] font-semibold mb-2 text-gray-400">Confirm password</label>
-                                <input id="r-confirm" type="password" autoComplete="new-password" {...register('confirmPassword')} className={inputCls(errors.confirmPassword)} placeholder="••••••••" />
-                                {errors.confirmPassword && <p className="text-red-400 text-xs mt-1.5 font-medium">{errors.confirmPassword.message}</p>}
-                            </div>
-                            <button type="submit" disabled={isLoading || isSubmitting || !isValid}
-                                className={`w-full py-3 mt-1 rounded-xl font-semibold text-sm transition-all duration-300 flex justify-center items-center gap-2 ${isLoading || isSubmitting || !isValid ? 'bg-gray-800 text-gray-500 cursor-not-allowed' : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:opacity-90 shadow-lg shadow-emerald-500/20 active:scale-[0.98]'}`}>
-                                {isLoading || isSubmitting ? (<><svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" /></svg>Creating...</>) : 'Create Account'}
-                            </button>
-                        </form>
-
-                        <div className="mt-6">
-                            <div className="flex items-center gap-2 text-zinc-400 text-[13px] font-medium before:flex-1 before:border-t before:border-white/[0.06] after:flex-1 after:border-t after:border-white/[0.06] mb-5">
-                                Or continue with
-                            </div>
-                            <div className="grid grid-cols-2 gap-3">
-                                {/* Google Button */}
-                                <a href={`${API_URL}/api/auth/google`} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-white text-zinc-700 hover:bg-zinc-50 ring-1 ring-zinc-200 rounded-xl font-semibold text-[13px] shadow-sm transition-all active:scale-[0.98]">
-                                    <svg className="w-[18px] h-[18px]" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <title>Google</title>
-                                        <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
-                                            <path fill="#4285F4" d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z" />
-                                            <path fill="#34A853" d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z" />
-                                            <path fill="#FBBC05" d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z" />
-                                            <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
-                                        </g>
-                                    </svg>
-                                    Google
-                                </a>
-
-                                {/* GitHub Button */}
-                                <a href={`${API_URL}/api/auth/github`} className="flex items-center justify-center gap-2 px-4 py-2.5 bg-[#24292e] text-white hover:bg-black rounded-xl font-semibold text-[13px] shadow-sm transition-all active:scale-[0.98]">
-                                    <svg className="w-[18px] h-[18px] fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                        <title>GitHub</title>
-                                        <path d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12" />
-                                    </svg>
-                                    GitHub
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                    <p className="text-center text-[11px] text-gray-600 mt-6">By creating an account, you agree to our <a href="#" className="text-gray-500 hover:text-white underline underline-offset-2 transition-colors">Terms</a> & <a href="#" className="text-gray-500 hover:text-white underline underline-offset-2 transition-colors">Privacy</a>.</p>
-                </div>
-            </div>
-        </div>
+        </>
     );
-};
-export default Register;
+}

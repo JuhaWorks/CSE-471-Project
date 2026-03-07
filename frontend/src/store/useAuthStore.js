@@ -109,7 +109,7 @@ export const useAuthStore = create((set) => ({
     accessToken: null,
     isAuthenticated: false,
     isLoading: false,
-    authChecking: true, // Defaults true — App.jsx gatekeeper blocks rendering until resolved
+    isCheckingAuth: true, // Defaults true — App.jsx gatekeeper blocks rendering until resolved
     error: null,
     setAccessToken: (token) => set({ accessToken: token }),
     clearError: () => set({ error: null }),
@@ -117,25 +117,21 @@ export const useAuthStore = create((set) => ({
     // 1. Session validation on page reload
     // Uses /auth/me which IS allowed to trigger the 401 refresh interceptor.
     // Flow: GET /me → 401 (no token) → interceptor calls /refresh with cookie → gets token → retries /me → success
-    checkAuth: async (forceFetch = false) => {
-        if (window.location.pathname === '/oauth/callback' && !forceFetch) {
-            set({ authChecking: false });
-            return;
-        }
-        set({ authChecking: true, error: null });
+    checkAuth: async () => {
+        set({ isCheckingAuth: true, error: null });
         try {
             const response = await api.get('/auth/me');
             set({
                 user: response.data.data,
                 isAuthenticated: true,
-                authChecking: false
+                isCheckingAuth: false
             });
         } catch (error) {
             set({
                 user: null,
                 accessToken: null,
                 isAuthenticated: false,
-                authChecking: false
+                isCheckingAuth: false
             });
         }
     },
@@ -225,5 +221,12 @@ export const useAuthStore = create((set) => ({
     changePassword: async (currentPassword, newPassword) => {
         const response = await api.put('/auth/profile/password', { currentPassword, newPassword });
         return response.data;
+    },
+
+    // 8. Synchronize email after update
+    syncEmail: (newEmail) => {
+        set((state) => ({
+            user: state.user ? { ...state.user, email: newEmail } : null
+        }));
     },
 }));

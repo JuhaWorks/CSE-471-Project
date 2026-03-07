@@ -388,7 +388,7 @@ const verifyEmail = async (req, res, next) => {
 // @route   GET /api/auth/me
 // @access  Private (Protected by JWT middleware)
 const getMe = async (req, res) => {
-    // req.user is already populated by the protect middleware
+    // req.user is already populated by the protect middleware (excluding password)
     res.status(200).json({ status: 'success', data: req.user });
 };
 

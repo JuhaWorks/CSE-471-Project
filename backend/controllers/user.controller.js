@@ -1,6 +1,7 @@
 const User = require('../models/user.model');
 const { z } = require('zod');
 const crypto = require('crypto');
+const jwt = require('jsonwebtoken');
 const sendEmail = require('../utils/sendEmail');
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
@@ -302,20 +303,51 @@ const confirmEmailChange = async (req, res, next) => {
 
         if (!user || !user.pendingNewEmail) {
             res.status(400);
-            return next(new Error('Invalid or expired token'));
+            return next(new Error('Invalid or expired confirmation link.'));
         }
 
+        // Corner Case 1: The Race Condition
+        // Check if the pending email was taken by another user during the wait period
+        const emailTaken = await User.findOne({ email: user.pendingNewEmail });
+        if (emailTaken) {
+            // Block update, clear pending fields to force a new request
+            user.pendingNewEmail = undefined;
+            user.emailChangeToken = undefined;
+            user.emailChangeTokenExpires = undefined;
+            await user.save();
+
+            res.status(400);
+            return next(new Error('This email address has already been taken by another user. Please request a new change.'));
+        }
+
+        // Execution: Perform the swap
+        const oldEmail = user.email;
         user.email = user.pendingNewEmail;
         user.isEmailVerified = true;
-        // wipe fields
+
+        // Corner Case 2: Garbage Collection
         user.pendingNewEmail = undefined;
         user.emailChangeToken = undefined;
         user.emailChangeTokenExpires = undefined;
+
         await user.save();
+
+        // Corner Case 3: The Stale JWT Issue
+        // Generate a new access token for the updated email to maintain the session
+        const accessToken = jwt.sign(
+            { id: user._id, email: user.email }, // Explicitly including email in payload as requested
+            process.env.JWT_SECRET,
+            { expiresIn: '15m' }
+        );
 
         res.status(200).json({
             status: 'success',
-            message: 'Email address updated successfully'
+            message: 'Email address updated successfully',
+            accessToken,
+            data: {
+                _id: user._id,
+                email: user.email
+            }
         });
     } catch (error) {
         next(error);

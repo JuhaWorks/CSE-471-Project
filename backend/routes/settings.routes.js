@@ -24,6 +24,10 @@ router.put('/profile', updateProfile);
 // PUT    /api/settings/security     - Update email and password
 router.put('/security', updateSecurity);
 
+// GET    /api/settings/email/confirm/:token - Step 3: Confirm token and swap email
+const { confirmEmailChange } = require('../controllers/user.controller');
+router.get('/email/confirm/:token', confirmEmailChange);
+
 // PUT    /api/settings/deactivate   - Deactivate user account (isActive = false)
 router.put('/deactivate', deactivateAccount);
 

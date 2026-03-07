@@ -13,18 +13,44 @@ const projectSchema = new mongoose.Schema(
             required: [true, 'Please add a description'],
             maxlength: [500, 'Description can not be more than 500 characters'],
         },
-        // Track team members and their specific roles on the project
-        teamMembers: [
+        category: {
+            type: String,
+            required: [true, 'Please add a category'],
+            trim: true,
+        },
+        startDate: {
+            type: Date,
+            required: [true, 'Please add a start date'],
+        },
+        endDate: {
+            type: Date,
+            required: [true, 'Please add an end date'],
+        },
+        status: {
+            type: String,
+            enum: ['Draft', 'Active', 'Paused', 'Completed', 'Archived'],
+            default: 'Active',
+        },
+        deletedAt: {
+            type: Date,
+            default: null,
+        },
+        // Workspace Members Array
+        members: [
             {
-                user: {
+                userId: {
                     type: mongoose.Schema.Types.ObjectId,
                     ref: 'User',
                     required: true,
                 },
                 role: {
                     type: String,
-                    enum: ['manager', 'developer', 'designer', 'viewer'],
-                    default: 'developer',
+                    enum: ['Manager', 'Editor', 'Viewer'],
+                    default: 'Editor',
+                },
+                joinedAt: {
+                    type: Date,
+                    default: Date.now,
                 },
             }
         ],
@@ -35,7 +61,10 @@ const projectSchema = new mongoose.Schema(
 );
 
 // Optimize lookups for determining which projects a user belongs to
-projectSchema.index({ 'teamMembers.user': 1 });
+projectSchema.index({ 'members.userId': 1 });
+
+// Index for soft-delete filtering
+projectSchema.index({ deletedAt: 1 });
 
 // Add $text index for Global Search weighting
 projectSchema.index(
@@ -44,3 +73,4 @@ projectSchema.index(
 );
 
 module.exports = mongoose.model('Project', projectSchema);
+
