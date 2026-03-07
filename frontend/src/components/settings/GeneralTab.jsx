@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { User, FileText } from 'lucide-react';
-import { useAuthStore, api } from '../store/useAuthStore'; // API instance for react-query
+import { useAuthStore, api } from '../../store/useAuthStore'; // API instance for react-query
 
 const generalSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),

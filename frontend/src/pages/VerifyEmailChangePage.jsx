@@ -18,7 +18,7 @@ const VerifyEmailChangePage = () => {
                 // Wait a bit for UI smoothness
                 await new Promise(r => setTimeout(r, 1200));
 
-                const response = await api.get(`/api/settings/email/confirm/${token}`);
+                const response = await api.get(`/settings/email/confirm/${token}`);
 
                 if (response.data.status === 'success') {
                     const { accessToken, data } = response.data;

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, Fragment } from 'react';
 import { Dialog, Transition } from '@headlessui/react';
 import { Mail, ShieldCheck, ArrowRight, X, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { api, useAuthStore } from '../store/useAuthStore';
+import { api, useAuthStore } from '../../store/useAuthStore';
 
 export default function EmailUpdateModal({ isOpen, onClose }) {
     const { user } = useAuthStore();

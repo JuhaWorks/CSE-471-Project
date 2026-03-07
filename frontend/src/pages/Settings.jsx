@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { User, ShieldCheck, ShieldAlert } from 'lucide-react';
 import { Toaster } from 'react-hot-toast';
-import GeneralTab from '../components/GeneralTab';
-import SecurityTab from '../components/SecurityTab';
-import AccountStatusTab from '../components/DangerZoneTab';
+import GeneralTab from '../components/settings/GeneralTab';
+import SecurityTab from '../components/settings/SecurityTab';
+import AccountStatusTab from '../components/settings/DangerZoneTab';
 
 export default function Settings() {
     const [activeTab, setActiveTab] = useState('general');

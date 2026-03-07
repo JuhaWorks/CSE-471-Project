@@ -265,7 +265,7 @@ const verifyEmailChangeOTP = async (req, res, next) => {
             ? 'https://klivra.vercel.app'
             : (process.env.FRONTEND_URL || 'http://localhost:5173');
 
-        const confirmUrl = `${frontendUrl}/settings?confirmEmailToken=${token}`;
+        const confirmUrl = `${frontendUrl}/verify-email-change/${token}`;
 
         const message = `
             <div style="font-family: inherit; padding: 20px; border: 1px solid #eee; border-radius: 12px; max-width: 500px;">

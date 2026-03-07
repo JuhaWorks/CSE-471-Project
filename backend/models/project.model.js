@@ -54,9 +54,19 @@ const projectSchema = new mongoose.Schema(
                 },
             }
         ],
+        // Media Assets
+        coverImageUrl: {
+            type: String,
+            default: null
+        },
+        coverImageId: {
+            type: String,
+            default: null
+        }
     },
     {
         timestamps: true,
+        versionKey: '__v', // Optimistic Concurrency Control enabled
     }
 );
 

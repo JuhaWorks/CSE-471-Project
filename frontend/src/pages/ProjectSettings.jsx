@@ -1,6 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { api, useAuthStore } from '../store/useAuthStore';
 import {
     Settings,
@@ -10,10 +13,23 @@ import {
     User as UserIcon,
     Calendar,
     ArrowLeft,
-    Loader2
+    Loader2,
+    Save,
+    Layout
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
+
+const projectSchema = z.object({
+    name: z.string().min(3, 'Project name must be at least 3 characters').max(100),
+    description: z.string().min(10, 'Description must be at least 10 characters').max(500),
+    category: z.string().min(2, 'Please select or enter a category'),
+    startDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid start date' }),
+    endDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid end date' }),
+}).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+    message: "End date must be after start date",
+    path: ["endDate"],
+});
 
 const ProjectSettings = () => {
     const { id } = useParams();
@@ -31,6 +47,48 @@ const ProjectSettings = () => {
         }
     });
 
+    const project = projectResponse?.data;
+
+    // React Hook Form
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isDirty, isValid },
+        reset
+    } = useForm({
+        resolver: zodResolver(projectSchema),
+        mode: 'onChange'
+    });
+
+    useEffect(() => {
+        if (project) {
+            reset({
+                name: project.name,
+                description: project.description,
+                category: project.category,
+                startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
+                endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : ''
+            });
+        }
+    }, [project, reset]);
+
+    // Update Mutation
+    const updateMutation = useMutation({
+        mutationFn: async (data) => {
+            const res = await api.put(`/projects/${id}`, data);
+            return res.data;
+        },
+        onSuccess: (updated) => {
+            queryClient.invalidateQueries({ queryKey: ['project', id] });
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            queryClient.invalidateQueries({ queryKey: ['projectActivity', id] });
+            toast.success('Project details updated 🛠️');
+        },
+        onError: (err) => {
+            toast.error(err.response?.data?.message || 'Failed to update project');
+        }
+    });
+
     // Fetch Activity Logs
     const { data: activityResponse, isLoading: activityLoading } = useQuery({
         queryKey: ['projectActivity', id],
@@ -40,7 +98,6 @@ const ProjectSettings = () => {
         }
     });
 
-    const project = projectResponse?.data;
     const activities = activityResponse?.data || [];
 
     const deleteMutation = useMutation({
@@ -48,13 +105,15 @@ const ProjectSettings = () => {
             await api.delete(`/projects/${id}`);
         },
         onMutate: async () => {
-            // Optimistic update: remove from project lists instantly
             await queryClient.cancelQueries({ queryKey: ['projects'] });
             const previousProjects = queryClient.getQueryData(['projects']);
-            queryClient.setQueryData(['projects'], (old) => ({
-                ...old,
-                data: old.data.filter(p => p._id !== id)
-            }));
+            queryClient.setQueryData(['projects'], (old) => {
+                if (!old) return old;
+                return {
+                    ...old,
+                    data: old.data.filter(p => p._id !== id)
+                };
+            });
             return { previousProjects };
         },
         onSuccess: () => {
@@ -62,10 +121,16 @@ const ProjectSettings = () => {
             navigate('/projects');
         },
         onError: (err, variables, context) => {
-            queryClient.setQueryData(['projects'], context.previousProjects);
+            if (context?.previousProjects) {
+                queryClient.setQueryData(['projects'], context.previousProjects);
+            }
             toast.error(err.response?.data?.message || 'Failed to delete project');
         }
     });
+
+    const isAuthorizedToEdit = project?.members.some(
+        m => m.userId?._id === currentUser?._id && (m.role === 'Manager' || m.role === 'Editor')
+    ) || currentUser?.role === 'Admin';
 
     const isManager = project?.members.some(
         m => m.userId?._id === currentUser?._id && m.role === 'Manager'
@@ -78,17 +143,21 @@ const ProjectSettings = () => {
     );
 
     if (!project) return (
-        <div className="p-8 text-center bg-zinc-950 border border-white/5 rounded-3xl">
+        <div className="p-8 text-center bg-zinc-950 border border-white/5 rounded-3xl mx-8">
             <p className="text-zinc-400">Project not found or you don't have access.</p>
         </div>
     );
+
+    const onSubmit = (data) => {
+        updateMutation.mutate(data);
+    };
 
     return (
         <div className="p-5 sm:p-8 max-w-5xl mx-auto space-y-8 pb-20">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <button
-                    onClick={() => navigate(-1)}
+                    onClick={() => navigate('/projects')}
                     className="p-2 hover:bg-white/5 rounded-full transition-colors text-zinc-400 hover:text-white"
                 >
                     <ArrowLeft className="w-5 h-5" />
@@ -105,6 +174,97 @@ const ProjectSettings = () => {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content */}
                 <div className="lg:col-span-2 space-y-8">
+
+                    {/* General Settings Form */}
+                    <section className="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">
+                        <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <Layout className="w-5 h-5 text-violet-400" />
+                                <h2 className="font-bold text-white">General Information</h2>
+                            </div>
+                            {!isAuthorizedToEdit && (
+                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">Read Only</span>
+                            )}
+                        </div>
+                        <div className="p-6">
+                            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-bold text-zinc-500 uppercase ml-1">Project Name</label>
+                                        <input
+                                            {...register('name')}
+                                            disabled={!isAuthorizedToEdit || updateMutation.isPending}
+                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white placeholder:text-zinc-700 focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all font-medium"
+                                        />
+                                        {errors.name && <p className="text-xs text-red-400 ml-1">{errors.name.message}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[11px] font-bold text-zinc-500 uppercase ml-1">Description</label>
+                                        <textarea
+                                            {...register('description')}
+                                            rows={3}
+                                            disabled={!isAuthorizedToEdit || updateMutation.isPending}
+                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white placeholder:text-zinc-700 focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all resize-none font-medium text-sm leading-relaxed"
+                                        />
+                                        {errors.description && <p className="text-xs text-red-400 ml-1">{errors.description.message}</p>}
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-bold text-zinc-500 uppercase ml-1">Category</label>
+                                            <select
+                                                {...register('category')}
+                                                disabled={!isAuthorizedToEdit || updateMutation.isPending}
+                                                className="w-full bg-[#0c0c16] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all appearance-none cursor-pointer"
+                                            >
+                                                {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map(cat => (
+                                                    <option key={cat} value={cat}>{cat}</option>
+                                                ))}
+                                            </select>
+                                            {errors.category && <p className="text-xs text-red-400 ml-1">{errors.category.message}</p>}
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-bold text-zinc-500 uppercase ml-1">Start Date</label>
+                                            <input
+                                                type="date"
+                                                {...register('startDate')}
+                                                disabled={!isAuthorizedToEdit || updateMutation.isPending}
+                                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all [color-scheme:dark]"
+                                            />
+                                            {errors.startDate && <p className="text-xs text-red-400 ml-1">{errors.startDate.message}</p>}
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[11px] font-bold text-zinc-500 uppercase ml-1">End Date</label>
+                                            <input
+                                                type="date"
+                                                {...register('endDate')}
+                                                disabled={!isAuthorizedToEdit || updateMutation.isPending}
+                                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-violet-500/50 disabled:opacity-50 transition-all [color-scheme:dark]"
+                                            />
+                                            {errors.endDate && <p className="text-xs text-red-400 ml-1">{errors.endDate.message}</p>}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {isAuthorizedToEdit && (
+                                    <div className="pt-4 border-t border-white/5 flex justify-end">
+                                        <button
+                                            type="submit"
+                                            disabled={!isDirty || !isValid || updateMutation.isPending}
+                                            className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-white text-zinc-950 font-bold text-sm hover:bg-zinc-200 transition-all disabled:opacity-20 disabled:cursor-not-allowed shadow-xl shadow-white/5"
+                                        >
+                                            {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                                            Save Changes
+                                        </button>
+                                    </div>
+                                )}
+                            </form>
+                        </div>
+                    </section>
 
                     {/* Activity Timeline */}
                     <section className="bg-zinc-950 border border-white/5 rounded-3xl overflow-hidden shadow-2xl">

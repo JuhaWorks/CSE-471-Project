@@ -14,11 +14,19 @@ const auditSchema = new mongoose.Schema(
         action: {
             type: String,
             required: true,
-            enum: ['Create', 'Update', 'Delete', 'Deactivate', 'StatusChange'],
+            enum: [
+                'Create', 'Update', 'Delete', 'Deactivate', 'StatusChange',
+                'PROJECT_CREATED', 'PROJECT_UPDATED', 'PROJECT_DELETED', 'PROJECT_RESTORED',
+                'MEMBER_ADDED', 'MEMBER_ROLE_UPDATED', 'MEMBER_REMOVED'
+            ],
         },
         details: {
-            type: String,
+            type: mongoose.Schema.Types.Mixed,
             required: true,
+        },
+        ipAddress: {
+            type: String,
+            default: 'Unknown'
         },
         user: {
             type: mongoose.Schema.Types.ObjectId,

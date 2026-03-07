@@ -13,6 +13,7 @@ const protect = async (req, res, next) => {
     }
 
     if (!token) {
+        console.log(`[AUTH DEBUG] No token found in header for ${req.originalUrl}. Header: ${req.headers.authorization}`);
         res.status(401);
         return next(new Error('Not authorized, no access token provided'));
     }

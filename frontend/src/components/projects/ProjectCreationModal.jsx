@@ -3,9 +3,9 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { X, Calendar, FolderPlus, ArrowRight, ArrowLeft, Loader2 } from 'lucide-react';
+import { X, Calendar, FolderPlus, ArrowRight, ArrowLeft, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { api } from '../store/useAuthStore';
+import { api } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 
@@ -15,6 +15,10 @@ const projectSchema = z.object({
     category: z.string().min(2, 'Please select or enter a category'),
     startDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid start date' }),
     endDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid end date' }),
+    coverImageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
+}).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+    message: "End date must be after start date",
+    path: ["endDate"],
 }).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
     message: "End date must be after start date",
     path: ["endDate"],
@@ -22,6 +26,9 @@ const projectSchema = z.object({
 
 const ProjectCreationModal = ({ open, onOpenChange }) => {
     const [step, setStep] = useState(1);
+    const [selectedFile, setSelectedFile] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState(null);
+    const fileInputRef = React.useRef(null);
     const queryClient = useQueryClient();
 
     const {
@@ -41,7 +48,18 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
     const createProjectMutation = useMutation({
         mutationFn: async (data) => {
             const res = await api.post('/projects', data);
-            return res.data;
+            const project = res.data.data;
+
+            // If a file was selected, upload it now
+            if (selectedFile) {
+                const formData = new FormData();
+                formData.append('coverImage', selectedFile);
+                await api.post(`/projects/${project._id}/image`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            }
+
+            return project;
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
@@ -56,6 +74,8 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
     const handleClose = () => {
         reset();
         setStep(1);
+        setSelectedFile(null);
+        setPreviewUrl(null);
         onOpenChange(false);
     };
 
@@ -127,6 +147,56 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                             />
                                             {errors.description && <p className="text-xs text-red-400 ml-1">{errors.description.message}</p>}
                                         </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[13px] font-semibold text-zinc-400 ml-1">Cover Image (Optional)</label>
+
+                                            <div className="flex gap-4">
+                                                <div
+                                                    onClick={() => fileInputRef.current.click()}
+                                                    className="w-24 h-24 rounded-2xl border border-white/[0.08] bg-white/[0.03] flex flex-col items-center justify-center cursor-pointer hover:bg-white/5 transition-all overflow-hidden relative group"
+                                                >
+                                                    {previewUrl ? (
+                                                        <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
+                                                    ) : (
+                                                        <>
+                                                            <Upload className="w-5 h-5 text-zinc-500 mb-1" />
+                                                            <span className="text-[10px] font-bold text-zinc-600 uppercase">File</span>
+                                                        </>
+                                                    )}
+                                                    {previewUrl && (
+                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                                                            <Upload className="w-5 h-5 text-white" />
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                <div className="flex-1 space-y-2">
+                                                    <input
+                                                        {...register('coverImageUrl')}
+                                                        placeholder="...or paste image URL"
+                                                        className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-4 py-3 text-white placeholder:text-zinc-600 focus:outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-500/40 transition-all font-medium text-sm"
+                                                    />
+                                                    <p className="text-[10px] text-zinc-500 italic ml-1 leading-relaxed">
+                                                        Heads up: Files take priority over URLs!
+                                                    </p>
+                                                </div>
+                                            </div>
+
+                                            <input
+                                                type="file"
+                                                ref={fileInputRef}
+                                                className="hidden"
+                                                accept="image/*"
+                                                onChange={(e) => {
+                                                    const file = e.target.files[0];
+                                                    if (file) {
+                                                        setSelectedFile(file);
+                                                        setPreviewUrl(URL.createObjectURL(file));
+                                                    }
+                                                }}
+                                            />
+                                            {errors.coverImageUrl && <p className="text-xs text-red-400 ml-1">{errors.coverImageUrl.message}</p>}
+                                        </div>
                                     </motion.div>
                                 )}
 
@@ -147,8 +217,8 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                                         type="button"
                                                         onClick={() => reset({ ...watch(), category: cat }, { keepDefaultValues: true })}
                                                         className={`px-4 py-3 rounded-2xl border text-sm font-medium transition-all ${watch('category') === cat
-                                                                ? 'bg-violet-600/20 border-violet-500 text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.1)]'
-                                                                : 'bg-white/[0.02] border-white/[0.08] text-zinc-400 hover:border-white/[0.15] hover:text-white'
+                                                            ? 'bg-violet-600/20 border-violet-500 text-violet-400 shadow-[0_0_15px_rgba(139,92,246,0.1)]'
+                                                            : 'bg-white/[0.02] border-white/[0.08] text-zinc-400 hover:border-white/[0.15] hover:text-white'
                                                             }`}
                                                     >
                                                         {cat}
@@ -240,7 +310,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                     </div>
                 </Dialog.Content>
             </Dialog.Portal>
-        </Dialog.Root>
+        </Dialog.Root >
     );
 };
 

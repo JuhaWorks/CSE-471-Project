@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { Mail, Lock } from 'lucide-react';
-import { useAuthStore, api } from '../store/useAuthStore';
+import { useAuthStore, api } from '../../store/useAuthStore';
 import EmailUpdateModal from './EmailUpdateModal';
 
 const securitySchema = z

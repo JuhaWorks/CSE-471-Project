@@ -26,6 +26,10 @@ router.post('/email/request-otp', protect, requestEmailChangeOTP);
 router.post('/email/verify-otp', protect, verifyEmailChangeOTP);
 
 // GET    /api/users/email/confirm-new/:token — step 3: confirm token and swap
+// Public endpoint for email link clicks
 router.get('/email/confirm-new/:token', confirmEmailChange);
+
+// All other user routes must be protected
+router.use(protect);
 
 module.exports = router;

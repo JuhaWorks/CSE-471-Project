@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
+import { useSocketStore } from '../store/useSocketStore';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/getCroppedImg';
 
@@ -315,7 +316,27 @@ const Profile = () => {
                                 <button
                                     key={s}
                                     type="button"
-                                    onClick={() => setProfileForm(f => ({ ...f, status: s }))}
+                                    onClick={async () => {
+                                        setProfileForm(f => ({ ...f, status: s }));
+
+                                        // 1. Instant Socket Sync
+                                        const { socket } = useSocketStore.getState();
+                                        if (socket?.connected) {
+                                            socket.emit('setStatus', { status: s });
+                                        }
+
+                                        // 2. Instant Auth Store Sync (for Avatar Dot)
+                                        useAuthStore.setState(state => ({
+                                            user: state.user ? { ...state.user, status: s } : null
+                                        }));
+
+                                        // 3. Persist to DB immediately
+                                        try {
+                                            await useAuthStore.getState().updateStatus(s);
+                                        } catch (err) {
+                                            console.error('Failed to sync status to DB:', err);
+                                        }
+                                    }}
                                     className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl text-[13px] font-medium border transition-all ${profileForm.status === s
                                         ? 'bg-violet-500/10 border-violet-500/30 text-violet-300'
                                         : 'bg-white/[0.02] border-white/[0.06] text-gray-400 hover:text-white hover:bg-white/[0.05]'

@@ -1,22 +1,22 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
 import { useEffect, lazy, Suspense } from 'react';
 import { useAuthStore } from './store/useAuthStore';
-import Layout from './components/Layout';
+import Layout from './components/layout/Layout';
 import CommandPalette from './components/ui/CommandPalette';
-import ErrorBoundary from './components/ErrorBoundary';
+import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './pages/Login';
 import Home from './pages/Home';
-import RequireVerification from './components/RequireVerification';
+import RequireVerification from './components/auth/RequireVerification';
 
 // Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
 const VerifyEmail = lazy(() => import('./pages/VerifyEmail'));
 const VerifyEmailChangePage = lazy(() => import('./pages/VerifyEmailChangePage'));
 const Profile = lazy(() => import('./pages/Profile'));
-const Whiteboard = lazy(() => import('./components/Whiteboard'));
+const Whiteboard = lazy(() => import('./components/tools/Whiteboard'));
 const Settings = lazy(() => import('./pages/Settings'));
 const Projects = lazy(() => import('./pages/Projects'));
-const ProjectSettings = lazy(() => import('./pages/ProjectSettings'));
+const ProjectSettings = lazy(() => import('./components/projects/ProjectSettingsDashboard'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));

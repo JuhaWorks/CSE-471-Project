@@ -9,24 +9,13 @@ const {
     deleteAccount
 } = require('../controllers/settings.controller');
 
-// All settings routes must be protected
-router.use(protect);
-
-// DEBUG: Log all requests to settings
-router.use((req, res, next) => {
-    console.log(`📍 Settings Route: ${req.method} ${req.path}`);
-    next();
-});
-
-// PUT    /api/settings/profile      - Update name and about
-router.put('/profile', updateProfile);
-
-// PUT    /api/settings/security     - Update email and password
-router.put('/security', updateSecurity);
-
 // GET    /api/settings/email/confirm/:token - Step 3: Confirm token and swap email
+// This endpoint is PUBLIC to allow access from email clients
 const { confirmEmailChange } = require('../controllers/user.controller');
 router.get('/email/confirm/:token', confirmEmailChange);
+
+// All other settings routes must be protected
+router.use(protect);
 
 // PUT    /api/settings/deactivate   - Deactivate user account (isActive = false)
 router.put('/deactivate', deactivateAccount);

@@ -3,7 +3,8 @@ import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import ApodWidget from '../components/ApodWidget';
+import ApodWidget from '../components/tools/ApodWidget';
+import { useSocketStore } from '../store/useSocketStore';
 
 // ─── Config ──────────────────────────────────────────────────────────────────
 
@@ -61,6 +62,7 @@ const SectionHead = ({ title, badge, action }) => (
 
 const Home = () => {
     const { user } = useAuthStore();
+    const { onlineUsers } = useSocketStore();
     const canViewActivity = user && ['Admin', 'Manager'].includes(user.role);
     const parentRef = useRef();
 
@@ -137,9 +139,13 @@ const Home = () => {
                             <Ico d={s.icon} size={16} stroke="rgba(255,255,255,.9)" sw={1.5} />
                         </div>
 
-                        <div style={{ fontSize: 26, fontWeight: 700, color: '#cdd0ec', letterSpacing: '-.03em', lineHeight: 1 }}>{s.value}</div>
+                        <div style={{ fontSize: 26, fontWeight: 700, color: '#cdd0ec', letterSpacing: '-.03em', lineHeight: 1 }}>
+                            {s.label === 'Team Members' ? onlineUsers.filter(u => u.status !== 'Offline').length : s.value}
+                        </div>
                         <div style={{ fontSize: 12, color: 'rgba(205,208,236,.4)', marginTop: 4, fontWeight: 500 }}>{s.label}</div>
-                        <div style={{ fontSize: 11, color: 'rgba(205,208,236,.22)', marginTop: 8 }}>{s.sub}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(205,208,236,.22)', marginTop: 8 }}>
+                            {s.label === 'Team Members' ? `${onlineUsers.filter(u => u.status !== 'Offline').length} online now` : s.sub}
+                        </div>
                     </div>
                 ))}
             </div>

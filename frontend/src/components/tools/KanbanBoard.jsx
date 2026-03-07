@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import { io } from 'socket.io-client';
-import { api } from '../store/useAuthStore';
+import { api } from '../../store/useAuthStore';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useSocketSync } from '../hooks/useSocketSync';
+import { useSocketSync } from '../../hooks/useSocketSync';
 
 // URL resolved once at module level (no socket yet — that happens in useEffect)
 const SOCKET_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? 'https://klivra-backend.onrender.com' : 'http://localhost:5000');

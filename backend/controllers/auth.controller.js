@@ -76,9 +76,7 @@ const registerUser = async (req, res, next) => {
                 await userExists.save();
 
                 const isProd = process.env.NODE_ENV === 'production';
-                const frontendUrl = isProd
-                    ? 'https://klivra.vercel.app'
-                    : (process.env.FRONTEND_URL || 'http://localhost:5173');
+                const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
 
                 const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
@@ -133,9 +131,7 @@ const registerUser = async (req, res, next) => {
             await user.save();
 
             const isProd = process.env.NODE_ENV === 'production';
-            const frontendUrl = isProd
-                ? 'https://klivra.vercel.app'
-                : (process.env.FRONTEND_URL || 'http://localhost:5173');
+            const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
 
             const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
@@ -235,6 +231,10 @@ const loginUser = async (req, res, next) => {
                 }
             }
 
+            // Set status to Online on login
+            user.status = 'Online';
+            await user.save();
+
             sendTokenResponse(user, 200, res, rememberMe);
         } else {
             res.status(401);
@@ -257,6 +257,15 @@ const logoutUser = async (req, res, next) => {
             secure: isProd,
             sameSite: isProd ? 'none' : 'lax'
         });
+
+        // Set status to Offline on logout
+        if (req.user) {
+            const user = await User.findById(req.user._id);
+            if (user) {
+                user.status = 'Offline';
+                await user.save();
+            }
+        }
 
         res.status(200).json({
             status: 'success',
@@ -308,7 +317,7 @@ const refreshTokenUser = async (req, res, next) => {
 // @desc    OAuth Callback Handler
 // @route   GET /api/auth/:provider/callback
 // @access  Public
-const oauthCallback = (req, res) => {
+const oauthCallback = async (req, res) => {
     // req.user is populated by passport
     const user = req.user;
 
@@ -318,6 +327,10 @@ const oauthCallback = (req, res) => {
 
     const accessToken = generateAccessToken(user._id);
     const refreshToken = generateRefreshToken(user._id);
+
+    // Set status to Online on OAuth login
+    user.status = 'Online';
+    await user.save();
 
     const isProd = process.env.NODE_ENV === 'production';
     const options = {
@@ -329,9 +342,7 @@ const oauthCallback = (req, res) => {
 
     res.cookie('refreshToken', refreshToken, options);
 
-    const frontendUrl = isProd
-        ? 'https://klivra.vercel.app'
-        : (process.env.FRONTEND_URL || 'http://localhost:5173');
+    const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
 
     res.redirect(`${frontendUrl}/oauth/callback?token=${accessToken}`);
 };
@@ -384,6 +395,30 @@ const verifyEmail = async (req, res, next) => {
     }
 };
 
+// @desc    Update user status (Online, Away, DND, Offline)
+// @route   PUT /api/auth/profile/status
+// @access  Private
+const updateStatus = async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        if (!['Online', 'Away', 'Do Not Disturb', 'Offline'].includes(status)) {
+            res.status(400);
+            return next(new Error('Invalid status value'));
+        }
+
+        const user = await User.findById(req.user._id);
+        user.status = status;
+        await user.save();
+
+        res.status(200).json({
+            status: 'success',
+            data: { status: user.status }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 // @desc    Get current user (session check for page reloads)
 // @route   GET /api/auth/me
 // @access  Private (Protected by JWT middleware)
@@ -417,9 +452,7 @@ const resendVerification = async (req, res, next) => {
         await user.save();
 
         const isProd = process.env.NODE_ENV === 'production';
-        const frontendUrl = isProd
-            ? 'https://klivra.vercel.app'
-            : (process.env.FRONTEND_URL || 'http://localhost:5173');
+        const frontendUrl = process.env.FRONTEND_URL || (isProd ? 'https://klivra.vercel.app' : 'http://localhost:5173');
 
         const verifyUrl = `${frontendUrl}/verify-email?token=${verificationToken}`;
 
@@ -457,5 +490,6 @@ module.exports = {
     oauthCallback,
     verifyEmail,
     resendVerification,
-    getMe
+    getMe,
+    updateStatus
 };

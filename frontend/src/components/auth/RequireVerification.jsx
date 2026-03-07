@@ -1,7 +1,7 @@
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { api } from '../store/useAuthStore'; // Assumes api instance is exported or available
+import { api } from '../../store/useAuthStore'; // Assumes api instance is exported or available
 import { useState } from 'react';
 
 const RequireVerification = ({ children }) => {

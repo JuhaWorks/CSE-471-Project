@@ -1,6 +1,13 @@
 import { useState, useRef, useEffect } from 'react';
-import { useAuthStore } from '../store/useAuthStore';
+import { useAuthStore } from '../../store/useAuthStore';
 import { Link } from 'react-router-dom';
+
+const STATUS_DOT = {
+    Online: 'bg-emerald-500',
+    Away: 'bg-yellow-400',
+    'Do Not Disturb': 'bg-red-500',
+    Offline: 'bg-gray-500',
+};
 
 // Auto-compress any Cloudinary avatar to a ~10-15kb 100x100 WebP
 const getOptimizedAvatar = (url) => {
@@ -42,7 +49,10 @@ const TopBar = ({ onMenuToggle }) => {
                 <div className="w-px h-5 bg-white/[0.06] mx-1 hidden sm:block" />
                 <div className="relative" ref={dropdownRef}>
                     <button onClick={() => setDropdownOpen(!dropdownOpen)} className="flex items-center gap-2 p-1.5 pr-2.5 rounded-xl hover:bg-white/[0.04] transition-colors" aria-expanded={dropdownOpen}>
-                        <img src={getOptimizedAvatar(user?.avatar)} alt={user?.name} className="w-7 h-7 rounded-lg border border-white/[0.08] object-cover" />
+                        <div className="relative">
+                            <img src={getOptimizedAvatar(user?.avatar)} alt={user?.name} className="w-7 h-7 rounded-lg border border-white/[0.08] object-cover" />
+                            <div className={`absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0a0a12] ${STATUS_DOT[user?.status] || 'bg-emerald-500'}`} />
+                        </div>
                         <div className="hidden sm:block text-left">
                             <p className="text-[13px] font-semibold text-white leading-none">{user?.name || 'User'}</p>
                             <p className="text-[10px] text-gray-600 leading-none mt-0.5">{user?.role || 'Member'}</p>
