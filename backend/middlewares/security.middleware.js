@@ -2,6 +2,7 @@ const SystemConfig = require('../models/systemConfig.model');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const logger = require('../utils/logger');
+const { checkMaintenanceStatus } = require('../utils/helpers');
 
 const securityMiddleware = async (req, res, next) => {
     try {
@@ -25,8 +26,15 @@ const securityMiddleware = async (req, res, next) => {
 
         // 2. Maintenance Mode Check
         const maintenanceConfig = await SystemConfig.findOne({ key: 'maintenance_mode' }).lean();
-        const maintenanceDetails = maintenanceConfig ? maintenanceConfig.value : { enabled: false, endTime: null };
-        const isMaintenance = maintenanceDetails.enabled && (!maintenanceDetails.endTime || new Date() < new Date(maintenanceDetails.endTime));
+        const { isMaintenance, endTime, autoRepairNeeded } = checkMaintenanceStatus(maintenanceConfig?.value);
+        
+        // Auto-Repair in the background if system thinks it's in maintenance but time is up
+        if (autoRepairNeeded) {
+            SystemConfig.findOneAndUpdate(
+                { key: 'maintenance_mode' },
+                { $set: { "value.enabled": false } }
+            ).exec().catch(err => logger.error(`[MAINTENANCE REPAIR FAIL] ${err.message}`));
+        }
 
         if (isMaintenance) {
             // Check for admin role
@@ -78,7 +86,7 @@ const securityMiddleware = async (req, res, next) => {
             return res.status(503).json({
                 status: 'fail',
                 message: 'System is currently under maintenance. Please try again later.',
-                endTime: maintenanceDetails.endTime
+                endTime: endTime
             });
         }
 

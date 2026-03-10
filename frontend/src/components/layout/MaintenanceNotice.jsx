@@ -35,6 +35,23 @@ const MaintenanceNotice = () => {
         return () => socket.off('maintenanceChanged', handleMaintenanceChanged);
     }, [socket, queryClient]);
 
+    // Cleanup: If the endTime is reached while the user is watching, auto-reload to unlock
+    useEffect(() => {
+        if (!statusRes?.data?.isMaintenance || !statusRes?.data?.endTime) return;
+
+        const endTime = new Date(statusRes.data.endTime).getTime();
+        const timeRemaining = endTime - Date.now();
+
+        if (timeRemaining > 0) {
+            const timer = setTimeout(() => {
+                console.log('[MAINTENANCE] End time reached. Reloading...');
+                window.location.reload();
+            }, timeRemaining + 1500); // 1.5s buffer for backend auto-repair to kick in
+
+            return () => clearTimeout(timer);
+        }
+    }, [statusRes?.data?.isMaintenance, statusRes?.data?.endTime]);
+
     const status = statusRes?.data;
 
     if (!status?.isMaintenance && !status?.endTime) return null;

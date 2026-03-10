@@ -81,9 +81,28 @@ const getCookieOptions = (rememberMe = false) => {
     return options;
 };
 
+/**
+ * Robustly checks if maintenance mode is effectively active.
+ * @param {Object} maintenanceValue - The value object from SystemConfig (key: 'maintenance_mode')
+ * @returns {Object} { isMaintenance: boolean, endTime: Date|null, autoRepairNeeded: boolean }
+ */
+const checkMaintenanceStatus = (maintenanceValue) => {
+    const details = maintenanceValue || { enabled: false, endTime: null };
+    const enabled = !!details.enabled;
+    const endTime = details.endTime ? new Date(details.endTime) : null;
+    
+    // Auto-disable if end time has passed
+    const isPast = endTime && endTime.getTime() < Date.now();
+    const isMaintenance = enabled && !isPast;
+    const autoRepairNeeded = enabled && isPast;
+
+    return { isMaintenance, endTime, autoRepairNeeded };
+};
+
 module.exports = {
     getFrontendUrl,
     formatUserResponse,
     sendStandardEmail,
-    getCookieOptions
+    getCookieOptions,
+    checkMaintenanceStatus
 };

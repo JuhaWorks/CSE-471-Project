@@ -3,6 +3,7 @@ const Project = require('../models/project.model');
 const Task = require('../models/task.model');
 const { logSecurityEvent, logActivity } = require('../utils/activityLogger');
 const SystemConfig = require('../models/systemConfig.model');
+const { checkMaintenanceStatus } = require('../utils/helpers');
 
 // @desc    Get all users with pagination and search
 // @route   GET /api/admin/users
@@ -157,13 +158,10 @@ const getPlatformStats = async (req, res, next) => {
         const pendingTasks = await Task.countDocuments({ status: { $ne: 'Completed' } });
 
         const maintenanceConfig = await SystemConfig.findOne({ key: 'maintenance_mode' }).lean();
-        const maintenanceDetails = maintenanceConfig ? maintenanceConfig.value : { enabled: false, endTime: null };
-        let isMaintenance = maintenanceDetails.enabled;
+        const { isMaintenance, endTime, autoRepairNeeded } = checkMaintenanceStatus(maintenanceConfig?.value);
 
-        // Auto-disable if end time has passed
-        if (isMaintenance && maintenanceDetails.endTime && new Date(maintenanceDetails.endTime) < new Date()) {
-            isMaintenance = false;
-            maintenanceDetails.enabled = false;
+        // Auto-Repair if system thinks it's in maintenance but time is up
+        if (autoRepairNeeded) {
             SystemConfig.findOneAndUpdate(
                 { key: 'maintenance_mode' },
                 { $set: { "value.enabled": false } }
@@ -192,7 +190,7 @@ const getPlatformStats = async (req, res, next) => {
                 },
                 system: {
                     status: isMaintenance ? 'Maintenance' : 'Operational',
-                    endTime: maintenanceDetails.endTime,
+                    endTime: endTime,
                     lastBackup: new Date().toISOString()
                 }
             }
@@ -302,11 +300,10 @@ const getBlockedIps = async (req, res, next) => {
 const getSystemStatus = async (req, res, next) => {
     try {
         const maintenanceConfig = await SystemConfig.findOne({ key: 'maintenance_mode' }).lean();
-        let maintenanceDetails = maintenanceConfig ? maintenanceConfig.value : { enabled: false, endTime: null };
+        const { isMaintenance, endTime, autoRepairNeeded } = checkMaintenanceStatus(maintenanceConfig?.value);
 
         // Auto-disable if end time has passed
-        if (maintenanceDetails.enabled && maintenanceDetails.endTime && new Date(maintenanceDetails.endTime) < new Date()) {
-            maintenanceDetails.enabled = false;
+        if (autoRepairNeeded) {
             SystemConfig.findOneAndUpdate(
                 { key: 'maintenance_mode' },
                 { $set: { "value.enabled": false } }
@@ -316,8 +313,8 @@ const getSystemStatus = async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             data: {
-                isMaintenance: maintenanceDetails.enabled,
-                endTime: maintenanceDetails.endTime
+                isMaintenance: isMaintenance,
+                endTime: endTime
             }
         });
     } catch (error) {
