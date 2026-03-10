@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, api } from '../store/useAuthStore';
+import { useSocketStore } from '../store/useSocketStore';
 import { Navigate, Link } from 'react-router-dom';
 import IPBlacklistModal from '../components/layout/IPBlacklistModal';
 
@@ -12,6 +13,38 @@ const SecurityFeed = () => {
     if (user?.role !== 'Admin') {
         return <Navigate to="/" replace />;
     }
+
+    const queryClient = useQueryClient();
+    const { socket } = useSocketStore();
+
+    // Real-time listener: when any admin action logs a security event,
+    // prepend it to the cached query data immediately (page 1 only)
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleSecurityEvent = (newLog) => {
+            // Only update the visible first page so new events appear at top
+            queryClient.setQueryData(['securityLogs', 1], (old) => {
+                if (!old) return old;
+                const updatedLogs = [newLog, ...(old.data || [])].slice(0, 20);
+                return {
+                    ...old,
+                    data: updatedLogs,
+                    pagination: {
+                        ...old.pagination,
+                        total: (old.pagination?.total || 0) + 1
+                    }
+                };
+            });
+            // If on page >1, refetch page 1 instead
+            if (page !== 1) {
+                queryClient.invalidateQueries({ queryKey: ['securityLogs', 1] });
+            }
+        };
+
+        socket.on('securityEvent', handleSecurityEvent);
+        return () => socket.off('securityEvent', handleSecurityEvent);
+    }, [socket, queryClient, page]);
 
     const { data: logsData, isLoading } = useQuery({
         queryKey: ['securityLogs', page],

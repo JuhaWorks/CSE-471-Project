@@ -132,6 +132,12 @@ module.exports = {
             // Track joined projects for this socket to cleanup on disconnect
             const joinedProjects = new Set();
 
+            // Auto-join admins to the security feed room
+            if (socket.user.role === 'Admin') {
+                socket.join('admin_security');
+                logger.info(`🔐 Admin ${socket.user.name} joined admin_security room`);
+            }
+
             // 2. Project Room Joining
             socket.on('joinProject', (projectId) => {
                 const roomKey = `project_${projectId}`;
