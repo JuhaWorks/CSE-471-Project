@@ -28,9 +28,9 @@ const { uploadProjectImage } = require('../middlewares/upload.middleware');
 router.route('/:id')
     .get(core.getProject)
     .put(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), core.updateProject)
-    .post(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), uploadProjectImage, core.uploadProjectImage)
     .delete(isNotArchived, authorizeProjectAccess(['Manager']), core.deleteProject);
 
+router.post('/:id/image', isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), uploadProjectImage, core.uploadProjectImage);
 router.post('/:id/restore', authorizeProjectAccess(['Manager']), core.restoreProject);
 
 // ── MEMBERS DOMAIN (RBAC & Teams) ───────────────────────────────────────────
