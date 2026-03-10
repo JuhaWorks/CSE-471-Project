@@ -5,14 +5,21 @@ import axios from 'axios';
 // Local dev: Vite proxy handles /api -> localhost:5000 (same-origin, cookies work)
 // Production: vercel.json rewrites /api -> Render backend (same-origin, cookies work)
 // Only set VITE_API_URL if you need to bypass both proxies (rare).
-let BASE_URL;
+// ==========================================
+// ENVIRONMENT TOGGLE (Switch between Local and Prod)
+// ==========================================
+
+// --- CASE A: FOR LOCALHOST DEVELOPMENT ---
+let BASE_URL = 'http://localhost:5000/api';
+
+// --- CASE B: FOR LIVE SERVER (VERCEL/RENDER) ---
+// let BASE_URL = '/api'; 
+
+// --- AUTOMATIC DETECTION (BACKUP) ---
 if (import.meta.env.VITE_API_URL) {
     BASE_URL = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`;
-} else if (import.meta.env.DEV) {
-    BASE_URL = 'http://localhost:5000/api';
-} else {
-    // Production: relative URL works because vercel.json rewrites /api/* to Render
-    BASE_URL = '/api';
+} else if (!import.meta.env.DEV && BASE_URL === 'http://localhost:5000/api') {
+    BASE_URL = '/api'; // Fallback to relative path in production if not manually set
 }
 
 // Create a configured Axios instance
@@ -20,14 +27,14 @@ if (import.meta.env.VITE_API_URL) {
 export const api = axios.create({
     baseURL: BASE_URL,
     withCredentials: true,
-    timeout: 30000, // 30s — Render cold starts can take 15-20s
+    timeout: 10000, // 10s maximum to prevent infinite hangs on load
 });
 
 // Add Request Interceptor to inject the access token
 api.interceptors.request.use((config) => {
     const token = useAuthStore.getState().accessToken;
     if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
+        config.headers['Authorization'] = `Bearer ${token}`;
     }
     return config;
 });
@@ -53,18 +60,20 @@ api.interceptors.response.use(
         const originalRequest = error.config;
 
         // 1. Intercept 401 Unauthorized for automated token refresh
-        // CRITICAL: /auth/me MUST be allowed to trigger refresh — that's how page reload works.
         const shouldRefresh =
             error.response?.status === 401 &&
             !originalRequest._retry &&
-            !NO_REFRESH_ROUTES.some(route => originalRequest.url === route);
+            // Check if the URL contains any of the NO_REFRESH_ROUTES
+            !NO_REFRESH_ROUTES.some(route => originalRequest.url?.includes(route));
 
         if (shouldRefresh) {
+            console.log(`[AUTH] 401 detected on ${originalRequest.url}. Attempting refresh...`);
+
             if (isRefreshing) {
                 return new Promise(function (resolve, reject) {
                     failedQueue.push({ resolve, reject });
                 }).then(token => {
-                    originalRequest.headers.Authorization = 'Bearer ' + token;
+                    originalRequest.headers['Authorization'] = 'Bearer ' + token;
                     return api(originalRequest);
                 }).catch(err => Promise.reject(err));
             }
@@ -74,17 +83,24 @@ api.interceptors.response.use(
 
             try {
                 // Securely request a new short-lived access token using the HttpOnly refresh cookie
+                console.log(`[AUTH] Calling /auth/refresh...`);
                 const response = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
                 const newAccessToken = response.data.accessToken;
 
-                useAuthStore.getState().setAccessToken(newAccessToken);
+                console.log(`[AUTH] Refresh successful. New token obtained.`);
+
+                // Update store state with new token
+                useAuthStore.setState({ accessToken: newAccessToken });
+
                 processQueue(null, newAccessToken);
 
                 // Retry the original failed request
-                originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+                originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
+                console.error(`[AUTH] Refresh failed:`, refreshError.response?.status || refreshError.message);
                 processQueue(refreshError, null);
+                // If it's a 401 during refresh, it means the refresh token is also invalid/expired
                 useAuthStore.getState().logout(true);
                 return Promise.reject(refreshError);
             } finally {
@@ -92,24 +108,21 @@ api.interceptors.response.use(
             }
         }
 
-        // 2. Auto-retry for transient network blips
-        if (!originalRequest._retried && (error.code === 'ECONNABORTED' || !error.response)) {
-            originalRequest._retried = true;
-            await new Promise((r) => setTimeout(r, 400));
-            return api(originalRequest);
-        }
-
+        // Removed the aggressive auto-retry logic for transient errors.
+        // It was causing 30s timeouts to double into 1-2 minute hangs 
+        // when the backend was unreachable or cold-starting.
+        
         return Promise.reject(error);
     }
 );
 
 
-export const useAuthStore = create((set) => ({
+export const useAuthStore = create((set, get) => ({
     user: null,
     accessToken: null,
     isAuthenticated: false,
     isLoading: false,
-    isCheckingAuth: true, // Defaults true — App.jsx gatekeeper blocks rendering until resolved
+    isCheckingAuth: false, // Default to false to avoid hang, set to true inside checkAuth
     error: null,
     setAccessToken: (token) => set({ accessToken: token }),
     clearError: () => set({ error: null }),
@@ -118,11 +131,18 @@ export const useAuthStore = create((set) => ({
     // Uses /auth/me which IS allowed to trigger the 401 refresh interceptor.
     // Flow: GET /me → 401 (no token) → interceptor calls /refresh with cookie → gets token → retries /me → success
     checkAuth: async () => {
+        // Prevent concurrent or redundant checks
+        if (get().isCheckingAuth || get().isAuthenticated) return;
+
         set({ isCheckingAuth: true, error: null });
         try {
-            const response = await api.get('/auth/me');
+            console.log('[AUTH] Checking session...');
+            // Force a fast fail on the initial load check—don't let the global 10s timeout hang the UI
+            const response = await api.get('/auth/me', { timeout: 3000 });
             set({
                 user: response.data.data,
+                // The refresh interceptor might have updated our state.accessToken automatically
+                // but if not, we should check if the interceptor logic should be more explicit.
                 isAuthenticated: true,
                 isCheckingAuth: false
             });
@@ -178,7 +198,8 @@ export const useAuthStore = create((set) => ({
         set({ isLoading: true, error: null });
         try {
             if (!forceClientSide) {
-                await api.get('/auth/logout');
+                console.log('[AUTH] Calling backend logout...');
+                await api.get('/auth/logout').catch(err => console.log('[AUTH] Backend logout failed (likely expired), proceeding with client-side cleanup.'));
             }
             set({
                 user: null,
@@ -220,6 +241,13 @@ export const useAuthStore = create((set) => ({
     // 7. Change password
     changePassword: async (currentPassword, newPassword) => {
         const response = await api.put('/auth/profile/password', { currentPassword, newPassword });
+        return response.data;
+    },
+
+    // 7.5. Update status
+    updateStatus: async (status) => {
+        const response = await api.put('/auth/profile/status', { status });
+        set((state) => ({ user: { ...state.user, status: response.data.data.status } }));
         return response.data;
     },
 

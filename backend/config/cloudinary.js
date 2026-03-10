@@ -7,14 +7,22 @@ cloudinary.config({
     api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-// Storage engine: files go to the 'klivra/avatars' folder in Cloudinary
 const avatarStorage = new CloudinaryStorage({
     cloudinary,
     params: {
         folder: 'klivra/avatars',
         allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
-        transformation: [{ width: 400, height: 400, crop: 'fill', gravity: 'face' }],
+        transformation: [{ width: 200, height: 200, crop: 'fill' }], // Circle crops often handled on frontend
     },
 });
 
-module.exports = { cloudinary, avatarStorage };
+const projectStorage = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'klivra/projects',
+        allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+        transformation: [{ width: 1200, height: 630, crop: 'fill' }], // Optimized for social sharing / banners
+    },
+});
+
+module.exports = { cloudinary, avatarStorage, projectStorage };

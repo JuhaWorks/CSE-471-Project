@@ -1,5 +1,5 @@
 const multer = require('multer');
-const { avatarStorage } = require('../config/cloudinary');
+const { avatarStorage, projectStorage } = require('../config/cloudinary');
 
 // Accept only image MIME types
 const imageFilter = (req, file, cb) => {
@@ -11,21 +11,18 @@ const imageFilter = (req, file, cb) => {
     }
 };
 
-// Build the raw multer handler
-const _multerHandler = multer({
+// --- Avatar Upload Middleware ---
+const _avatarMulter = multer({
     storage: avatarStorage,
     fileFilter: imageFilter,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
 }).single('avatar');
 
-// Express v5 compatibility: wrap the callback-based multer handler in a Promise
-// so that any MulterError it throws is passed to next() automatically.
-const uploadSingle = (req, res, next) => {
-    _multerHandler(req, res, (err) => {
+const uploadAvatarSync = (req, res, next) => {
+    _avatarMulter(req, res, (err) => {
         if (err instanceof multer.MulterError) {
-            // e.g. file too large
             res.status(400);
-            return next(new Error(err.message));
+            return next(new Error(`Multer Error: ${err.message}`));
         }
         if (err) {
             res.status(400);
@@ -35,4 +32,28 @@ const uploadSingle = (req, res, next) => {
     });
 };
 
-module.exports = { uploadSingle };
+// --- Project Image Upload Middleware ---
+const _projectMulter = multer({
+    storage: projectStorage,
+    fileFilter: imageFilter,
+    limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB for high-res banners
+}).single('coverImage');
+
+const uploadProjectImageSync = (req, res, next) => {
+    _projectMulter(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            res.status(400);
+            return next(new Error(`Multer Error: ${err.message}`));
+        }
+        if (err) {
+            res.status(400);
+            return next(new Error(err.message || 'File upload error'));
+        }
+        next();
+    });
+};
+
+module.exports = {
+    uploadSingle: uploadAvatarSync, // Maintain backward compatibility
+    uploadProjectImage: uploadProjectImageSync
+};

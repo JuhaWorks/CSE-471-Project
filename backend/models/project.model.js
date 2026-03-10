@@ -54,9 +54,19 @@ const projectSchema = new mongoose.Schema(
                 },
             }
         ],
+        // Media Assets
+        coverImageUrl: {
+            type: String,
+            default: null
+        },
+        coverImageId: {
+            type: String,
+            default: null
+        }
     },
     {
         timestamps: true,
+        versionKey: '__v', // Optimistic Concurrency Control enabled
     }
 );
 
@@ -71,6 +81,20 @@ projectSchema.index(
     { name: 'text', description: 'text' },
     { name: "ProjectTextIndex", weights: { name: 10, description: 5 } }
 );
+
+/**
+ * Instance method to check if a user is already a member
+ */
+projectSchema.methods.isMember = function (userId) {
+    return this.members.some(m => m.userId.toString() === userId.toString());
+};
+
+/**
+ * Instance method to get total managers in project
+ */
+projectSchema.methods.getManagerCount = function () {
+    return this.members.filter(m => m.role === 'Manager').length;
+};
 
 module.exports = mongoose.model('Project', projectSchema);
 

@@ -3,7 +3,7 @@ import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import { ShieldAlert, ChevronDown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAuthStore, api } from '../store/useAuthStore';
+import { useAuthStore, api } from '../../store/useAuthStore';
 
 // Glassmorphism Modal Component
 const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deactivationDuration, setDeactivationDuration }) => {

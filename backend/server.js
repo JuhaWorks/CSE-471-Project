@@ -9,6 +9,7 @@ const cookieParser = require('cookie-parser');
 const dns = require('dns');
 const mongoSanitize = require('express-mongo-sanitize');
 const morganMiddleware = require('./middlewares/morgan.middleware');
+const { securityMiddleware } = require('./middlewares/security.middleware');
 const logger = require('./utils/logger');
 const session = require('express-session');
 const passport = require('./config/passport');
@@ -26,16 +27,28 @@ try {
 const app = express();
 app.set('trust proxy', 1); // Trust Render's load balancer to correctly read `https` protocol headers
 const server = http.createServer(app);
+
+// 2. Initialize Socket.io with JWT Security
 const io = require('./utils/socket').init(server);
 
-// 2. Fast allowed origins lookup O(1)
+// 3. Fast allowed origins lookup O(1)
 const allowedOrigins = new Set([
-  'http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175', 'http://localhost:3000',
+  'http://localhost:5173',
+  'http://localhost:5174',
+  'http://localhost:5175',
+  'http://localhost:3000',
+  'http://127.0.0.1:5173',
   'https://klivra.vercel.app',
   process.env.FRONTEND_URL?.replace(/\/$/, '')
 ].filter(Boolean));
 
-// 3. Middlewares
+// Log Active Mode
+logger.info(`🌐 Server starting in ${process.env.NODE_ENV || 'development'} mode`);
+if (process.env.NODE_ENV !== 'production') {
+  logger.info(`🔓 CORS internal allowance: ${Array.from(allowedOrigins).join(', ')}`);
+}
+
+// 4. Middlewares
 app.use(helmet());
 app.use(compression({ threshold: 1024 }));
 app.use(cors({
@@ -83,15 +96,24 @@ app.use((req, res, next) => {
 // HTTP Request Logging
 app.use(morganMiddleware);
 
-app.use((req, res, next) => { req.io = io; next(); });
+// Attach Socket.io to Request object
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
-// 4. Compact Socket.io Setup
-io.on('connection', (socket) => {
-  socket.on('joinProject', (id) => socket.join(id));
-  socket.on('join-whiteboard', (id) => socket.join(id));
-  socket.on('task:move', (data) => socket.to(data.projectId).emit('task:moved', data));
-  socket.on('draw-line', ({ roomId, lineData }) => socket.to(roomId).emit('draw-line', lineData));
-  socket.on('clear-board', (roomId) => socket.to(roomId).emit('clear-board'));
+// Global Security & Maintenance Check
+app.use(securityMiddleware);
+
+// Diagnostic Middleware for Auth
+app.use((req, res, next) => {
+  if (req.originalUrl.includes('/api/auth')) {
+    const authHeader = req.headers.authorization;
+    const hasToken = !!authHeader;
+    const isBearer = authHeader?.startsWith('Bearer');
+    console.log(`[AUTH DIAGNOSTIC] ${req.method} ${req.originalUrl} - HasToken: ${hasToken}, IsBearer: ${isBearer}`);
+  }
+  next();
 });
 
 // 5. Routes
@@ -135,18 +157,7 @@ app.use((req, res, next) => {
   next(new Error(`Not Found - ${req.originalUrl}`));
 });
 
-app.use((err, req, res, next) => {
-  if (err.status !== 404) {
-    logger.error(`${err.status || 500} - ${err.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
-  }
-
-  res.status(res.statusCode === 200 ? 500 : res.statusCode).json({
-    status: 'error',
-    message: err.message,
-    requiresReactivation: err.requiresReactivation || false,
-    stack: process.env.NODE_ENV === 'production' ? '🥞' : err.stack,
-  });
-});
+app.use(require('./middlewares/error.middleware'));
 
 // 8. Server Initialization
 const PORT = process.env.PORT || 5000;

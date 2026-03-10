@@ -1,39 +1,51 @@
 const express = require('express');
 const router = express.Router();
-const {
-    getProjects,
-    getProject,
-    createProject,
-    updateProject,
-    deleteProject,
-} = require('../controllers/project.controller');
-const { getLogs } = require('../controllers/audit.controller'); // Reuse audit fetcher
 const { protect } = require('../middlewares/auth.middleware');
-const { cacheMiddleware } = require('../utils/redis');
+const { isNotArchived, authorizeProjectAccess } = require('../middlewares/project.middleware');
 
+// Modular Controllers
+const core = require('../controllers/projectCore.controller');
+const members = require('../controllers/projectMembers.controller');
+const activity = require('../controllers/projectActivity.controller');
+const { getProjectInsights, getWorkspaceStats } = require('../controllers/projectAnalytics.controller');
+const validate = require('../middlewares/validate.middleware');
+const { addMemberSchema, updateMemberRoleSchema } = require('../validators/projectMember.validator');
 
-// We can re-route requests into the task router for relationships
-// e.g., GET /api/projects/:projectId/tasks
+// Relations
 const taskRouter = require('./task.routes');
 router.use('/:projectId/tasks', taskRouter);
 
-// Apply auth middleware to all project routes
+// Set Global Protections
 router.use(protect);
 
+// ── CORE DOMAIN (CRUD & Soft-Delete) ─────────────────────────────────────────
 router.route('/')
-    .get(cacheMiddleware('projects', 300), getProjects)
-    .post(createProject);
+    .get(core.getProjects)
+    .post(core.createProject);
+
+const { uploadProjectImage } = require('../middlewares/upload.middleware');
 
 router.route('/:id')
-    .get(cacheMiddleware('project', 300), getProject)
-    .put(updateProject)
-    .delete(deleteProject);
+    .get(core.getProject)
+    .put(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), core.updateProject)
+    .post(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), uploadProjectImage, core.uploadProjectImage)
+    .delete(isNotArchived, authorizeProjectAccess(['Manager']), core.deleteProject);
 
-// Project-specific Activity Log
-router.get('/:projectId/activity', (req, res, next) => {
-    req.query.entityId = req.params.projectId; // Reuse the audit controller logic
-    return getLogs(req, res, next);
-});
+router.post('/:id/restore', authorizeProjectAccess(['Manager']), core.restoreProject);
 
+// ── MEMBERS DOMAIN (RBAC & Teams) ───────────────────────────────────────────
+router.route('/:id/members')
+    .post(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), validate(addMemberSchema), members.addMember);
+
+router.route('/:id/members/:userId')
+    .put(isNotArchived, authorizeProjectAccess(['Manager']), validate(updateMemberRoleSchema), members.updateMemberRole)
+    .delete(isNotArchived, authorizeProjectAccess(['Manager']), members.removeMember);
+
+// ── ACTIVITY & ANALYTICS DOMAIN ───────────────────────────────────────────────
+router.get('/:id/activity', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), activity.getProjectActivity);
+
+const analytics = require('../controllers/projectAnalytics.controller');
+router.get('/workspace/stats', analytics.getWorkspaceStats);
+router.get('/:id/insights', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), analytics.getProjectInsights);
 
 module.exports = router;

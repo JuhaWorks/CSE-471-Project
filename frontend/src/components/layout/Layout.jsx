@@ -1,15 +1,18 @@
 import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import Sidebar from './Sidebar';
+import SidebarComponent from './Sidebar';
 import TopBar from './TopBar';
+import GlobalPresence from './GlobalPresence';
+import { useIdleTimer } from '../../hooks/useIdleTimer';
 
 const Layout = () => {
+    useIdleTimer(); // Global idle tracking
     const [sidebarOpen, setSidebarOpen] = useState(false);
 
     return (
-        <div className="flex h-screen bg-[#0a0a12] text-white overflow-hidden">
+        <div className="flex h-screen bg-[var(--bg-base)] text-[var(--text-main)] overflow-hidden transition-colors duration-300">
             {/* Sidebar */}
-            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+            <SidebarComponent isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
             {/* Main Content Area */}
             <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
@@ -21,6 +24,9 @@ const Layout = () => {
                     <Outlet />
                 </main>
             </div>
+
+            {/* Global Presence Indicator */}
+            <GlobalPresence />
         </div>
     );
 };

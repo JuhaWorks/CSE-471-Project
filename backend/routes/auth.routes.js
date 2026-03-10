@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 // bcrypt, multer and schema validation are no longer needed here; they live in user.controller
 const { protect } = require('../middlewares/auth.middleware');
-const { registerUser, loginUser, logoutUser, refreshTokenUser, oauthCallback, verifyEmail, resendVerification, getMe } = require('../controllers/auth.controller');
+const { registerUser, loginUser, logoutUser, refreshTokenUser, oauthCallback, verifyEmail, resendVerification, getMe, updateStatus } = require('../controllers/auth.controller');
 const { authLimiter } = require('../middlewares/rateLimiter.middleware');
 const passport = require('passport');
 // reuse the helpers from user.controller to keep validation/upload logic in one place
@@ -57,5 +57,6 @@ router.post('/profile/avatar', protect, /* multer middleware defined below */(re
 router.delete('/profile/avatar', protect, removeAvatar);
 router.put('/profile', protect, updateProfile);
 router.put('/profile/password', protect, changePassword);
+router.put('/profile/status', protect, updateStatus);
 
 module.exports = router;

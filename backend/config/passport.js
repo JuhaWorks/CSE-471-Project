@@ -100,9 +100,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             {
                 clientID: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                // Using a relative URL lets Passport auto-resolve against the current server host regardless of environment
-                callbackURL: '/api/auth/google/callback',
-                proxy: true, // Forces passport to trust x-forwarded-proto from Render's load balancer
+                // Use absolute URL if BACKEND_URL is set, otherwise fallback to relative
+                callbackURL: process.env.BACKEND_URL
+                    ? `${process.env.BACKEND_URL}/api/auth/google/callback`
+                    : '/api/auth/google/callback',
+                scope: ['profile', 'email'],
+                proxy: true,
             },
             async (accessToken, refreshToken, profile, done) => {
                 await linkOrCreateUser(profile, 'google', 'googleId', done);
@@ -123,9 +126,11 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
             {
                 clientID: process.env.GITHUB_CLIENT_ID,
                 clientSecret: process.env.GITHUB_CLIENT_SECRET,
-                callbackURL: '/api/auth/github/callback',
-                scope: ['user:email'], // Explicitly request email
-                proxy: true, // Trusted proxy calculation fallback
+                callbackURL: process.env.BACKEND_URL
+                    ? `${process.env.BACKEND_URL}/api/auth/github/callback`
+                    : '/api/auth/github/callback',
+                scope: ['user:email'],
+                proxy: true,
             },
             async (accessToken, refreshToken, profile, done) => {
                 await linkOrCreateUser(profile, 'github', 'githubId', done);
