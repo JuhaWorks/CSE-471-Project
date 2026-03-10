@@ -226,6 +226,17 @@ const toggleMaintenance = async (req, res, next) => {
             ipAddress: req.ip
         }, 'System');
 
+        // Broadcast to every connected client so browsers can react instantly
+        try {
+            const { getIO } = require('../utils/socket');
+            getIO().emit('maintenanceChanged', {
+                enabled: !!enabled,
+                endTime: enabled ? endTime : null
+            });
+        } catch (socketErr) {
+            // Non-fatal — socket may not be initialized during tests
+        }
+
         res.status(200).json({
             status: 'success',
             data: config
@@ -234,6 +245,7 @@ const toggleMaintenance = async (req, res, next) => {
         next(error);
     }
 };
+
 
 // @desc    Update blocked IPs
 // @route   PUT /api/admin/system/blocked-ips

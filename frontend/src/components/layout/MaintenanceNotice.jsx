@@ -1,15 +1,39 @@
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 import { api, useAuthStore } from '../../store/useAuthStore';
+import { useSocketStore } from '../../store/useSocketStore';
 
 const MaintenanceNotice = () => {
     const { user } = useAuthStore();
     const location = useLocation();
+    const queryClient = useQueryClient();
+    const { socket } = useSocketStore();
+
     const { data: statusRes } = useQuery({
         queryKey: ['systemStatus'],
         queryFn: async () => (await api.get('/admin/system/status')).data,
-        refetchInterval: 60000, // Check every minute
+        refetchInterval: 10000, // Poll every 10s as backup
     });
+
+    // Real-time: react instantly when admin toggles maintenance via socket
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleMaintenanceChanged = ({ enabled }) => {
+            // Update the cached status so UI re-renders right away
+            queryClient.invalidateQueries({ queryKey: ['systemStatus'] });
+
+            // When maintenance ends, reload every browser (users & admins)
+            // Use a short delay so the query cache has time to update first
+            if (!enabled) {
+                setTimeout(() => window.location.reload(), 500);
+            }
+        };
+
+        socket.on('maintenanceChanged', handleMaintenanceChanged);
+        return () => socket.off('maintenanceChanged', handleMaintenanceChanged);
+    }, [socket, queryClient]);
 
     const status = statusRes?.data;
 
@@ -83,3 +107,4 @@ const MaintenanceNotice = () => {
 };
 
 export default MaintenanceNotice;
+
