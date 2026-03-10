@@ -58,10 +58,6 @@ const getProject = async (req, res, next) => {
 // @route   POST /api/projects
 const createProject = async (req, res, next) => {
     try {
-        if (req.user.role === 'Admin') {
-            res.status(403);
-            throw new Error('Administrators are restricted from creating projects. Please use a Manager or Developer account.');
-        }
         const { name, description, category, startDate, endDate } = req.body;
 
         const project = await Project.create({
