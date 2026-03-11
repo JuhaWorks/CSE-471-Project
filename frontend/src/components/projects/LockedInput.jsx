@@ -2,7 +2,7 @@ import React from 'react';
 import { useSocketStore } from '../../store/useSocketStore';
 import { useAuthStore } from '../../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Lock, UserEdit, ShieldAlert } from 'lucide-react';
+import { Lock, ShieldAlert } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
