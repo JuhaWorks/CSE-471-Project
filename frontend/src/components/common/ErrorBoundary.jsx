@@ -1,5 +1,14 @@
 import React from 'react';
 import * as Sentry from '@sentry/react';
+import { motion } from 'framer-motion';
+import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+
+/**
+ * Modern 2026 Error Boundary
+ * Glassmorphism 2.0, Agentic Ready, Sentry Integrated
+ */
 
 class ErrorBoundary extends React.Component {
     constructor(props) {
@@ -8,44 +17,61 @@ class ErrorBoundary extends React.Component {
     }
 
     static getDerivedStateFromError(error) {
-        // Update state so the next render will show the fallback UI
         return { hasError: true, error };
     }
 
     componentDidCatch(error, errorInfo) {
-        console.error('ErrorBoundary caught an error:', error, errorInfo);
+        console.error('Klivra Engine: Exception Caught | Check Diagnostics', error, errorInfo);
         Sentry.captureException(error, { extra: errorInfo });
     }
 
     render() {
         if (this.state.hasError) {
-            // Elegant, polite Fallback UI
             return (
-                <div className="w-full h-full flex items-center justify-center p-6 bg-white/[0.02] border border-white/[0.05] rounded-xl text-center min-h-[300px]">
-                    <div className="space-y-4">
-                        <div className="w-16 h-16 mx-auto bg-rose-500/10 rounded-full flex items-center justify-center">
-                            <svg className="w-8 h-8 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
+                <div className="w-full h-full flex items-center justify-center p-6 min-h-[400px]">
+                    <Card className="max-w-md w-full text-center" hoverable={false}>
+                        <motion.div
+                            initial={{ rotate: -10, opacity: 0 }}
+                            animate={{ rotate: 0, opacity: 1 }}
+                            className="w-16 h-16 mx-auto bg-red-500/10 rounded-2xl flex items-center justify-center mb-6 border border-red-500/20"
+                        >
+                            <AlertTriangle className="w-8 h-8 text-red-400" />
+                        </motion.div>
+                        
+                        <h3 className="text-xl font-black text-white mb-3 tracking-tighter">System Interruption</h3>
+                        <p className="text-gray-400 text-sm font-medium mb-8 leading-relaxed">
+                            The requested module encountered a fatal exception. Error diagnostics have been transmitted to the core team.
+                        </p>
+
+                        <div className="flex flex-col gap-3">
+                            <Button
+                                onClick={() => this.setState({ hasError: false, error: null })}
+                                leftIcon={RefreshCw}
+                                fullWidth
+                            >
+                                Re-initialize Component
+                            </Button>
+                            
+                            <Button
+                                variant="secondary"
+                                onClick={() => window.location.href = '/'}
+                                leftIcon={Home}
+                                fullWidth
+                            >
+                                Return to Base
+                            </Button>
                         </div>
-                        <div>
-                            <h3 className="text-lg font-bold text-white mb-2">Something went wrong.</h3>
-                            <p className="text-gray-400 text-sm max-w-sm mx-auto">
-                                We're sorry, but this component encountered an unexpected error. Our team has been notified.
+
+                        <div className="mt-8 pt-6 border-t border-white/5">
+                            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-600">
+                                Exception ID: {Math.random().toString(36).substring(7).toUpperCase()}
                             </p>
                         </div>
-                        <button
-                            onClick={() => this.setState({ hasError: false, error: null })}
-                            className="px-4 py-2 mt-2 bg-white/[0.05] hover:bg-white/[0.1] text-white text-sm font-medium rounded-lg transition-colors border border-white/[0.1]"
-                        >
-                            Try Reloading
-                        </button>
-                    </div>
+                    </Card>
                 </div>
             );
         }
 
-        // Render children normally if no error
         return this.props.children;
     }
 }

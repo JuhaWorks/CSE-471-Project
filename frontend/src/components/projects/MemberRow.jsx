@@ -1,10 +1,15 @@
 import React from 'react';
-import { User, Shield, UserMinus } from 'lucide-react';
+import { User, Shield, UserMinus, ChevronDown, MoreHorizontal, UserCog, History } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { cn } from '../../utils/cn';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { motion } from 'framer-motion';
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
- * Component representing a single member row in the project members table.
+ * Modern 2026 MemberRow Component
+ * Cinematic row interactions with Glassmorphism 2.0 dropdowns
  */
 const MemberRow = ({
     member,
@@ -21,54 +26,71 @@ const MemberRow = ({
     const isOnlyManager = member.role === 'Manager' && managerCount === 1;
 
     return (
-        <tr className="group hover:bg-white/[0.01] transition-colors">
-            <td className="px-6 py-5">
-                <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-zinc-800 to-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden">
-                        {member.userId?.avatar ? (
-                            <img src={member.userId.avatar} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                            <User className="w-5 h-5 text-zinc-600" />
+        <motion.tr 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="group hover:bg-white/[0.02] transition-colors"
+        >
+            <td className="px-10 py-6">
+                <div className="flex items-center gap-4">
+                    <div className="relative">
+                        <div className="w-12 h-12 rounded-2xl bg-[#09090b] border border-white/10 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105 shadow-xl">
+                            {member.userId?.avatar ? (
+                                <img src={member.userId.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-indigo-500/10 to-cyan-500/10 text-gray-400 font-black text-xs">
+                                    {member.userId?.name?.charAt(0)}
+                                </div>
+                            )}
+                        </div>
+                        {isSelf && (
+                            <div className="absolute -top-1.5 -right-1.5 px-2 py-0.5 rounded-md bg-cyan-500 text-[#09090b] text-[8px] font-black uppercase tracking-widest shadow-lg shadow-cyan-500/40 border border-white/20">
+                                You
+                            </div>
                         )}
                     </div>
                     <div>
-                        <p className="text-sm font-bold text-white leading-none">
+                        <p className="text-sm font-black text-white tracking-tight group-hover:text-cyan-400 transition-colors">
                             {member.userId?.name}
-                            {isSelf && (
-                                <span className="ml-2 text-[10px] text-emerald-400 font-medium bg-emerald-400/10 px-2 py-0.5 rounded-full border border-emerald-400/20 uppercase tracking-tighter">
-                                    You
-                                </span>
-                            )}
                         </p>
-                        <p className="text-xs text-zinc-500 mt-1">{member.userId?.email}</p>
+                        <p className="text-[10px] font-medium text-gray-500 mt-1 uppercase tracking-widest">{member.userId?.email}</p>
                     </div>
                 </div>
             </td>
-            <td className="px-6 py-5">
+            <td className="px-10 py-6">
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger
                         disabled={isViewer || (isSelf && isOnlyManager) || isUpdating}
                         className={cn(
-                            "flex items-center gap-2 px-3 py-1.5 rounded-xl border border-white/5 bg-zinc-900/50 text-xs font-bold text-zinc-300 transition-all outline-none",
-                            "hover:border-emerald-500/30 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            "flex items-center gap-3 px-4 py-2 rounded-xl border border-white/5 bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-gray-300 transition-all outline-none",
+                            "hover:border-cyan-500/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed group/trigger"
                         )}
                     >
-                        <Shield className="w-3.5 h-3.5 text-emerald-400" />
-                        {member.role}
+                        <Shield className="w-3.5 h-3.5 text-cyan-500/60 transition-colors group-hover/trigger:text-cyan-400" />
+                        <span>{member.role}</span>
+                        <ChevronDown className="w-3 h-3 text-gray-600 transition-transform group-data-[state=open]:rotate-180" />
                     </DropdownMenu.Trigger>
 
                     <DropdownMenu.Portal>
-                        <DropdownMenu.Content className="z-[100] min-w-[140px] bg-zinc-900 border border-white/10 rounded-2xl p-1 shadow-2xl animate-in fade-in zoom-in duration-200">
+                        <DropdownMenu.Content 
+                            className="z-[200] min-w-[180px] glass-2 bg-[#09090b]/80 border border-white/10 rounded-[1.5rem] p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+                            sideOffset={8}
+                        >
+                            <div className="px-3 py-2 text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1">Select Clearance</div>
                             {['Manager', 'Editor', 'Viewer'].map((role) => (
                                 <DropdownMenu.Item
                                     key={role}
                                     onClick={() => onUpdateRole(member.userId._id, role)}
                                     className={cn(
-                                        "flex items-center gap-2 px-3 py-2 text-xs font-bold rounded-xl cursor-pointer outline-none transition-all",
-                                        member.role === role ? "text-emerald-400" : "text-zinc-400",
-                                        "hover:text-white hover:bg-emerald-600"
+                                        "flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-pointer outline-none transition-all",
+                                        member.role === role ? "bg-cyan-500/10 text-cyan-400" : "text-gray-400",
+                                        "hover:bg-white/5 hover:text-white"
                                     )}
                                 >
+                                    <div className={cn(
+                                        "w-1.5 h-1.5 rounded-full transition-all",
+                                        member.role === role ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" : "bg-gray-800"
+                                    )} />
                                     {role}
                                 </DropdownMenu.Item>
                             ))}
@@ -76,21 +98,32 @@ const MemberRow = ({
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
             </td>
-            <td className="px-6 py-5 text-xs text-zinc-500">
-                {new Date(member.joinedAt).toLocaleDateString()}
+            <td className="px-10 py-6">
+                <div className="flex items-center gap-2 text-gray-500">
+                    <History className="w-3.5 h-3.5 opacity-40" />
+                    <span className="text-[10px] font-black uppercase tracking-widest">
+                        {new Date(member.joinedAt).toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                </div>
             </td>
-            <td className="px-6 py-5 text-right">
-                {canManage && !isSelf && (
-                    <button
-                        onClick={() => onRemove(member.userId._id)}
-                        disabled={isRemoving}
-                        className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-400/10 rounded-xl transition-all disabled:opacity-20"
-                    >
-                        <UserMinus className="w-4 h-4" />
+            <td className="px-10 py-6 text-right">
+                <div className="flex items-center justify-end gap-2">
+                    {canManage && !isSelf && (
+                        <button
+                            onClick={() => onRemove(member.userId._id)}
+                            disabled={isRemoving}
+                            className="p-3 text-gray-600 hover:text-red-400 hover:bg-red-400/10 rounded-2xl transition-all disabled:opacity-20 active:scale-90 border border-transparent hover:border-red-500/20 shadow-xl"
+                            title="De-authorize Agent"
+                        >
+                            <UserMinus className="w-4 h-4" />
+                        </button>
+                    )}
+                    <button className="p-3 text-gray-600 hover:text-white hover:bg-white/5 rounded-2xl transition-all border border-transparent hover:border-white/10 active:scale-90">
+                        <UserCog className="w-4 h-4" />
                     </button>
-                )}
+                </div>
             </td>
-        </tr>
+        </motion.tr>
     );
 };
 

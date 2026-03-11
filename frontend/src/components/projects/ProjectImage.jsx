@@ -1,5 +1,15 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ImageIcon } from 'lucide-react';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+const cn = (...inputs) => twMerge(clsx(inputs));
+
+/**
+ * Modern 2026 Project Image Primitive
+ * Performance-first, cinematic fallback, Glassmorphism 2.0
+ */
 
 const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
     const [imageLoaded, setImageLoaded] = useState(false);
@@ -9,43 +19,65 @@ const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
     const initial = project?.name?.charAt(0) || 'P';
 
     return (
-        <div className={`relative overflow-hidden ${aspect} ${className}`}>
+        <div className={cn("relative overflow-hidden group", aspect, className)}>
             <AnimatePresence mode="wait">
                 {hasImage ? (
-                    <motion.img
-                        key="image"
-                        src={project.coverImageUrl}
-                        alt={project.name}
-                        onLoad={() => setImageLoaded(true)}
-                        onError={() => setImageError(true)}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: imageLoaded ? 1 : 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.5 }}
-                        className="w-full h-full object-cover"
-                    />
-                ) : (
                     <motion.div
-                        key="fallback"
+                        key="image-container"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="w-full h-full bg-gradient-to-br from-emerald-500 to-purple-600 flex items-center justify-center relative group"
+                        className="w-full h-full"
                     >
-                        {/* Elegant background texture */}
-                        <div className="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_white_1px,_transparent_1px)] bg-[length:20px_20px]" />
+                        <motion.img
+                            src={project.coverImageUrl}
+                            alt={project.name}
+                            onLoad={() => setImageLoaded(true)}
+                            onError={() => setImageError(true)}
+                            className={cn(
+                                "w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105",
+                                !imageLoaded && "opacity-0"
+                            )}
+                        />
+                        {/* Shimmer overlay for loading */}
+                        <AnimatePresence>
+                            {!imageLoaded && (
+                                <motion.div 
+                                    exit={{ opacity: 0 }}
+                                    className="absolute inset-0 bg-white/5 animate-pulse" 
+                                />
+                            )}
+                        </AnimatePresence>
+                    </motion.div>
+                ) : (
+                    <motion.div
+                        key="fallback"
+                        initial={{ opacity: 0, scale: 1.1 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        className="w-full h-full flex items-center justify-center relative overflow-hidden"
+                    >
+                        {/* 2026 Gradient Mesh Fallback */}
+                        <div className="absolute inset-0 bg-gradient-to-br from-[#1e293b] to-[#0f172a]" />
+                        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-cyan-500/10 rounded-full blur-[100px] animate-pulse" />
+                        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-blue-600/10 rounded-full blur-[100px] animate-pulse" />
+                        
+                        {/* Grainy Texture */}
+                        <div className="absolute inset-0 opacity-[0.03] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] blend-overlay pointer-events-none" />
 
                         <div className="relative z-10 flex flex-col items-center">
-                            <span className="text-white font-black text-4xl sm:text-5xl uppercase tracking-tighter drop-shadow-2xl">
+                            <span className="text-white font-black text-6xl uppercase tracking-tighter drop-shadow-[0_0_30px_rgba(255,255,255,0.2)]">
                                 {initial}
                             </span>
+                            <div className="absolute -inset-4 border border-white/5 rounded-[2rem] opacity-20 group-hover:scale-110 transition-transform duration-500" />
                         </div>
                     </motion.div>
                 )}
             </AnimatePresence>
 
-            {/* Subtle overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none" />
+            {/* Cinematic Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent pointer-events-none" />
+            <div className="absolute inset-0 border border-white/5 rounded-[inherit] pointer-events-none" />
         </div>
     );
 };

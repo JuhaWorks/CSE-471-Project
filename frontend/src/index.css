@@ -6,165 +6,116 @@
 
 @layer base {
   :root {
-    /* ── Semantic Colors: Light Mode (Muted Warm Sage) ── */
-    --bg-base: #d8d5cf;       /* Deep warm taupe — noticeably dim and calm */
-    --bg-surface: #e2ded8;    /* Slightly lighter for cards */
-    --bg-elevated: #ccc9c3;   /* Deeper for hover states */
-    --text-main: #1a1a1e;     /* Rich near-black — crisp contrast */
-    --text-muted: #6b6860;    /* Warm mid-tone for labels */
-    --border-subtle: rgba(50, 40, 30, 0.12);
-    --shadow-color: rgba(50, 40, 30, 0.08);
+    /* ── 2026 Fluid Typography System ── */
+    --font-size-xs: clamp(0.7rem, 0.6rem + 0.5vw, 0.8rem);
+    --font-size-sm: clamp(0.8rem, 0.7rem + 0.5vw, 0.95rem);
+    --font-size-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
+    --font-size-lg: clamp(1.125rem, 1rem + 0.6vw, 1.35rem);
+    --font-size-xl: clamp(1.35rem, 1.2rem + 0.8vw, 1.75rem);
+    --font-size-2xl: clamp(1.75rem, 1.5rem + 1vw, 2.5rem);
 
-    --background: 35 10% 84%;
-    --foreground: 240 5% 12%;
+    /* ── Glassmorphism 2.0 Design Tokens ── */
+    --glass-bg: rgba(255, 255, 255, 0.03);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.2);
+    --glass-blur: blur(24px);
+    
+    /* ── System Adaptive Colors (Prefers Light/Dark fallback) ── */
+    --bg-base: light-dark(#f8fafc, #09090b);
+    --bg-surface: light-dark(rgba(255, 255, 255, 0.7), rgba(15, 15, 18, 0.6));
+    --text-main: light-dark(#1e293b, #f1f5f9);
+    --text-muted: light-dark(#64748b, #94a3b8);
+    --accent-primary: #06b6d4;
+    --accent-secondary: #3b82f6;
 
-    --primary: 152 76% 51%;
-    /* emerald-400 */
-    --primary-foreground: 0 0% 0%;
-
-    --card: 0 0% 5%;
-    --card-foreground: 0 0% 90%;
-
-    --border: 0 0% 12%;
-    --input: 0 0% 12%;
-    --ring: 152 76% 51%;
-
-    /* Klivra Premium Tokens */
-    --k-accent: #34d399;
-    /* Green */
-    --k-accent-soft: rgba(52, 211, 153, 0.1);
-    --k-surface: #0a0a0c;
-    --k-border: rgba(255, 255, 255, 0.08);
-    /* Silver outline */
-    --k-text-dim: #9ca3af;
-    /* Silver text */
-
-    /* ── Gradient Tokens ── */
-    --grad-primary: linear-gradient(135deg, #10b981 0%, #059669 100%);
-    --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
-    --grad-glow: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
-    --grad-mesh: radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-                 radial-gradient(at 100% 0%, rgba(52, 211, 153, 0.05) 0%, transparent 50%),
-                 radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
-                 radial-gradient(at 0% 100%, rgba(52, 211, 153, 0.05) 0%, transparent 50%);
-
-    /* Dynamic Theme Overrides (Default: Sage Emerald) */
-    --theme-400: 78 205 163;  /* Softer sage-teal #4ecda3 */
-    --theme-500: 45 179 138;  /* Muted emerald #2db38a */
-    --theme-600: 22 149 110;  /* Deeper forest #16956e */
-    --theme-900: 10 78 59;    /* Very dark green #0a4e3b */
+    /* ── Premium Niche Gradients ── */
+    --grad-primary: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
+    --grad-mesh: radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
+                 radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+    
+    --text-hue: linear-gradient(to right, #00f2fe 0%, #4facfe 30%, #a855f7 70%, #ec4899 100%);
+    
+    color-scheme: light dark;
   }
 
-  /* --- Alternate Themes --- */
-
-  /* Soft Lavender */
-  .theme-neon-purple {
-    --theme-400: 188 170 255; /* Muted lavender #bcaaff */
-    --theme-500: 155 135 245; /* #9b87f5 */
-    --theme-600: 120 95 220;  /* #785fdc */
-    --theme-900: 72 42 149;   /* #482a95 */
-  }
-
-  /* Warm Amber */
-  .theme-cyber-yellow {
-    --theme-400: 255 213 128; /* Warm honey #ffd580 */
-    --theme-500: 245 190 80;  /* Muted amber #f5be50 */
-    --theme-600: 210 145 40;  /* Burnished gold #d29128 */
-    --theme-900: 120 75 15;   /* #784b0f */
-  }
-
-  /* Dusty Rose */
-  .theme-crimson-red {
-    --theme-400: 255 152 162; /* Soft coral rose #ff98a2 */
-    --theme-500: 240 100 115; /* Muted rose #f06473 */
-    --theme-600: 200 60 80;   /* Deeper rose #c83c50 */
-    --theme-900: 120 25 40;   /* #781928 */
-  }
-
-  /* --- Display Modes --- */
-  .dark {
-    /* ── Semantic Colors: Dark Mode (Deep Charcoal) ── */
-    --bg-base: #0e0f14;         /* Deep charcoal, slight blue tint */
-    --bg-surface: #13151c;      /* Card surface, a step lighter */
-    --bg-elevated: #1a1d27;     /* Elevated modals/dropdowns */
-    --text-main: #dde1e8;       /* Soft warm-white text */
-    --text-muted: #7a828f;      /* Matching muted slate */
-    --border-subtle: rgba(255, 255, 255, 0.07);
-    --shadow-color: rgba(0, 0, 0, 0.4);
-
-    --background: 223 16% 7%;
-    --foreground: 0 0% 87%;
-  }
-
-  *,
-  *::before,
-  *::after {
+  /* ── Reset & Baseline ── */
+  *, *::before, *::after {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    border-color: var(--glass-border);
   }
 
   html {
-    font-synthesis: none;
-    text-rendering: optimizeLegibility;
+    font-size: var(--font-size-base);
     -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+    scroll-behavior: smooth;
   }
 
   body {
     background: var(--bg-base);
     color: var(--text-main);
+    font-family: 'Inter', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
     min-height: 100vh;
-    font-family: 'Osiris', 'Orbitron', 'Syncopate', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    transition: background-color 0.3s ease, color 0.3s ease;
+    overflow-x: hidden;
+    line-height: 1.6;
   }
 }
 
 @layer components {
   .serif {
-    font-family: 'Osiris', 'Orbitron', 'Syncopate', serif;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-weight: 800;
+  }
+
+  /* ── Glassmorphism 2.0 Primitives ── */
+  .glass-2 {
+    background: var(--bg-surface);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    border-radius: 1.5rem;
   }
 
   .k-card {
-    @apply bg-[var(--bg-surface)] border border-[var(--border-subtle)] backdrop-blur-xl rounded-2xl transition-all duration-500;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     background-image: var(--grad-surface);
-  }
 
-  .k-card-hover {
-    @apply hover:border-[rgba(var(--theme-500),0.3)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-1 shadow-sm;
-  }
-
-  .k-input {
-    @apply w-full bg-[rgba(var(--bg-surface),0.5)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-300 focus:border-[rgba(var(--theme-500),0.5)] focus:ring-4 focus:ring-[rgba(var(--theme-500),0.05)] placeholder:text-[var(--text-muted)];
-    backdrop-filter: blur(10px);
+    &.hoverable:hover {
+      transform: translateY(-4px) scale(1.01);
+      border-color: rgba(var(--accent-primary), 0.3);
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+    }
   }
 
   .k-button-primary {
-    @apply relative overflow-hidden text-black font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-500/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none;
+    @apply relative overflow-hidden font-bold py-2.5 px-6 rounded-xl transition-all duration-300;
     background: var(--grad-primary);
+    color: white;
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.2);
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+    }
+
+    &:active {
+      transform: scale(0.96);
+    }
   }
 
-  .k-button-primary::after {
-    content: '';
-    @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300;
+  .text-hue {
+    @apply bg-clip-text text-transparent opacity-90;
+    background-image: var(--text-hue);
+    background-size: 200% auto;
+    animation: text-hue-shift 8s linear infinite;
   }
+}
 
-  .k-button-primary:hover::after {
-    @apply opacity-100;
-  }
-
-  .k-glass {
-    @apply bg-[rgba(var(--bg-surface),0.7)] backdrop-blur-2xl border border-[var(--border-subtle)];
-    background-image: var(--grad-surface);
-  }
-
-  .glass-stroke {
-    @apply border border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)];
-  }
-
-  .mesh-bg {
-    background-image: var(--grad-mesh);
-  }
+@keyframes text-hue-shift {
+  0% { background-position: 0% 50% }
+  100% { background-position: 200% 50% }
 }
 
 /* ── Smooth Scrollbar ───────────────────────────────────── */
@@ -253,4 +204,80 @@ html:not(.dark) {
   .ring-\[#0a0a12\] {
     --tw-ring-color: var(--bg-surface) !important;
   }
+
+  /* ── Fixes for Recent UI Overhaul (Light Mode Legibility) ── */
+  
+  /* Make gray-500 readable (was missing from overrides) */
+  .text-gray-500 {
+    color: #4b4b52 !important;
+  }
+
+  /* Darken bright emerald/green texts */
+  .text-emerald-400,
+  .text-emerald-300,
+  .hover\:text-emerald-400:hover,
+  .hover\:text-emerald-300:hover,
+  .group-hover\:text-emerald-400:hover,
+  .text-\[rgb\(var\(--theme-400\)\)\] {
+    color: #059669 !important; /* emerald-600 */
+  }
+
+  /* Darken red warnings */
+  .text-red-400,
+  .hover\:text-red-400:hover,
+  .hover\:text-red-300:hover {
+    color: #dc2626 !important; /* red-600 */
+  }
+
+  /* Darken gradient text for Home greeting */
+  .from-emerald-400 {
+    --tw-gradient-from: #047857 !important; /* emerald-700 */
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+  }
+  .to-emerald-600 {
+    --tw-gradient-to: #065f46 !important; /* emerald-800 */
+  }
+
+}
+
+/* ── Vanguard 2026: Spatial Computing & Adaptive Density ── */
+@media (pointer: coarse) {
+  :root {
+    --ui-density: 1.15;
+  }
+}
+
+@media (pointer: fine) {
+  :root {
+    --ui-density: 0.95;
+  }
+}
+
+/* ── Vanguard 2026: Advanced Optical OKLCH Gamut Mapping ── */
+:root[data-color-gamut="p3"] {
+  --accent-primary: color(display-p3 0.05 0.75 0.9);
+  --accent-secondary: color(display-p3 0.25 0.55 0.95);
+  --text-hue: linear-gradient(
+    to right, 
+    color(display-p3 0 0.9 1) 0%, 
+    color(display-p3 0.3 0.65 1) 30%, 
+    color(display-p3 0.65 0.3 0.95) 70%, 
+    color(display-p3 0.9 0.25 0.6) 100%
+  );
+}
+
+/* ── Vanguard 2026: Spatial Z-Axis Hierarchy ── */
+.spatial-stack-base {
+  transform: translateZ(10px);
+  filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+}
+
+.spatial-stack-elevated {
+  transform: translateZ(30px) rotateX(2deg);
+  filter: drop-shadow(0 20px 25px rgba(0,0,0,0.3));
+}
+
+.spatial-stack-floating {
+  transform: translateZ(60px) rotateX(5deg);
+  filter: drop-shadow(0 40px 50px rgba(0,0,0,0.5));
 }

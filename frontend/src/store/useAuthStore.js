@@ -117,7 +117,7 @@ export const useAuthStore = create((set, get) => ({
     accessToken: null,
     isAuthenticated: false,
     isLoading: false,
-    isCheckingAuth: false, // Default to false to avoid hang, set to true inside checkAuth
+    isCheckingAuth: true, // Set to true by default to prevent premature redirects on mount
     error: null,
     setAccessToken: (token) => set({ accessToken: token }),
     clearError: () => set({ error: null }),

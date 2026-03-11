@@ -1,66 +1,90 @@
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, Suspense } from 'react';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { preload } from 'react-dom';
+import { 
+    FolderKanban, CheckSquare, Zap, Plus, ChevronRight, Activity, 
+    Lock, Cpu, Network, Trophy, RefreshCw
+} from 'lucide-react/dist/esm/lucide-react';
 import ApodWidget from '../components/tools/ApodWidget';
 import { useSocketStore } from '../store/useSocketStore';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
 
-// ─── Config ──────────────────────────────────────────────────────────────────
+// ── Vanguard 2026: Physics Configuration ──
+const LIQUID_SPRING = { type: 'spring', stiffness: 260, damping: 20, mass: 0.5 };
+const KINETIC_SPRING = { type: 'spring', stiffness: 100, damping: 30 };
 
-// ─── Shared primitives (Replaced by global index.css) ──────────────────────
+// ── Vanguard 2026: Error Boundary ──
+class DashboardErrorBoundary extends React.Component {
+    constructor(props) { super(props); this.state = { hasError: false }; }
+    static getDerivedStateFromError() { return { hasError: true }; }
+    render() {
+        if (this.state.hasError) {
+            return (
+                <div className="w-full flex-1 flex flex-col items-center justify-center p-10 bg-rose-500/5 rounded-[3rem] border border-rose-500/20 text-center">
+                    <RefreshCw className="w-8 h-8 text-rose-500 mb-4" />
+                    <h2 className="text-xl font-black text-rose-400">Dashboard Synchronization Failed</h2>
+                </div>
+            );
+        }
+        return this.props.children;
+    }
+}
 
-const Ico = ({ d, size = 16, sw = 1.5, stroke = 'currentColor', fill = 'none' }) => (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke={stroke}
-        strokeWidth={sw} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-        <path d={d} />
-    </svg>
-);
-
-const Tag = ({ children }) => (
-    <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.08] text-gray-500">
-        {children}
-    </span>
-);
-
-const SectionHead = ({ title, badge, action }) => (
-    <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-            <h3 className="text-sm font-bold text-gray-300 uppercase tracking-wider">{title}</h3>
-            {badge !== undefined && (
-                <span className="text-xs font-medium text-gray-600">({badge})</span>
-            )}
+// ── Vanguard 2026: Zero-CLS Skeleton Array ──
+const ActivitySkeleton = () => (
+    <div className="flex items-center gap-5 border-b border-[oklch(100%_0_0/0.03)] pb-4 mb-4 opacity-50 animate-pulse">
+        <div className="w-10 h-10 rounded-2xl bg-[oklch(100%_0_0/0.05)] border border-[oklch(100%_0_0/0.05)]" />
+        <div className="flex-1 space-y-2">
+            <div className="h-4 w-3/4 rounded-md bg-[oklch(100%_0_0/0.05)]" />
+            <div className="h-2 w-1/4 rounded-md bg-[oklch(100%_0_0/0.05)]" />
         </div>
-        {action}
     </div>
 );
-
-// ─── Home ─────────────────────────────────────────────────────────────────────
 
 const Home = () => {
     const { user } = useAuthStore();
     const { onlineUsers } = useSocketStore();
     const canViewActivity = user && ['Admin', 'Manager'].includes(user.role);
+    const containerRef = useRef(null);
     const parentRef = useRef();
+
+    // ── Vanguard 2026: Kinetics & Parallax 3.0 ──
+    const { scrollYProgress } = useScroll({ container: containerRef });
+    const parallaxY1 = useTransform(scrollYProgress, [0, 1], [0, 150]);
+    const parallaxY2 = useTransform(scrollYProgress, [0, 1], [0, -100]);
+    const kineticLetterSpacing = useTransform(scrollYProgress, [0, 0.2], ['-0.05em', '0em'], KINETIC_SPRING);
+    const kineticScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
+
+    // LCP Speculative Preload
+    useEffect(() => {
+        preload('/fonts/Inter-Black.woff2', { as: 'font', type: 'font/woff2', fetchpriority: 'high', crossOrigin: 'anonymous' });
+        // M2M Agent Intent Broadcast
+        document.documentElement.setAttribute('data-agent-context', 'dashboard-overview');
+    }, []);
 
     const { data: actRes, isLoading: actLoading } = useQuery({
         queryKey: ['activityFeed'],
-        queryFn: async () => (await api.get('/audit?limit=100')).data,
+        queryFn: async ({ signal }) => (await api.get('/audit?limit=100', { signal })).data,
         staleTime: 1000 * 60 * 5,
         enabled: canViewActivity,
     });
 
     const activity = actRes?.data || [];
 
-    const { data: statsRes, isLoading: statsLoading } = useQuery({
+    const { data: statsRes } = useQuery({
         queryKey: ['workspaceStats'],
-        queryFn: async () => (await api.get('/projects/workspace/stats')).data,
+        queryFn: async ({ signal }) => (await api.get('/projects/workspace/stats', { signal })).data,
         staleTime: 1000 * 60 * 5,
     });
 
-    const { data: platformStatsRes, isLoading: platformLoading } = useQuery({
+    const { data: platformStatsRes } = useQuery({
         queryKey: ['platformStats'],
-        queryFn: async () => (await api.get('/admin/stats')).data,
+        queryFn: async ({ signal }) => (await api.get('/admin/stats', { signal })).data,
         enabled: user?.role === 'Admin',
         staleTime: 1000 * 60 * 5,
     });
@@ -71,210 +95,252 @@ const Home = () => {
             totalTasks: platformStatsRes?.data?.tasks.total || 0,
             completedTasks: platformStatsRes?.data?.tasks.completed || 0,
             pendingTasks: platformStatsRes?.data?.tasks.pending || 0,
-            inProgressTasks: 0, // Admin view doesn't need this granular split here
             completionPct: platformStatsRes?.data?.tasks.completionPct || 0,
             totalProjects: platformStatsRes?.data?.projects.total || 0
         }
-        : statsRes?.data || {
-            activeProjects: 0,
-            totalTasks: 0,
-            completedTasks: 0,
-            pendingTasks: 0,
-            inProgressTasks: 0,
-            completionPct: 0
-        };
+        : statsRes?.data || { activeProjects: 0, totalTasks: 0, completedTasks: 0, pendingTasks: 0, completionPct: 0 };
 
     const STATS = [
-        { label: 'Active Projects', value: statsData.activeProjects, sub: `${statsData.totalProjects || 0} total`, icon: 'M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z', g: ['rgb(var(--theme-600))', 'rgb(var(--theme-400))'], glow: 'rgba(var(--theme-500), 0.18)' },
-        { label: 'Total Tasks', value: statsData.totalTasks, sub: `${statsData.pendingTasks} pending`, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4', g: ['#374151', '#9ca3af'], glow: 'rgba(156,163,175,.18)' },
-        { label: 'Completed', value: statsData.completedTasks, sub: `${statsData.completionPct}% complete`, icon: 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z', g: ['rgb(var(--theme-600))', 'rgb(var(--theme-500))'], glow: 'rgba(var(--theme-500), 0.18)' },
-        { label: 'Team Members', value: onlineUsers.filter(u => u.status !== 'Offline').length, sub: '3 online now', icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z', g: ['#1f2937', '#6b7280'], glow: 'rgba(107,114,128,.18)' },
-    ];
-
-    const TASKS = [
-        { status: 'Pending', count: statsData.pendingTasks, pct: statsData.totalTasks > 0 ? `${(statsData.pendingTasks / statsData.totalTasks) * 100}%` : '0%', color: '#4b5563' },
-        { status: 'In Progress', count: statsData.inProgressTasks, pct: statsData.totalTasks > 0 ? `${(statsData.inProgressTasks / statsData.totalTasks) * 100}%` : '0%', color: '#9ca3af' },
-        { status: 'Completed', count: statsData.completedTasks, pct: statsData.totalTasks > 0 ? `${(statsData.completedTasks / statsData.totalTasks) * 100}%` : '0%', color: 'rgb(var(--theme-400))' },
+        { label: 'Active Projects', value: statsData.activeProjects, sub: `${statsData.totalProjects || 0} total`, icon: FolderKanban, color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+        { label: 'Total Tasks', value: statsData.totalTasks, sub: `${statsData.pendingTasks} pending`, icon: CheckSquare, color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+        { label: 'Platform Velocity', value: statsData.completedTasks, sub: `${statsData.completionPct}% output`, icon: Zap, color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+        { label: 'Neural Nodes', value: onlineUsers.filter(u => u.status !== 'Offline').length, sub: 'Quantum Link Active', icon: Network, color: 'text-fuchsia-400', bg: 'bg-fuchsia-500/10' },
     ];
 
     const virt = useVirtualizer({
         count: activity.length,
         getScrollElement: () => parentRef.current,
-        estimateSize: () => 60,
+        estimateSize: () => 76,
         overscan: 5,
     });
 
     const [greeting, setGreeting] = useState('');
-
     useEffect(() => {
-        const update = () => {
-            const h = new Date().getHours();
-            if (h < 5) setGreeting('Good night');
-            else if (h < 12) setGreeting('Good morning');
-            else if (h < 17) setGreeting('Good afternoon');
-            else setGreeting('Good evening');
-        };
-        update();
-        const t = setInterval(update, 60000);
-        return () => clearInterval(t);
+        const h = new Date().getHours();
+        if (h < 5) setGreeting('System Standby');
+        else if (h < 12) setGreeting('Morning Session');
+        else if (h < 17) setGreeting('Peak Frequency');
+        else setGreeting('Evening Sync');
     }, []);
 
-    const firstName = user?.name?.split(' ')[0] || 'there';
+    const firstName = user?.name?.split(' ')[0] || 'Operator';
 
     return (
-        <div className="p-8 max-w-[1400px] mx-auto flex flex-col gap-8">
+        <article 
+            ref={containerRef} 
+            className="space-y-12 pb-20 relative h-[calc(100vh-100px)] overflow-y-auto custom-scrollbar @container"
+            aria-description="Main operations dashboard and platform telemetry."
+        >
+            {/* Parallax 3.0 Background Layers */}
+            <motion.div style={{ y: parallaxY1 }} className="absolute -top-40 right-10 w-[40vw] h-[40vw] bg-cyan-500/5 rounded-full blur-[140px] pointer-events-none -z-10 mix-blend-screen" aria-hidden />
+            <motion.div style={{ y: parallaxY2 }} className="absolute top-60 -left-20 w-[30vw] h-[30vw] bg-fuchsia-600/5 rounded-full blur-[120px] pointer-events-none -z-10 mix-blend-screen" aria-hidden />
 
-            {/* ── Header ── */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-                <div>
-                    <h1 className="serif text-4xl tracking-tight text-white mb-2">
-                        {greeting}, <span className="bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent italic">{firstName}</span> 👋
-                    </h1>
-                    <p className="text-sm font-medium text-gray-400 max-w-md leading-relaxed">
-                        {user?.role === 'Admin'
-                            ? "Platform security and oversight control center. Monitoring all neural nodes."
-                            : "Welcome back. Here's your workspace overview and recent activity."}
-                    </p>
-                </div>
-
-                {user?.role !== 'Admin' && (
-                    <Link to="/whiteboard/team-alpha" className="k-button-primary flex items-center gap-2 text-sm no-underline">
-                        <Ico d="M12 4v16m8-8H4" size={16} sw={2.5} />
-                        Open Whiteboard
-                    </Link>
-                )}
-            </header>
-
-            {/* ── Stats ── */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                {STATS.map((s, i) => (
-                    <div key={i} className="k-card k-card-hover p-6 relative overflow-hidden group border-white/5">
-                        {/* subtle bg glow */}
-                        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-20 pointer-events-none transition-all duration-700 group-hover:opacity-40 blur-3xl" style={{ background: s.g[1] }} />
-
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 glass-stroke transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
-                            style={{ background: `linear-gradient(135deg, ${s.g[0]}, ${s.g[1]})`, boxShadow: `0 8px 16px -4px ${s.glow}` }}>
-                            <Ico d={s.icon} size={20} stroke="black" sw={2.5} />
+            <DashboardErrorBoundary>
+                {/* ── Header Area (Kinetic Typography) ── */}
+                <header className="relative pt-10 z-10 w-full">
+                    <div className="flex flex-col @4xl:flex-row @4xl:items-end justify-between gap-8">
+                        <div className="space-y-3">
+                            <motion.div
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={LIQUID_SPRING}
+                                className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-[oklch(100%_0_0/0.03)] border border-[oklch(100%_0_0/0.05)] text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]"
+                                data-agent-intent="system-status-indicator"
+                            >
+                                <Cpu className="w-3 h-3 animate-pulse" />
+                                <span>Node Status: Standard</span>
+                            </motion.div>
+                            
+                            {/* Kinetic Typography */}
+                            <motion.h1 
+                                style={{ letterSpacing: kineticLetterSpacing, scale: kineticScale }}
+                                className="text-[length:clamp(3rem,6vw,5rem)] font-black tracking-tighter text-white leading-none transform-origin-left"
+                            >
+                                {greeting}, <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-indigo-400 to-fuchsia-400 animate-pulse bg-[length:200%_auto]">{firstName}</span>.
+                            </motion.h1>
+                            
+                            <motion.p 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1, ...LIQUID_SPRING }}
+                                className="text-gray-500 font-medium text-[length:clamp(1rem,1.5vw,1.125rem)] max-w-xl leading-relaxed"
+                            >
+                                {user?.role === 'Admin'
+                                    ? "Platform architectural integrity preserved. Monitoring global nexus activity and machine telemetry."
+                                    : "Workspace is operational. All neural links are stable and ready for dispatch."}
+                            </motion.p>
                         </div>
 
-                        <div className="flex flex-col gap-1 relative z-10">
-                            <span className="text-3xl font-bold text-white tracking-tighter mb-0.5">
-                                {s.label === 'Team Members' ? onlineUsers.filter(u => u.status !== 'Offline').length : s.value}
-                            </span>
-                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-emerald-400 transition-colors">
-                                {s.label}
-                            </span>
-                            <div className="flex items-center gap-2 mt-3">
-                                <div className="h-1 flex-1 bg-white/[0.04] rounded-full overflow-hidden">
-                                    <div className="h-full bg-gradient-to-r from-emerald-500/50 to-emerald-400/50 w-2/3 rounded-full" />
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.2, ...LIQUID_SPRING }}
+                            className="shrink-0"
+                        >
+                            <Button 
+                                variant="primary" 
+                                size="lg" 
+                                leftIcon={Plus}
+                                as={Link}
+                                to="/projects"
+                                data-agent-intent="create-new-project-initiative"
+                                hapticIntensity="light"
+                                className="shadow-[inset_0_1px_1px_rgba(255,255,255,0.2),_0_15px_30px_rgba(6,182,212,0.3)]"
+                            >
+                                New Initiative
+                            </Button>
+                        </motion.div>
+                    </div>
+                </header>
+
+                {/* ── Vanguard 2026: Generative UI Grid ── */}
+                <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 @container" aria-label="System Metrics">
+                    {STATS.map((s, i) => (
+                        <Card 
+                            key={i} 
+                            className="group relative overflow-hidden bg-[oklch(100%_0_0/0.02)] border-[oklch(100%_0_0/0.05)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)] !p-8 transform-gpu transition-all duration-500 hover:-translate-y-2 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)]"
+                            data-agent-intent={`view-metric-${s.label.toLowerCase()}`}
+                        >
+                            {/* Confidence Indicator (AI Readiness) */}
+                            <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_rgba(52,211,153,0.8)]" aria-label="High Confidence Metric" />
+
+                            <div className={cn("absolute -top-12 -right-12 w-32 h-32 rounded-full blur-[50px] opacity-20 transition-all duration-700 group-hover:opacity-40", s.bg.replace('bg-', 'bg-'))} aria-hidden />
+
+                            <div className="relative z-10 flex flex-col justify-between h-full gap-8">
+                                <div className={cn("w-14 h-14 rounded-[1.25rem] flex items-center justify-center border border-white/10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6 shadow-inner", s.bg)}>
+                                    <s.icon className={cn("w-6 h-6", s.color)} />
                                 </div>
-                                <span className="text-[9px] font-bold text-gray-700 whitespace-nowrap">
-                                    {s.label === 'Team Members' ? `${onlineUsers.filter(u => u.status !== 'Offline').length} node(s)` : s.sub}
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
+                                
+                                <div className="space-y-1">
+                                    <motion.span 
+                                        className="text-5xl font-black text-white block tracking-tighter"
+                                        initial={{ scale: 0.8, opacity: 0 }}
+                                        animate={{ scale: 1, opacity: 1 }}
+                                        transition={{ delay: i * 0.1, ...LIQUID_SPRING }}
+                                    >
+                                        {s.value}
+                                    </motion.span>
+                                    <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-white transition-colors duration-300">
+                                        {s.label}
+                                    </span>
+                                </div>
 
-            {/* ── Widgets row ── */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Task Overview */}
-                <div className="k-card p-6 flex flex-col">
-                    <SectionHead title="Task Overview" badge={null} action={<Tag>Sprint</Tag>} />
-
-                    {/* Stacked progress bar */}
-                    <div className="flex h-1.5 rounded-full overflow-hidden bg-white/[0.04] mb-8 gap-0.5">
-                        {TASKS.map((t, i) => (
-                            <div key={i} style={{ width: t.pct, background: t.color }} className="transition-all duration-700 ease-out" />
-                        ))}
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                        {TASKS.map((t, i) => (
-                            <div key={i} className="flex items-center justify-between group">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-2 h-2 rounded-full shadow-[0_0_8px_currentColor]" style={{ color: t.color, background: 'currentColor' }} />
-                                    <span className="text-sm font-medium text-gray-500 group-hover:text-gray-300 transition-colors">{t.status}</span>
+                                    <div className="h-0.5 flex-1 bg-[oklch(100%_0_0/0.05)] rounded-full overflow-hidden">
+                                        <motion.div 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: `${Math.min(100, (s.value / (statsData.totalProjects || 100)) * 100)}%` }} // Fallback purely visual calculation
+                                            className={cn("h-full", s.bg.replace('/10', ''))}
+                                            transition={{ duration: 1, delay: i * 0.1 + 0.5 }}
+                                        />
+                                    </div>
+                                    <span className="text-[10px] font-bold text-gray-600 whitespace-nowrap uppercase">{s.sub}</span>
                                 </div>
-                                <span className="text-sm font-bold text-gray-300">{t.count}</span>
                             </div>
-                        ))}
-                    </div>
+                        </Card>
+                    ))}
+                </section>
 
-                    <div className="mt-auto pt-6 border-t border-white/[0.04]">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-gray-700">
-                            Volume: <span className="text-gray-400">{statsData.totalTasks} nodes</span> / {statsData.totalProjects} segments
-                        </p>
-                    </div>
-                </div>
-
-                {/* Activity Feed */}
-                <div className="k-card p-6 flex flex-col h-[420px]">
-                    <SectionHead
-                        title="Neural Feed"
-                        badge={canViewActivity ? activity.length : null}
-                        action={
-                            canViewActivity && (
-                                <Link to="/admin/security" className="text-[10px] font-bold uppercase tracking-widest text-emerald-400 hover:text-emerald-300 transition-colors">
-                                    Analyze All
+                {/* ── Main Dashboard Area ── */}
+                <section className="grid grid-cols-1 lg:grid-cols-3 gap-8 pb-10">
+                    {/* Neural Feed (Activity) - Liquid Glass Container */}
+                    <Card className="lg:col-span-2 flex flex-col h-[550px] !p-0 bg-[oklch(100%_0_0/0.02)] border-[oklch(100%_0_0/0.05)] shadow-[inset_0_1px_1px_rgba(255,255,255,0.02)] overflow-hidden relative">
+                        <header className="p-8 border-b border-[oklch(100%_0_0/0.05)] flex items-center justify-between bg-[oklch(100%_0_0/0.01)] backdrop-blur-md relative z-20">
+                            <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-[1.25rem] bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center">
+                                    <Activity className="w-6 h-6 text-cyan-400 animate-pulse" />
+                                </div>
+                                <div>
+                                    <h3 className="text-xl font-black text-white tracking-tighter">Neural Feed</h3>
+                                    <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest mt-0.5">Real-time Synchronization</p>
+                                </div>
+                            </div>
+                            {canViewActivity && (
+                                <Link to="/admin/security" className="text-[10px] font-black uppercase tracking-[0.2em] text-cyan-400 hover:text-white transition-colors">
+                                    Full Audit Log
                                 </Link>
-                            )
-                        }
-                    />
+                            )}
+                        </header>
 
-                    {!canViewActivity ? (
-                        <div className="flex-1 flex flex-col items-center justify-center text-center px-4">
-                            <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.06] flex items-center justify-center mb-4">
-                                <Ico d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" size={20} stroke="#4b5563" />
-                            </div>
-                            <p className="text-sm font-bold text-gray-400 mb-1">Encrypted Stream</p>
-                            <p className="text-[11px] text-gray-600 leading-relaxed uppercase tracking-wider">Level 3 Clearance Required</p>
-                        </div>
-                    ) : actLoading ? (
-                        <div className="flex-1 flex items-center justify-center">
-                            <div className="w-6 h-6 rounded-full border-2 border-transparent border-t-emerald-500 border-b-emerald-500 animate-spin" />
-                        </div>
-                    ) : (
-                        <div ref={parentRef} className="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-                            <div style={{ height: virt.getTotalSize(), width: '100%', position: 'relative' }}>
-                                {virt.getVirtualItems().map(vi => {
-                                    const a = activity[vi.index];
-                                    const date = new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                                    const initial = a.user?.name?.charAt(0) || '?';
-                                    return (
-                                        <div key={vi.key} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: vi.size, transform: `translateY(${vi.start}px)` }}
-                                            className="flex gap-4 py-3 group">
-                                            <div className="relative flex-shrink-0">
-                                                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-gray-600/20 to-emerald-600/20 border border-white/10 flex items-center justify-center text-[11px] font-black text-emerald-400">
-                                                    {initial}
+                        <div className="flex-1 min-h-0 relative z-10 bg-gradient-to-b from-[oklch(100%_0_0/0.02)] to-transparent">
+                            {!canViewActivity ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center p-12 text-center" aria-label="Encrypted Segment Warning">
+                                    <Lock className="w-12 h-12 text-rose-500/80 mb-6 drop-shadow-[0_0_15px_rgba(244,63,94,0.4)]" />
+                                    <h4 className="text-white text-lg font-black tracking-tight mb-2">Encrypted Segment</h4>
+                                    <p className="text-sm text-gray-500 font-medium max-w-xs leading-relaxed">
+                                        Neural activity stream requires level 3 architectural clearance.
+                                    </p>
+                                </div>
+                            ) : actLoading ? (
+                                <div className="p-8 space-y-2">
+                                    {[1, 2, 3, 4, 5].map(i => <ActivitySkeleton key={i} />)}
+                                </div>
+                            ) : (
+                                <div ref={parentRef} className="h-full overflow-y-auto px-8 py-4 custom-scrollbar" aria-live="polite">
+                                    <div style={{ height: virt.getTotalSize(), width: '100%', position: 'relative' }}>
+                                        {virt.getVirtualItems().map(vi => {
+                                            const a = activity[vi.index];
+                                            const t = new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                            return (
+                                                <div 
+                                                    key={vi.key} 
+                                                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: vi.size, transform: `translateY(${vi.start}px)` }}
+                                                    className="flex items-center gap-5 border-b border-[oklch(100%_0_0/0.03)] last:border-0 hover:bg-[oklch(100%_0_0/0.02)] transition-colors rounded-xl px-2"
+                                                >
+                                                    <div className="relative flex-shrink-0">
+                                                        <div className="w-11 h-11 rounded-[1.125rem] bg-[oklch(100%_0_0/0.05)] border border-[oklch(100%_0_0/0.1)] flex items-center justify-center font-black text-sm text-gray-300 shadow-inner">
+                                                            {a.user?.name?.charAt(0)}
+                                                        </div>
+                                                    </div>
+                                                    <div className="min-w-0 pr-4 flex-1 py-3 border-r border-[oklch(100%_0_0/0.03)]">
+                                                        <p className="text-sm text-gray-300 font-medium truncate leading-tight">
+                                                            <span className="font-black text-cyan-400 mr-2">{a.user?.name}</span>
+                                                            <span className="text-gray-500">{a.action}</span>
+                                                            {a.details?.title && <span className="ml-2 text-white">"{a.details.title}"</span>}
+                                                        </p>
+                                                        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600 mt-1.5">{t}</p>
+                                                    </div>
+                                                    <ChevronRight className="ml-3 w-4 h-4 text-gray-700 shrink-0" />
                                                 </div>
-                                                {vi.index < activity.length - 1 && (
-                                                    <div className="absolute top-9 left-1/2 -translate-x-1/2 w-px h-[calc(100%-10px)] bg-white/[0.03]" />
-                                                )}
-                                            </div>
-                                            <div className="min-w-0">
-                                                <div className="text-[12px] leading-relaxed">
-                                                    <span className="font-bold text-gray-300">{a.user?.name || 'Unknown'}</span>
-                                                    <span className="text-gray-500 mx-1.5">{a.action}</span>
-                                                    <span className="font-medium text-emerald-400/80">"{a.details?.title || a.entityType}"</span>
-                                                </div>
-                                                <div className="text-[9px] font-bold uppercase tracking-widest text-gray-700 mt-1">{date}</div>
-                                            </div>
-                                        </div>
-                                    );
-                                })}
-                            </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                    )}
-                </div>
+                    </Card>
 
-                {/* Space widget */}
-                <ApodWidget />
-            </div>
-
-        </div>
+                    {/* Right Column (Widgets) - M2M Adaptive Space */}
+                    <aside className="space-y-8 h-full flex flex-col">
+                        <ApodWidget />
+                        
+                        <Card className="flex-1 bg-gradient-to-br from-indigo-500/10 to-[oklch(100%_0_0/0.02)] border-indigo-500/20 overflow-hidden relative shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" padding="p-8">
+                            <div className="absolute -top-10 -right-10 p-4 transform-gpu rotate-12 scale-150 opacity-20 filter blur-sm">
+                                <Trophy className="w-32 h-32 text-indigo-400 mix-blend-overlay" />
+                            </div>
+                            <div className="relative z-10 flex flex-col h-full justify-center">
+                                <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 mb-8 border-b border-indigo-500/20 pb-4 inline-block">Adaptive Goal Tracker</h4>
+                                <div className="space-y-6">
+                                    <div className="flex items-center justify-between px-1">
+                                        <span className="text-lg font-black tracking-tight text-white">Phase 5 Delta</span>
+                                        <span className="text-base font-black text-indigo-400">92%</span>
+                                    </div>
+                                    <div className="h-1.5 bg-[oklch(100%_0_0/0.05)] rounded-full overflow-hidden shadow-inner">
+                                        <motion.div 
+                                            initial={{ width: 0 }}
+                                            animate={{ width: '92%' }}
+                                            transition={{ ...LIQUID_SPRING, delay: 0.5 }}
+                                            className="h-full bg-gradient-to-r from-indigo-500 to-cyan-400 shadow-[0_0_15px_rgba(99,102,241,0.6)]"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-indigo-300/50 font-medium">Trajectory indicates target acquisition within 2 cycles.</p>
+                                </div>
+                            </div>
+                        </Card>
+                    </aside>
+                </section>
+            </DashboardErrorBoundary>
+        </article>
     );
 };
 

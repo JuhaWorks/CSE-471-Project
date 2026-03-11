@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useParams, useNavigate, Navigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import {
     Settings,
     Users,
@@ -10,13 +10,14 @@ import {
     Ghost,
     Zap,
     Circle,
-    User
+    LayoutDashboard
 } from 'lucide-react';
 import { useProject } from '../../hooks/projects/useProjectQueries';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useSocketStore } from '../../store/useSocketStore';
 import { useProjectSocket } from '../../hooks/projects/useProjectSocket';
 import { motion, AnimatePresence } from 'framer-motion';
+import Button from '../ui/Button';
 
 // Tabs Components
 import CoreDetailsTab from './CoreDetailsTab';
@@ -31,6 +32,11 @@ import AvatarGroup from './AvatarGroup';
 import ProjectSettingsSkeleton from './ProjectSettingsSkeleton';
 import ProjectSettingsError from './ProjectSettingsError';
 
+/**
+ * Modern 2026 Project Settings Dashboard
+ * Glassmorphism 2.0, Real-time Presence, Anti-grid Layouts
+ */
+
 const ProjectSettingsDashboard = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -41,17 +47,14 @@ const ProjectSettingsDashboard = () => {
     // Socket Synchronization & Presence
     useProjectSocket(id);
 
-    // Corner Case 1: Malformed URL / Invalid ID
     const isValidId = useMemo(() => /^[0-9a-fA-F]{24}$/.test(id), [id]);
-
     const { data: project, isLoading, error } = useProject(isValidId ? id : null);
 
-    // Immediate redirection for invalid IDs
     if (!isValidId) {
         return <ProjectSettingsError
             icon={AlertCircle}
-            title="Invalid Project Link"
-            description="The project ID provided in the URL is malformed. Please verify the link and try again."
+            title="Malformed Segment ID"
+            description="The requested project identifier does not match standard nexus protocols."
         />;
     }
 
@@ -62,24 +65,23 @@ const ProjectSettingsDashboard = () => {
         if (status === 403) {
             return <ProjectSettingsError
                 icon={Lock}
-                title="Access Denied"
-                description="You do not have permission to view the settings for this project."
+                title="Unauthorized Access"
+                description="Your node lacks the required clearance level for this project segment."
             />;
         }
         return <ProjectSettingsError
             icon={Ghost}
-            title="Ghost Project"
-            description="This project might have been deleted or moved to another workspace."
+            title="Null Reference"
+            description="This project segment has been de-initialized or relocated within the neural network."
         />;
     }
 
-    if (!project) return <ProjectSettingsError title="Empty Data" description="We couldn't retrieve any data for this project." />;
+    if (!project) return <ProjectSettingsError title="Data Corruption" description="Failed to synchronize with the core database nodes." />;
 
     const userRole = project.members?.find(m =>
         (m.userId?._id || m.userId) === currentUser?._id
     )?.role || 'Viewer';
 
-    // Permission flags
     const isManager = userRole === 'Manager' || currentUser?.role === 'Admin';
     const isAuthorized = isManager || userRole === 'Editor';
 
@@ -88,100 +90,121 @@ const ProjectSettingsDashboard = () => {
         { id: 'insights', label: 'Insights', icon: Zap },
         { id: 'members', label: 'Team', icon: Users },
         { id: 'activity', label: 'Audit', icon: History },
-        ...(isManager ? [{ id: 'danger', label: 'Danger', icon: AlertCircle, color: 'text-red-400' }] : []),
+        ...(isManager ? [{ id: 'danger', label: 'Danger Zone', icon: AlertCircle, color: 'text-red-400' }] : []),
     ];
 
     return (
-        <div className="max-w-6xl mx-auto p-6 sm:p-10 space-y-10 pb-32">
-            {/* Nav Header */}
-            <div className="space-y-8">
-                {/* Banner Area */}
-                <div className="relative h-64 w-full rounded-[40px] overflow-hidden border border-white/5 shadow-2xl">
+        <div className="space-y-12">
+            {/* Nav Header Area */}
+            <div className="space-y-10">
+                {/* Cinematic Banner Area */}
+                <header className="relative h-[280px] w-full rounded-[3.5rem] overflow-hidden border border-white/5 shadow-2xl">
                     <ProjectImage
                         project={project}
                         aspect="h-full w-full"
-                        className="transition-transform duration-700 hover:scale-105"
+                        className="transition-transform duration-1000 group-hover:scale-105"
                     />
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/20 to-transparent pointer-events-none" />
-                </div>
-
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2">
-                    <div className="flex items-center gap-5">
-                        <button
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent pointer-events-none" />
+                    
+                    {/* Floating Navigation Controls */}
+                    <div className="absolute top-8 left-8 flex gap-4">
+                        <Button
+                            variant="secondary"
                             onClick={() => navigate('/projects')}
-                            className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl transition-all text-zinc-400 hover:text-white border border-white/5 active:scale-90"
+                            className="p-3 bg-black/40 backdrop-blur-xl border-white/10 rounded-2xl hover:scale-110 active:scale-95"
                         >
-                            <ArrowLeft className="w-5 h-5" />
-                        </button>
-                        <div>
+                            <ArrowLeft className="w-5 h-5 text-white" />
+                        </Button>
+                    </div>
+
+                    <div className="absolute bottom-10 left-10 right-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div className="space-y-3">
                             <div className="flex items-center gap-3">
-                                <h1 className="text-4xl font-black text-white tracking-tighter truncate max-w-md">{project.name}</h1>
-                                <span className="px-3 py-1 rounded-full bg-emerald-600/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest">{project.status}</span>
+                                <h1 className="text-5xl font-black text-white tracking-tighter truncate max-w-xl">{project.name}</h1>
+                                <div className="px-4 py-1.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-[9px] font-black uppercase tracking-widest backdrop-blur-md">
+                                    {project.status}
+                                </div>
                             </div>
-                            <p className="text-zinc-500 font-bold text-sm mt-1 flex items-center gap-2">
-                                <Settings className="w-4 h-4 text-emerald-500/50" />
-                                Workspace Management Ecosystem
-                            </p>
+                            <div className="flex items-center gap-4 text-gray-400 font-bold text-sm">
+                                <div className="flex items-center gap-2">
+                                    <LayoutDashboard className="w-4 h-4 text-cyan-500/60" />
+                                    <span>Workspace Management</span>
+                                </div>
+                                <div className="w-1.5 h-1.5 rounded-full bg-gray-800" />
+                                <span className="opacity-60">Node: {id.substring(0, 8).toUpperCase()}</span>
+                            </div>
+                        </div>
+
+                        {/* Real-time Presence Indicators */}
+                        <div className="flex items-center gap-6 glass-2 bg-black/40 p-2.5 pl-6 rounded-3xl border border-white/10 backdrop-blur-xl shadow-2xl">
+                            <div className="flex items-center gap-6">
+                                <AvatarGroup
+                                    viewers={activeViewers}
+                                    onClick={() => useSocketStore.getState().toggleGlobalPresence(true, project.members)}
+                                />
+                                <div className="w-px h-8 bg-white/10" />
+                                <div className="flex items-center gap-3 pr-3">
+                                    <div className="relative flex h-3 w-3">
+                                        <div className={cn(
+                                            "absolute inset-0 rounded-full animate-ping opacity-75",
+                                            isConnected ? "bg-emerald-400" : "bg-red-400"
+                                        )} />
+                                        <div className={cn(
+                                            "relative rounded-full h-3 w-3",
+                                            isConnected ? "bg-emerald-500" : "bg-red-500"
+                                        )} />
+                                    </div>
+                                    <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                                        {isConnected ? 'Sync Active' : 'Disconnected'}
+                                    </span>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                </header>
 
-                    {/* Presence & Socket Status */}
-                    <div className="flex items-center gap-6 bg-zinc-900/50 p-2 pl-4 rounded-2xl border border-white/5 backdrop-blur-md">
-                        <AvatarGroup
-                            viewers={activeViewers}
-                            onClick={() => useSocketStore.getState().toggleGlobalPresence(true, project.members)}
-                        />
-
-                        <div className="w-px h-6 bg-white/5" />
-
-                        <div
-                            onClick={() => useSocketStore.getState().toggleGlobalPresence(true, project.members)}
-                            className="flex items-center gap-2 pr-2 cursor-pointer hover:bg-white/5 p-1 rounded-lg transition-all"
-                        >
-                            <Circle className={`w-2.5 h-2.5 ${isConnected ? 'text-emerald-500 fill-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'text-zinc-700 fill-zinc-700'} transition-colors duration-500`} />
-                            <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">{isConnected ? 'Live' : 'Offline'}</span>
-                        </div>
-                    </div>
+                {/* Anti-grid Tab Navigation */}
+                <div className="flex flex-wrap items-center gap-3 p-2 glass-2 bg-white/5 border border-white/5 rounded-[2rem] w-fit">
+                    {tabs.map((tab) => {
+                        const isActive = activeTab === tab.id;
+                        const Icon = tab.icon;
+                        return (
+                            <button
+                                key={tab.id}
+                                onClick={() => setActiveTab(tab.id)}
+                                className={cn(
+                                    "relative flex items-center gap-3 px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 outline-none",
+                                    isActive ? "text-white" : "text-gray-500 hover:text-gray-300"
+                                )}
+                            >
+                                <Icon className={cn("w-4 h-4 transition-colors", isActive ? (tab.color || 'text-cyan-400') : 'text-gray-600')} />
+                                <span className="relative z-10">{tab.label}</span>
+                                {isActive && (
+                                    <motion.div
+                                        layoutId="activeSettingsTab"
+                                        className="absolute inset-0 bg-white/5 border border-white/10 rounded-2xl -z-10 shadow-2xl"
+                                        transition={{ type: 'spring', bounce: 0.15, duration: 0.6 }}
+                                    />
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
             </div>
 
-            {/* Tab Navigation */}
-            <div className="flex items-center p-1.5 bg-zinc-950/80 border border-white/5 rounded-2xl w-fit backdrop-blur-sm">
-                {tabs.map((tab) => {
-                    const isActive = activeTab === tab.id;
-                    const Icon = tab.icon;
-                    return (
-                        <button
-                            key={tab.id}
-                            onClick={() => setActiveTab(tab.id)}
-                            className={`
-                                    relative flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-black transition-all duration-300 outline-none
-                                    ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}
-                                `}
-                        >
-                            <Icon className={`w-4 h-4 ${isActive ? (tab.color || 'text-emerald-400') : ''}`} />
-                            {tab.label}
-                            {isActive && (
-                                <motion.div
-                                    layoutId="activeTabSlot"
-                                    className="absolute inset-0 bg-white/5 border border-white/10 rounded-xl -z-10 shadow-2xl"
-                                    transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
-                                />
-                            )}
-                        </button>
-                    );
-                })}
-            </div>
-
-            {/* Content Area */}
-            <div className="min-h-[400px]">
+            {/* Main Content Segment */}
+            <main className="min-h-[500px]">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={activeTab}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.2 }}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -20 }}
+                        transition={{ 
+                            type: 'spring', 
+                            stiffness: 300, 
+                            damping: 30 
+                        }}
                     >
                         {activeTab === 'core' && <CoreDetailsTab project={project} isAuthorized={isAuthorized} />}
                         {activeTab === 'insights' && <InsightsTab projectId={project._id} />}
@@ -190,7 +213,7 @@ const ProjectSettingsDashboard = () => {
                         {activeTab === 'danger' && isManager && <DangerZoneTab project={project} />}
                     </motion.div>
                 </AnimatePresence>
-            </div>
+            </main>
         </div>
     );
 };

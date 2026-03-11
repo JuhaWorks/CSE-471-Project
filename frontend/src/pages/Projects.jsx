@@ -1,12 +1,31 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, api } from '../store/useAuthStore';
-import { Plus, Search, Folder, Calendar, Users, Settings, ExternalLink, Trash2, RefreshCw } from 'lucide-react';
+import { 
+    Plus, 
+    Search, 
+    Folder, 
+    Calendar, 
+    Users, 
+    Settings, 
+    ExternalLink, 
+    Trash2, 
+    RefreshCw, 
+    LayoutGrid, 
+    Box, 
+    Target,
+    ChevronRight,
+    SearchX
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import ProjectCreationModal from '../components/projects/ProjectCreationModal';
 import ProjectImage from '../components/projects/ProjectImage';
 import { toast } from 'react-hot-toast';
+import Button from '../components/ui/Button';
+import Card from '../ui/Card';
+import Input from '../components/ui/Input';
+import { Skeleton } from '../components/ui/Loading';
 
 const Projects = () => {
     const { user } = useAuthStore();
@@ -15,22 +34,14 @@ const Projects = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Active projects (not deleted)
     const { data: activeRes, isLoading: loadingActive } = useQuery({
         queryKey: ['projects', 'active'],
-        queryFn: async () => {
-            const res = await api.get('/projects');
-            return res.data;
-        }
+        queryFn: async () => (await api.get('/projects')).data
     });
 
-    // Archived / Trash projects (soft-deleted)
     const { data: archivedRes, isLoading: loadingArchived } = useQuery({
         queryKey: ['projects', 'archived'],
-        queryFn: async () => {
-            const res = await api.get('/projects?archived=true');
-            return res.data;
-        }
+        queryFn: async () => (await api.get('/projects?archived=true')).data
     });
 
     const restoreMutation = useMutation({
@@ -38,17 +49,15 @@ const Projects = () => {
             await api.post(`/projects/${id}/restore`);
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['projects', 'active'] });
-            queryClient.invalidateQueries({ queryKey: ['projects', 'archived'] });
-            toast.success('Project restored 🚀');
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            toast.success('Project restored to active workspace index.');
         },
-        onError: () => toast.error('Failed to restore project.')
+        onError: () => toast.error('Spectral restoration failed.')
     });
 
     const activeProjects = activeRes?.data || [];
     const archivedProjects = archivedRes?.data || [];
 
-    // The current list shown depends on the active tab
     const currentList = view === 'active' ? activeProjects : archivedProjects;
     const isLoading = view === 'active' ? loadingActive : loadingArchived;
 
@@ -57,194 +66,226 @@ const Projects = () => {
         p.category?.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const getStatusColor = (status) => {
+    const getStatusStyles = (status) => {
         switch (status) {
-            case 'Active': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-            case 'Paused': return 'text-amber-500 bg-amber-500/10 border-amber-500/20';
-            case 'Completed': return 'text-emerald-500 bg-emerald-500/10 border-emerald-500/20';
-            case 'Archived': return 'text-[var(--text-muted)] bg-[var(--border-subtle)] border-[var(--border-subtle)]';
-            default: return 'text-[var(--text-muted)] bg-[var(--border-subtle)] border-[var(--border-subtle)]';
+            case 'Active': return 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20';
+            case 'Paused': return 'text-yellow-400 bg-yellow-500/10 border-yellow-500/20';
+            case 'Completed': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
+            case 'Archived': return 'text-gray-400 bg-white/5 border-white/10';
+            default: return 'text-gray-400 bg-white/5 border-white/10';
         }
     };
 
     return (
-        <div className="p-8 max-w-[1400px] mx-auto space-y-10 pb-32">
-            {/* Header Area */}
-            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-8">
-                <div>
-                    <div className="flex items-center gap-3 mb-2">
-                        <Folder className="w-8 h-8 text-emerald-500" />
-                        <h1 className="text-5xl font-black text-[var(--text-main)] tracking-tighter">Workspace</h1>
+        <div className="space-y-12">
+            {/* Header Area (Anti-grid) */}
+            <header className="relative py-8">
+                <div className="absolute -top-10 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
+                
+                <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
+                    <div className="space-y-4">
+                        <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]">
+                            <LayoutGrid className="w-3 h-3" />
+                            <span>Segment Lifecycle Control</span>
+                        </div>
+                        <h1 className="text-6xl font-black text-white tracking-tighter">Workspace.</h1>
+                        <p className="text-gray-500 font-medium text-lg max-w-xl leading-relaxed">
+                            Orchestrating collective intellectual property and node-specific directives across the neural network.
+                        </p>
                     </div>
-                    <p className="text-[var(--text-muted)] font-bold ml-1 tracking-tight">Manage and track your collective intellectual property.</p>
-                </div>
 
-                <div className="flex flex-wrap items-center gap-4">
-                    {/* Segmented Control */}
-                    <div className="flex p-1 bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl">
-                        {[
-                            { id: 'active', label: 'Active', count: activeProjects.length },
-                            { id: 'archived', label: 'Trash', count: archivedProjects.length, icon: Trash2 }
-                        ].map(tab => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setView(tab.id)}
-                                className={`flex items-center gap-2 px-6 py-2 rounded-xl text-xs font-black transition-all ${view === tab.id
-                                    ? 'bg-[var(--text-main)]/10 text-[var(--text-main)] shadow-xl'
-                                    : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
-                                }`}
+                    <div className="flex flex-wrap items-center gap-4">
+                        {/* 2026 Segmented Control */}
+                        <div className="flex p-1.5 glass-2 bg-white/5 border-white/10 rounded-2xl">
+                            {[
+                                { id: 'active', label: 'Active', count: activeProjects.length, icon: Box },
+                                { id: 'archived', label: 'Archived', count: archivedProjects.length, icon: Trash2 }
+                            ].map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setView(tab.id)}
+                                    className={cn(
+                                        "flex items-center gap-3 px-6 py-2.5 rounded-xl text-xs font-black transition-all relative overflow-hidden",
+                                        view === tab.id ? "text-cyan-400" : "text-gray-500 hover:text-gray-300"
+                                    )}
+                                >
+                                    {view === tab.id && (
+                                        <motion.div 
+                                            layoutId="project-tab"
+                                            className="absolute inset-0 bg-white/5 border border-white/10 rounded-xl"
+                                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                        />
+                                    )}
+                                    <tab.icon className="w-3.5 h-3.5 relative z-10" />
+                                    <span className="relative z-10">{tab.label}</span>
+                                    <span className={cn(
+                                        "relative z-10 px-1.5 py-0.5 rounded-md text-[9px]",
+                                        view === tab.id ? "bg-cyan-500/20 text-cyan-400" : "bg-white/5 text-gray-600"
+                                    )}>{tab.count}</span>
+                                </button>
+                            ))}
+                        </div>
+
+                        {user?.role !== 'Admin' && (
+                            <Button
+                                size="lg"
+                                onClick={() => setIsCreateModalOpen(true)}
+                                leftIcon={Plus}
                             >
-                                {tab.label}
-                                <span className={`px-2 py-0.5 rounded-md text-[9px] ${view === tab.id
-                                    ? 'bg-[var(--text-main)]/15 text-[var(--text-main)]'
-                                    : 'bg-[var(--border-subtle)] text-[var(--text-muted)]'
-                                }`}>{tab.count}</span>
-                            </button>
-                        ))}
+                                New Project
+                            </Button>
+                        )}
                     </div>
-
-                    {user?.role !== 'Admin' && (
-                        <button
-                            onClick={() => setIsCreateModalOpen(true)}
-                            className="flex items-center justify-center gap-2 px-8 py-3.5 rounded-2xl bg-emerald-500 text-white font-black hover:bg-emerald-400 transition-all active:scale-95 shadow-[0_10px_30px_rgba(45,179,138,0.25)]"
-                        >
-                            <Plus className="w-5 h-5" />
-                            New Project
-                        </button>
-                    )}
                 </div>
-            </div>
+            </header>
 
-            {/* Search */}
+            {/* Filter Bar */}
             <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-                <div className="relative w-full md:w-[400px] group">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)] group-focus-within:text-emerald-500 transition-colors" />
-                    <input
-                        type="text"
+                <div className="w-full md:w-[450px]">
+                    <Input
                         placeholder="Search workspace index..."
+                        leftIcon={Search}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-2xl pl-14 pr-6 py-4 text-sm text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[rgba(var(--theme-500),0.3)] focus:border-[rgba(var(--theme-500),0.4)] transition-all font-bold"
+                        className="rounded-3xl"
                     />
                 </div>
             </div>
 
-            {/* Projects Grid */}
+            {/* Content Segment */}
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="h-72 rounded-[40px] bg-[var(--bg-surface)] border border-[var(--border-subtle)] animate-pulse" />
+                    {[1, 2, 3, 4, 5, 6].map(i => (
+                        <Skeleton key={i} className="h-80 w-full rounded-[2.5rem]" />
                     ))}
                 </div>
             ) : filteredProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                     <AnimatePresence mode="popLayout">
-                        {filteredProjects.map((project, index) => (
-                            <motion.div
-                                key={project._id}
-                                layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ type: 'spring', bounce: 0.2, duration: 0.5 }}
-                                className="group relative bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-[40px] p-8 hover:border-emerald-500/30 transition-all hover:shadow-lg shadow-sm overflow-hidden"
+                        {filteredProjects.map((project) => (
+                            <Card 
+                                key={project._id} 
+                                className="group h-full flex flex-col"
+                                padding="p-0"
                             >
-                                <div className="relative -mx-8 -mt-8 mb-8">
-                                    <ProjectImage
-                                        project={project}
-                                        className="rounded-t-[40px] border-b border-[var(--border-subtle)]"
-                                    />
-                                    <div className="absolute top-6 right-6">
-                                        <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border backdrop-blur-md ${getStatusColor(project.status)}`}>
-                                            {project.status || 'Active'}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="space-y-3 mb-8">
-                                    <h3 className="text-2xl font-black text-[var(--text-main)] tracking-tighter group-hover:text-emerald-500 transition-colors line-clamp-1">{project.name}</h3>
-                                    <p className="text-[var(--text-muted)] text-sm font-medium line-clamp-2 leading-relaxed h-10">{project.description}</p>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-6 mb-8">
-                                    <div className="space-y-1">
-                                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Deadline</span>
-                                        <div className="flex items-center gap-2 text-[var(--text-main)]">
-                                            <Calendar className="w-4 h-4 text-emerald-500/60" />
-                                            <span className="text-xs font-bold">{new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}</span>
-                                        </div>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <span className="text-[10px] font-black text-[var(--text-muted)] uppercase tracking-widest">Team</span>
-                                        <div className="flex items-center gap-2 text-[var(--text-main)]">
-                                            <Users className="w-4 h-4 text-emerald-500/60" />
-                                            <span className="text-xs font-bold">{project.members?.length || 0} members</span>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between pt-8 border-t border-[var(--border-subtle)]">
-                                    <div className="flex -space-x-3">
-                                        {project.members?.slice(0, 3).map((m, i) => (
-                                            <div key={i} className="w-9 h-9 rounded-2xl border-2 border-[var(--bg-surface)] bg-[var(--bg-base)] flex items-center justify-center overflow-hidden">
-                                                {m.userId?.avatar ? (
-                                                    <img src={m.userId.avatar} alt="" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <span className="text-[10px] font-black text-[var(--text-muted)]">{m.userId?.name?.charAt(0)}</span>
-                                                )}
+                                <div className="p-4 flex flex-col h-full">
+                                    <div className="relative mb-6">
+                                        <ProjectImage
+                                            project={project}
+                                            className="rounded-3xl border border-white/5"
+                                        />
+                                        <div className="absolute top-4 right-4">
+                                            <div className={cn(
+                                                "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border backdrop-blur-md shadow-xl transition-all group-hover:scale-105",
+                                                getStatusStyles(project.status)
+                                            )}>
+                                                {project.status || 'Active'}
                                             </div>
-                                        ))}
-                                        {project.members?.length > 3 && (
-                                            <div className="w-9 h-9 rounded-2xl border-2 border-[var(--bg-surface)] bg-[var(--bg-base)] flex items-center justify-center text-[10px] font-black text-[var(--text-muted)]">
-                                                +{project.members.length - 3}
-                                            </div>
-                                        )}
+                                        </div>
                                     </div>
 
-                                    <div className="flex items-center gap-3">
-                                        {project.status === 'Archived' ? (
-                                            <button
-                                                onClick={() => restoreMutation.mutate(project._id)}
-                                                className="flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-emerald-500 text-white font-black text-xs hover:bg-emerald-400 transition-all active:scale-90"
-                                            >
-                                                <RefreshCw className="w-3.5 h-3.5" />
-                                                Restore
-                                            </button>
-                                        ) : (
-                                            <>
-                                                <Link
-                                                    to={`/projects/${project._id}/settings`}
-                                                    className="p-3 bg-[var(--bg-base)] text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-subtle)] rounded-2xl border border-[var(--border-subtle)] transition-all active:scale-90"
+                                    <div className="px-4 space-y-4 mb-8">
+                                        <div className="space-y-1">
+                                            <h3 className="text-2xl font-black text-white tracking-tighter group-hover:text-cyan-400 transition-colors line-clamp-1">
+                                                {project.name}
+                                            </h3>
+                                            <p className="text-gray-500 text-xs font-medium line-clamp-2 leading-relaxed min-h-[32px]">
+                                                {project.description}
+                                            </p>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-6 pt-2">
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest block">Deadline</span>
+                                                <div className="flex items-center gap-2 text-white">
+                                                    <Calendar className="w-3.5 h-3.5 text-cyan-500/60" />
+                                                    <span className="text-xs font-bold">
+                                                        {new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest block">Team Nodes</span>
+                                                <div className="flex items-center gap-2 text-white">
+                                                    <Users className="w-3.5 h-3.5 text-indigo-500/60" />
+                                                    <span className="text-xs font-bold">{project.members?.length || 0}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="mt-auto px-4 py-6 border-t border-white/5 flex items-center justify-between">
+                                        <div className="flex -space-x-2">
+                                            {project.members?.slice(0, 4).map((m, i) => (
+                                                <div key={i} className="w-8 h-8 rounded-xl border-2 border-[#09090b] bg-white/5 flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
+                                                    {m.userId?.avatar ? (
+                                                        <img src={m.userId.avatar} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <span className="text-[10px] font-black text-gray-600">{m.userId?.name?.charAt(0)}</span>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            {project.members?.length > 4 && (
+                                                <div className="w-8 h-8 rounded-xl border-2 border-[#09090b] bg-white/5 flex items-center justify-center text-[9px] font-black text-gray-500">
+                                                    +{project.members.length - 4}
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            {project.status === 'Archived' ? (
+                                                <Button
+                                                    size="sm"
+                                                    variant="secondary"
+                                                    onClick={() => restoreMutation.mutate(project._id)}
+                                                    leftIcon={RefreshCw}
                                                 >
-                                                    <Settings className="w-5 h-5" />
-                                                </Link>
-                                                <Link
-                                                    to={`/tasks?project=${project._id}`}
-                                                    className="p-3 bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500 hover:text-white rounded-2xl border border-emerald-500/20 transition-all active:scale-90"
-                                                >
-                                                    <ExternalLink className="w-5 h-5" />
-                                                </Link>
-                                            </>
-                                        )}
+                                                    Restore
+                                                </Button>
+                                            ) : (
+                                                <>
+                                                    <Button
+                                                        variant="secondary"
+                                                        size="sm"
+                                                        as={Link}
+                                                        to={`/projects/${project._id}/settings`}
+                                                        className="px-3"
+                                                    >
+                                                        <Settings className="w-4 h-4" />
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        as={Link}
+                                                        to={`/tasks?project=${project._id}`}
+                                                        rightIcon={ChevronRight}
+                                                    >
+                                                        Enter
+                                                    </Button>
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </motion.div>
+                            </Card>
                         ))}
                     </AnimatePresence>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-32 text-center bg-[var(--bg-surface)] border-2 border-dashed border-[var(--border-subtle)] rounded-[60px]">
-                    <div className="w-24 h-24 rounded-[40px] bg-[var(--bg-base)] border border-[var(--border-subtle)] flex items-center justify-center mb-8">
-                        <Folder className="w-10 h-10 text-[var(--text-muted)]" />
+                <div className="flex flex-col items-center justify-center py-40 text-center glass-2 border-dashed border-white/5 rounded-[4rem]">
+                    <div className="w-24 h-24 rounded-[2.5rem] bg-white/5 border border-white/10 flex items-center justify-center mb-8">
+                        <SearchX className="w-10 h-10 text-gray-600" />
                     </div>
-                    <h2 className="text-3xl font-black text-[var(--text-main)] mb-3">Workspace Empty</h2>
-                    <p className="text-[var(--text-muted)] font-medium max-w-sm mb-10 leading-relaxed">No projects found. Create your first project to get started.</p>
-                    <button
+                    <h2 className="text-4xl font-black text-white tracking-tighter mb-3">Segment Empty</h2>
+                    <p className="text-gray-500 font-medium max-w-sm mb-12 leading-relaxed">
+                        No projects found in this domain. Dispatch a new initiative to begin.
+                    </p>
+                    <Button
+                        size="lg"
                         onClick={() => setIsCreateModalOpen(true)}
-                        className="px-10 py-4 rounded-2xl bg-emerald-500 text-white font-black hover:bg-emerald-400 transition-all shadow-[0_10px_30px_rgba(45,179,138,0.2)]"
+                        leftIcon={Plus}
                     >
-                        Create New Project
-                    </button>
+                        New Initiative
+                    </Button>
                 </div>
             )}
 

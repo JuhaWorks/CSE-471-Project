@@ -7,18 +7,27 @@ import {
     AlertTriangle,
     Zap,
     Calendar,
-    ArrowRight
+    ArrowRight,
+    TrendingUp,
+    Target,
+    BrainCircuit
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import Card from '../ui/Card';
+import { Skeleton } from '../ui/Loading';
 
+/**
+ * Modern 2026 InsightsTab
+ * Intelligence core with predictive analytics and Glassmorphism 2.0
+ */
 const InsightsTab = ({ projectId }) => {
     const { data: insights, isLoading, error } = useProjectInsights(projectId);
 
     if (isLoading) {
         return (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-pulse">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[1, 2, 3].map(i => (
-                    <div key={i} className="h-40 bg-white/5 rounded-3xl border border-white/5" />
+                    <Skeleton key={i} className="h-44 w-full rounded-[2.5rem]" />
                 ))}
             </div>
         );
@@ -26,18 +35,19 @@ const InsightsTab = ({ projectId }) => {
 
     if (error) {
         return (
-            <div className="flex flex-col items-center justify-center p-20 bg-white/5 rounded-3xl border border-white/5">
-                <AlertTriangle className="w-10 h-10 text-red-500 mb-4" />
-                <p className="text-zinc-400 font-bold">Failed to load insights</p>
+            <div className="flex flex-col items-center justify-center py-24 glass-2 bg-red-500/5 border border-red-500/10 rounded-[3rem]">
+                <AlertTriangle className="w-12 h-12 text-red-500 mb-6" />
+                <h3 className="text-xl font-black text-white tracking-tight">Intelligence Failure</h3>
+                <p className="text-gray-500 font-medium mt-1">Failed to synchronize with the analytics node.</p>
             </div>
         );
     }
 
     const healthColor = {
-        'On Track': 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-        'At Risk': 'text-amber-400 bg-amber-400/10 border-amber-400/20',
-        'Overdue': 'text-rose-400 bg-rose-400/10 border-rose-400/20'
-    }[insights.healthScore] || 'text-zinc-400 bg-zinc-400/10 border-zinc-400/20';
+        'On Track': 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20 shadow-emerald-500/10',
+        'At Risk': 'text-amber-400 bg-amber-400/10 border-amber-400/20 shadow-amber-500/10',
+        'Overdue': 'text-rose-400 bg-rose-400/10 border-rose-400/20 shadow-rose-500/10'
+    }[insights.healthScore] || 'text-gray-400 bg-white/5 border-white/10';
 
     const healthIcon = {
         'On Track': ShieldCheck,
@@ -48,27 +58,45 @@ const InsightsTab = ({ projectId }) => {
     const HealthIcon = healthIcon;
 
     return (
-        <div className="space-y-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="space-y-10">
+            <header className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]">
+                        <BrainCircuit className="w-4 h-4" />
+                        <span>Intelligence Core</span>
+                    </div>
+                    <h2 className="text-4xl font-black text-white tracking-tighter">Segment Analytics.</h2>
+                    <p className="text-gray-500 font-medium text-sm max-w-lg">
+                        Predictive performance metrics, temporal tracking, and neural health indicators for this project domain.
+                    </p>
+                </div>
+            </header>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Project Health Card */}
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="p-6 bg-gradient-to-br from-zinc-900 to-black rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group"
+                    className="group relative"
                 >
-                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                        <HealthIcon className="w-20 h-20" />
-                    </div>
-                    <p className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4">Project Health</p>
-                    <div className="flex items-center gap-4">
-                        <div className={`p-3 rounded-2xl border ${healthColor}`}>
-                            <HealthIcon className="w-6 h-6" />
+                    <Card className="h-full overflow-hidden" padding="p-8">
+                        <div className="absolute top-[-10%] right-[-5%] p-4 opacity-5 group-hover:opacity-10 transition-all duration-700 pointer-events-none">
+                            <HealthIcon className="w-32 h-32" />
                         </div>
-                        <div>
-                            <h3 className="text-2xl font-black text-white">{insights.healthScore}</h3>
-                            <p className="text-zinc-500 text-xs font-bold">Based on timeline & activity</p>
+                        
+                        <div className="flex flex-col h-full gap-6">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Node Vitality</span>
+                            <div className="flex items-center gap-5">
+                                <div className={cn("p-4 rounded-2xl border transition-all duration-500 shadow-xl", healthColor)}>
+                                    <HealthIcon className="w-8 h-8" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-3xl font-black text-white tracking-tighter">{insights.healthScore}</h3>
+                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Active Neural Status</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </Card>
                 </motion.div>
 
                 {/* Deadline Tracking Card */}
@@ -76,20 +104,28 @@ const InsightsTab = ({ projectId }) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="p-6 bg-zinc-900/50 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group"
+                    className="group"
                 >
-                    <p className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4">Deadline Status</p>
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400">
-                            <Clock className="w-6 h-6" />
+                    <Card className="h-full overflow-hidden" padding="p-8">
+                        <div className="absolute top-[-10%] right-[-5%] p-4 opacity-5 group-hover:opacity-10 transition-all duration-700 pointer-events-none">
+                            <Clock className="w-32 h-32" />
                         </div>
-                        <div>
-                            <h3 className="text-2xl font-black text-white">
-                                {insights.daysRemaining > 0 ? `${insights.daysRemaining} Days` : insights.daysRemaining === 0 ? 'Due Today' : `${Math.abs(insights.daysRemaining)} Days Late`}
-                            </h3>
-                            <p className="text-zinc-500 text-xs font-bold">Remaining until end date</p>
+
+                        <div className="flex flex-col h-full gap-6">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Temporal Horizon</span>
+                            <div className="flex items-center gap-5">
+                                <div className="p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-2xl text-cyan-400 shadow-xl shadow-cyan-500/5 group-hover:bg-cyan-500/20 transition-all">
+                                    <Clock className="w-8 h-8" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-3xl font-black text-white tracking-tighter">
+                                        {insights.daysRemaining > 0 ? `${insights.daysRemaining} Days` : insights.daysRemaining === 0 ? 'Due Today' : `${Math.abs(insights.daysRemaining)} Late`}
+                                    </h3>
+                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Remaining Frequency</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </Card>
                 </motion.div>
 
                 {/* Activity Velocity Card */}
@@ -97,44 +133,88 @@ const InsightsTab = ({ projectId }) => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="p-6 bg-zinc-900/50 rounded-3xl border border-white/5 shadow-2xl relative overflow-hidden group"
+                    className="group"
                 >
-                    <p className="text-zinc-500 text-xs font-black uppercase tracking-widest mb-4">Activity Velocity</p>
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-400">
-                            <Activity className="w-6 h-6" />
+                    <Card className="h-full overflow-hidden" padding="p-8">
+                        <div className="absolute top-[-10%] right-[-5%] p-4 opacity-5 group-hover:opacity-10 transition-all duration-700 pointer-events-none">
+                            <TrendingUp className="w-32 h-32" />
                         </div>
-                        <div>
-                            <h3 className="text-2xl font-black text-white">{insights.activityVelocity}</h3>
-                            <p className="text-zinc-500 text-xs font-bold">Events in last 7 days</p>
+
+                        <div className="flex flex-col h-full gap-6">
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Transmission Flow</span>
+                            <div className="flex items-center gap-5">
+                                <div className="p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl text-indigo-400 shadow-xl shadow-indigo-500/5 group-hover:bg-indigo-500/20 transition-all">
+                                    <TrendingUp className="w-8 h-8" />
+                                </div>
+                                <div className="space-y-1">
+                                    <h3 className="text-3xl font-black text-white tracking-tighter">{insights.activityVelocity}</h3>
+                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Events / 7-Day Cycle</p>
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                    </Card>
                 </motion.div>
             </div>
 
-            {/* Detailed Stats / Suggestions */}
-            <div className="p-8 bg-zinc-900/30 rounded-3xl border border-white/5">
-                <div className="flex items-center gap-3 mb-6">
-                    <Zap className="w-5 h-5 text-amber-400" />
-                    <h4 className="text-lg font-black text-white tracking-tight">Smart Recommendations</h4>
+            {/* Smart Recommendations Segment */}
+            <div className="space-y-6">
+                <div className="flex items-center gap-3 px-1">
+                    <Zap className="w-5 h-5 text-amber-500" />
+                    <h4 className="text-xl font-black text-white tracking-tighter uppercase">Predictive Directives</h4>
                 </div>
-                <div className="space-y-4">
-                    {insights.healthScore === 'At Risk' && (
-                        <div className="flex items-center gap-4 p-4 bg-amber-400/5 border border-amber-400/10 rounded-2xl">
-                            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
-                            <p className="text-sm text-zinc-300 font-medium">The deadline is approaching fast (under 7 days). Consider re-evaluating priorities.</p>
-                        </div>
-                    )}
-                    {insights.activityVelocity === 0 && (
-                        <div className="flex items-center gap-4 p-4 bg-rose-400/5 border border-rose-400/10 rounded-2xl">
-                            <Zap className="w-5 h-5 text-rose-400 shrink-0" />
-                            <p className="text-sm text-zinc-300 font-medium">No activity recorded in the last 7 days. This project might be stalling.</p>
-                        </div>
-                    )}
-                    <div className="flex items-center gap-4 p-4 bg-zinc-800/20 border border-white/5 rounded-2xl">
-                        <Calendar className="w-5 h-5 text-zinc-500 shrink-0" />
-                        <p className="text-sm text-zinc-300 font-medium">Keep your project status updated to reflect the most accurate health metrics.</p>
-                    </div>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <AnimatePresence>
+                        {insights.healthScore === 'At Risk' && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex items-start gap-5 p-8 glass-2 bg-amber-500/5 border border-amber-500/10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group"
+                            >
+                                <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500 shrink-0">
+                                    <AlertTriangle className="w-5 h-5" />
+                                </div>
+                                <div className="space-y-2">
+                                    <span className="text-[9px] font-black text-amber-500/60 uppercase tracking-widest">Protocol Warning: Sequential Strain</span>
+                                    <p className="text-sm text-gray-300 font-medium leading-relaxed">
+                                        Segment deadline approaches within a <span className="text-white font-black">7-Day Horizon</span>. Immediate node reprioritization recommended to avoid temporal drift.
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+                        {insights.activityVelocity === 0 && (
+                            <motion.div 
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                className="flex items-start gap-5 p-8 glass-2 bg-rose-500/5 border border-rose-500/10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group"
+                            >
+                                <div className="p-3 bg-rose-500/10 rounded-xl text-rose-500 shrink-0">
+                                    <Zap className="w-5 h-5" />
+                                </div>
+                                <div className="space-y-2">
+                                    <span className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest">System Warning: Node Stagnation</span>
+                                    <p className="text-sm text-gray-300 font-medium leading-relaxed">
+                                        Zero transmissions detected in the previous cycle. Operational domain is nearing <span className="text-white font-black">Inert State</span>.
+                                    </p>
+                                </div>
+                            </motion.div>
+                        )}
+                        <motion.div 
+                            initial={{ opacity: 0, scale: 0.95 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="flex items-start gap-5 p-8 glass-2 bg-white/5 border border-white/5 rounded-[2.5rem] shadow-2xl relative overflow-hidden group"
+                        >
+                            <div className="p-3 bg-white/5 rounded-xl text-gray-500 shrink-0">
+                                <Calendar className="w-5 h-5" />
+                            </div>
+                            <div className="space-y-2">
+                                <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest">Maintenance Directive</span>
+                                <p className="text-sm text-gray-400 font-medium leading-relaxed">
+                                    Maintain high neural fidelity by ensuring status identifiers are synchronized with actual progress metrics.
+                                </p>
+                            </div>
+                        </motion.div>
+                    </AnimatePresence>
                 </div>
             </div>
         </div>

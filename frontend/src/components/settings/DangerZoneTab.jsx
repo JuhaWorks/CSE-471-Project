@@ -1,11 +1,21 @@
 import React, { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { ShieldAlert, ChevronDown } from 'lucide-react';
+import { ShieldAlert, ChevronDown, X, Zap, AlertTriangle, Trash2, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore, api } from '../../store/useAuthStore';
+import { motion, AnimatePresence } from 'framer-motion';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
-// Glassmorphism Modal Component
+const cn = (...inputs) => twMerge(clsx(inputs));
+
+/**
+ * Modern 2026 ConfirmModal
+ * High-vibrance risk confirmation with cinematic overlays
+ */
 const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deactivationDuration, setDeactivationDuration }) => {
     const [inputValue, setInputValue] = useState('');
 
@@ -15,78 +25,101 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
     const isDeactivate = actionType === 'deactivate';
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-            {/* Backdrop */}
-            <div
-                className="fixed inset-0 bg-[#0a0a12]/80 backdrop-blur-sm transition-opacity"
-                onClick={onClose}
-            ></div>
-
-            {/* Modal */}
-            <div className="relative w-full max-w-md bg-[#12121a]/90 backdrop-blur-md ring-1 ring-white/[0.06] shadow-2xl rounded-2xl p-6 m-4 transform transition-all">
-                <h3 className="text-lg font-bold text-white tracking-tight">
-                    {isDeactivate ? 'Deactivate Account' : 'Are you absolutely sure?'}
-                </h3>
-
-                {isDeactivate ? (
-                    <div className="mt-4 space-y-4">
-                        <p className="text-[13px] text-gray-400">
-                            Your profile will be hidden from the workspace. You can reactivate at any time by logging back in.
-                        </p>
-                        <div className="space-y-1.5">
-                            <label className="block text-[13px] font-semibold text-gray-300">
-                                Deactivation Duration
-                            </label>
-                            <div className="relative">
-                                <select
-                                    className="block w-full appearance-none px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 focus:bg-white/[0.04] focus:ring-1 focus:ring-amber-500/50 focus:border-amber-500/50 outline-none cursor-pointer transition-all duration-200 [&>option]:bg-[#12121a] [&>option]:text-gray-200"
-                                    value={deactivationDuration}
-                                    onChange={(e) => setDeactivationDuration(e.target.value)}
-                                >
-                                    <option value="null">Indefinitely</option>
-                                    <option value="7">7 Days</option>
-                                    <option value="30">30 Days</option>
-                                </select>
-                                <ChevronDown className="absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none" />
+        <AnimatePresence>
+            <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-6"
+            >
+                <motion.div 
+                    initial={{ scale: 0.9, y: 20, opacity: 0 }}
+                    animate={{ scale: 1, y: 0, opacity: 1 }}
+                    exit={{ scale: 0.9, y: 20, opacity: 0 }}
+                    className="relative w-full max-w-lg bg-[#09090b] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.8)] rounded-[3rem] overflow-hidden"
+                >
+                    {/* High-Risk Header */}
+                    <div className={cn(
+                        "px-10 py-8 border-b border-white/5 flex items-center justify-between",
+                        isDeactivate ? "bg-amber-500/5" : "bg-rose-500/5"
+                    )}>
+                        <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                                <AlertTriangle className={cn("w-5 h-5", isDeactivate ? "text-amber-500" : "text-rose-500")} />
+                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase">
+                                    {isDeactivate ? 'Deactivate Node' : 'Terminal Scrub.'}
+                                </h3>
                             </div>
+                            <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Critical Protocol Override</p>
+                        </div>
+                        <button onClick={onClose} className="p-3 bg-white/5 rounded-2xl text-gray-500 hover:text-white transition-colors">
+                            <X className="w-5 h-5" />
+                        </button>
+                    </div>
+
+                    <div className="p-10 space-y-8">
+                        {isDeactivate ? (
+                            <div className="space-y-6">
+                                <p className="text-[11px] text-gray-500 font-medium leading-relaxed uppercase tracking-widest bg-white/5 p-4 rounded-2xl">
+                                    Your identity and data will be cached but hidden from the platform. Reactivation protocols are available upon re-authentication.
+                                </p>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">
+                                        Hibernation Duration
+                                    </label>
+                                    <div className="relative group">
+                                        <select
+                                            className="w-full appearance-none px-6 py-4 border border-white/5 rounded-2xl text-sm bg-white/5 text-white focus:outline-none focus:border-amber-500/30 focus:ring-8 focus:ring-amber-500/5 transition-all font-medium cursor-pointer"
+                                            value={deactivationDuration}
+                                            onChange={(e) => setDeactivationDuration(e.target.value)}
+                                        >
+                                            <option value="null">Indefinite Stasis</option>
+                                            <option value="7">7 Cycles (Days)</option>
+                                            <option value="30">30 Cycles (Days)</option>
+                                        </select>
+                                        <ChevronDown className="absolute right-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 pointer-events-none group-focus-within:text-amber-400" />
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="p-6 bg-rose-500/5 border border-rose-500/10 rounded-2xl space-y-2">
+                                    <p className="text-[11px] text-rose-400 font-black uppercase tracking-widest">Permanent Data Erasure.</p>
+                                    <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
+                                        This protocol is irreversible. All neural caches, project segments, and identity markers will be scrubbed from the nexus.
+                                    </p>
+                                </div>
+                                <div className="space-y-3">
+                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Universal Verification</label>
+                                    <input
+                                        type="text"
+                                        value={inputValue}
+                                        onChange={(e) => setInputValue(e.target.value)}
+                                        placeholder="Type CONFIRM to authorize"
+                                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-rose-500/30 focus:ring-8 focus:ring-rose-500/5 transition-all font-medium text-sm placeholder:text-gray-800"
+                                    />
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="flex gap-4">
+                            <Button variant="outline" onClick={onClose} disabled={isLoading} className="flex-1 py-5 rounded-2xl">Abort Protocol</Button>
+                            <Button 
+                                onClick={onConfirm}
+                                isLoading={isLoading}
+                                disabled={(actionType === 'delete' && !isMatch) || isLoading}
+                                className={cn(
+                                    "flex-1 py-5 rounded-2xl shadow-2xl",
+                                    isDeactivate ? "bg-amber-600 hover:bg-amber-500" : "bg-rose-600 hover:bg-rose-500 shadow-rose-500/20"
+                                )}
+                            >
+                                {isDeactivate ? 'Execute Hibernation' : 'Execute Scrub'}
+                            </Button>
                         </div>
                     </div>
-                ) : (
-                    <>
-                        <p className="text-[13px] text-gray-400 mt-2">
-                            This action cannot be undone. Please type <strong className="text-gray-200 font-bold select-all">CONFIRM</strong> below to verify.
-                        </p>
-                        <input
-                            type="text"
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            placeholder="Type CONFIRM"
-                            className="mt-4 block w-full px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-red-500/50 focus:border-red-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
-                        />
-                    </>
-                )}
-
-                <div className="mt-6 flex justify-end gap-3">
-                    <button
-                        onClick={onClose}
-                        disabled={isLoading}
-                        className="px-4 py-2.5 text-[13px] font-semibold text-gray-300 hover:text-white hover:bg-white/[0.04] rounded-xl transition-all disabled:opacity-50"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={() => onConfirm()}
-                        disabled={(actionType === 'delete' && !isMatch) || isLoading}
-                        className={`inline-flex items-center justify-center px-4 py-2.5 text-[13px] font-semibold text-white rounded-xl shadow-lg transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed ${isDeactivate
-                            ? 'bg-amber-600 hover:bg-amber-500 shadow-amber-500/20'
-                            : 'bg-red-600 hover:bg-red-500 shadow-red-500/20'
-                            }`}
-                    >
-                        {isLoading ? 'Processing...' : isDeactivate ? 'Confirm Deactivation' : 'Delete Account'}
-                    </button>
-                </div>
-            </div>
-        </div>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
     );
 };
 
@@ -96,7 +129,7 @@ export default function AccountStatusTab() {
 
     const [modalConfig, setModalConfig] = useState({
         isOpen: false,
-        actionType: null // 'deactivate' or 'delete'
+        actionType: null
     });
     const [deactivationDuration, setDeactivationDuration] = useState('null');
 
@@ -105,7 +138,6 @@ export default function AccountStatusTab() {
         setDeactivationDuration('null');
     };
 
-    // Handle Deactivate Account
     const deactivateMutation = useMutation({
         mutationFn: async (duration) => {
             const body = duration !== 'null' ? { duration } : {};
@@ -113,31 +145,30 @@ export default function AccountStatusTab() {
             return response.data;
         },
         onSuccess: async () => {
-            toast.success('Account deactivated successfully.');
+            toast.success('Neural hibernation active.');
             closeHandler();
             await logout();
             navigate('/auth/login', { replace: true });
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Failed to deactivate account');
+            toast.error(error.response?.data?.message || 'Hibernation protocol failed.');
             closeHandler();
         }
     });
 
-    // Handle Delete Account
     const deleteMutation = useMutation({
         mutationFn: async () => {
             const response = await api.delete('/settings/delete');
             return response.data;
         },
         onSuccess: async () => {
-            toast.success('Account permanently deleted.');
+            toast.success('Identity scrubbed successfully.');
             closeHandler();
             await logout();
             navigate('/auth/login', { replace: true });
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Failed to delete account');
+            toast.error(error.response?.data?.message || 'Scrub protocol failed.');
             closeHandler();
         }
     });
@@ -153,7 +184,7 @@ export default function AccountStatusTab() {
     const isLoading = deactivateMutation.isPending || deleteMutation.isPending;
 
     return (
-        <div className="bg-amber-500/[0.02] border border-amber-500/10 -m-6 md:-m-8 p-6 md:p-8 rounded-2xl h-full transition-colors duration-200">
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
             <ConfirmModal
                 isOpen={modalConfig.isOpen}
                 onClose={closeHandler}
@@ -164,47 +195,74 @@ export default function AccountStatusTab() {
                 setDeactivationDuration={setDeactivationDuration}
             />
 
-            <div className="mb-6 flex items-start gap-3">
-                <ShieldAlert className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                <div>
-                    <h2 className="text-[17px] font-bold text-amber-400 tracking-tight">Account Status</h2>
-                    <p className="text-[13px] text-amber-400/70 mt-1 max-w-2xl leading-relaxed">
-                        Manage the active status of your profile. Deactivation temporarily suspends your presence, while deletion permanently scrubs all associated data.
-                    </p>
+            {/* Danger Zone Metadata */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-rose-500/10">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-black text-rose-500 tracking-tighter uppercase">Terminal <span className="text-white">Zone.</span></h2>
+                    <p className="text-[10px] font-black text-rose-500/40 uppercase tracking-[0.3em]">Irreversible Account Protocols</p>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-2xl shadow-xl">
+                    <ShieldAlert className="w-4 h-4 text-rose-500" />
+                    <span className="text-[9px] font-black text-rose-500 uppercase tracking-widest">High Risk Level 5</span>
                 </div>
             </div>
 
-            <div className="border border-white/[0.06] bg-white/[0.01] rounded-xl overflow-hidden divide-y divide-white/[0.06] mt-6">
+            <div className="grid grid-cols-1 gap-8">
                 {/* Deactivate Option */}
-                <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h3 className="text-[14px] font-bold text-gray-200 tracking-tight">Deactivate Profile</h3>
-                        <p className="text-[13px] text-gray-500 mt-1 max-w-xl">
-                            Hide your presence in the workspace without losing your data.
-                        </p>
+                <Card padding="p-8" className="border-amber-500/5 bg-amber-500/[0.02] hover:border-amber-500/20 transition-all group">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:scale-110 transition-transform">
+                                <LogOut className="w-8 h-8 text-amber-500" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Deactivate Identity Node</h3>
+                                <p className="text-[11px] text-gray-500 font-medium max-w-lg leading-relaxed">
+                                    Temporarily suspend your presence and neural links. Data integrity is maintained for potential reactivation.
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            onClick={() => setModalConfig({ isOpen: true, actionType: 'deactivate' })}
+                            className="bg-amber-600 hover:bg-amber-500 px-8 py-4 rounded-xl shadow-xl shadow-amber-500/10"
+                        >
+                            Execute Hibernation
+                        </Button>
                     </div>
-                    <button
-                        onClick={() => setModalConfig({ isOpen: true, actionType: 'deactivate' })}
-                        className="shrink-0 inline-flex items-center justify-center px-4 py-2 text-[13px] font-semibold text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/20 rounded-xl transition-all active:scale-[0.98]"
-                    >
-                        Deactivate
-                    </button>
-                </div>
+                </Card>
 
                 {/* Delete Option */}
-                <div className="p-5 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h3 className="text-[14px] font-bold text-gray-200 tracking-tight">Permanent Deletion</h3>
-                        <p className="text-[13px] text-gray-500 mt-1 max-w-xl">
-                            Irreversibly erase your entire account history and remove yourself from all shared projects.
-                        </p>
+                <Card padding="p-8" className="border-rose-500/5 bg-rose-500/[0.02] hover:border-rose-500/20 transition-all group">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                        <div className="flex items-center gap-6">
+                            <div className="w-16 h-16 rounded-[1.5rem] bg-rose-500/10 flex items-center justify-center border border-rose-500/10 group-hover:scale-110 transition-transform">
+                                <Trash2 className="w-8 h-8 text-rose-500" />
+                            </div>
+                            <div className="space-y-2">
+                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Permanent Terminal Scrub</h3>
+                                <p className="text-[11px] text-gray-500 font-medium max-w-lg leading-relaxed">
+                                    Irreversibly erase your entire neural history, project segments, and identity markers from the nexus.
+                                </p>
+                            </div>
+                        </div>
+                        <Button
+                            onClick={() => setModalConfig({ isOpen: true, actionType: 'delete' })}
+                            className="bg-rose-600 hover:bg-rose-500 px-8 py-4 rounded-xl shadow-xl shadow-rose-500/10"
+                        >
+                            Authorize Scrub
+                        </Button>
                     </div>
-                    <button
-                        onClick={() => setModalConfig({ isOpen: true, actionType: 'delete' })}
-                        className="shrink-0 inline-flex items-center justify-center px-4 py-2 text-[13px] font-semibold text-white bg-red-600/90 hover:bg-red-500 shadow-lg shadow-red-500/20 rounded-xl transition-all active:scale-[0.98]"
-                    >
-                        Delete Account
-                    </button>
+                </Card>
+            </div>
+
+            {/* Protocol Warning */}
+            <div className="p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 flex items-start gap-6 opacity-30">
+                <ShieldAlert className="w-6 h-6 text-gray-600 shrink-0 mt-1" />
+                <div className="space-y-2">
+                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Protocol Intelligence</span>
+                    <p className="text-[10px] text-gray-700 font-medium leading-relaxed uppercase tracking-widest">
+                        Terminal actions target primary identity markers and shared node indices. Peripheral project data may persist in team neural segments.
+                    </p>
                 </div>
             </div>
         </div>

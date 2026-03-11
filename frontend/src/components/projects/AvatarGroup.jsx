@@ -1,6 +1,14 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
+const cn = (...inputs) => twMerge(clsx(inputs));
+
+/**
+ * Modern 2026 AvatarGroup
+ * High-vibrance presence indicators with Glassmorphism 2.0
+ */
 const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
     const displayViewers = viewers.slice(0, max);
     const overflowCount = viewers.length > max ? viewers.length - max : 0;
@@ -8,7 +16,10 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
     return (
         <div
             onClick={onClick}
-            className={`flex items-center -space-x-4 ${onClick ? 'cursor-pointer hover:opacity-80 transition-opacity' : ''}`}
+            className={cn(
+                "flex items-center -space-x-4",
+                onClick && "cursor-pointer hover:opacity-80 transition-opacity"
+            )}
         >
             <AnimatePresence mode="popLayout">
                 {displayViewers.map((viewer, index) => (
@@ -19,17 +30,17 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                         exit={{ opacity: 0, x: -10, scale: 0.8 }}
                         transition={{
                             type: "spring",
-                            stiffness: 300,
-                            damping: 25,
+                            stiffness: 400,
+                            damping: 30,
                             delay: index * 0.05
                         }}
                         className="relative group focus:outline-none"
-                        title={viewer.name}
                     >
-                        <div className={`
-                            w-10 h-10 rounded-full border-2 border-zinc-950 bg-zinc-800 shadow-xl overflow-hidden transition-all duration-300 group-hover:-translate-y-1 group-hover:scale-110 group-hover:z-50 ring-4 ring-transparent group-hover:ring-emerald-500/20
-                            ${(viewer.status === 'Away' || viewer.status === 'away') ? 'opacity-50 grayscale' : 'opacity-100'}
-                        `}>
+                        <div className={cn(
+                            "w-12 h-12 rounded-[1.25rem] border-2 border-[#09090b] bg-white/5 shadow-2xl overflow-hidden transition-all duration-500",
+                            "group-hover:-translate-y-2 group-hover:scale-110 group-hover:z-50 group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10",
+                            (viewer.status === 'Away' || viewer.status === 'away') ? 'opacity-40 grayscale' : 'opacity-100'
+                        )}>
                             {viewer.avatar ? (
                                 <img
                                     src={viewer.avatar}
@@ -37,23 +48,26 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                                     className="w-full h-full object-cover"
                                 />
                             ) : (
-                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-emerald-500 to-emerald-600 text-[10px] font-black text-white uppercase">
+                                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-cyan-500/20 to-indigo-500/20 text-[11px] font-black text-white uppercase tracking-tighter">
                                     {viewer.name?.charAt(0) || '?'}
                                 </div>
                             )}
                         </div>
 
-                        {/* Status Indicator */}
-                        <div className={`
-                            absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-zinc-950 z-[2]
-                            ${(viewer.status === 'Online' || viewer.status === 'active') ? 'bg-emerald-500' :
-                                (viewer.status === 'Away' || viewer.status === 'away') ? 'bg-amber-500' :
-                                    viewer.status === 'Do Not Disturb' ? 'bg-rose-500' : 'bg-zinc-500'}
-                        `} />
+                        {/* Status Indicator Grid */}
+                        <div className={cn(
+                            "absolute bottom-0 right-0 w-4 h-4 rounded-lg border-2 border-[#09090b] z-[2] shadow-xl",
+                            (viewer.status === 'Online' || viewer.status === 'active') ? 'bg-emerald-500 shadow-emerald-500/40' :
+                                (viewer.status === 'Away' || viewer.status === 'away') ? 'bg-amber-500 shadow-amber-500/40' :
+                                    viewer.status === 'Do Not Disturb' ? 'bg-rose-500 shadow-rose-500/40' : 'bg-gray-600'
+                        )}>
+                            <div className="absolute inset-0 bg-white/20 rounded-sm scale-[0.3]" />
+                        </div>
 
-                        {/* Tooltip (Simple native fallback + style) */}
-                        <div className="absolute -top-10 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-zinc-900 border border-white/10 rounded-lg text-[10px] font-black text-white opacity-0 group-hover:opacity-100 transition-all pointer-events-none whitespace-nowrap shadow-2xl z-[60]">
+                        {/* Cinematic Tooltip */}
+                        <div className="absolute -top-12 left-1/2 -translate-x-1/2 px-4 py-2 glass-2 bg-black/60 border border-white/10 rounded-xl text-[10px] font-black text-white opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap shadow-2xl z-[60] scale-90 group-hover:scale-100 uppercase tracking-widest">
                             {viewer.name}
+                            <div className="absolute bottom-[-6px] left-1/2 -translate-x-1/2 border-l-[6px] border-l-transparent border-r-[6px] border-r-transparent border-t-[6px] border-t-black/60" />
                         </div>
                     </motion.div>
                 ))}
@@ -62,7 +76,7 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.5 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="w-10 h-10 rounded-full border-2 border-zinc-950 bg-zinc-900 flex items-center justify-center text-[10px] font-black text-zinc-400 shadow-xl relative z-10"
+                        className="w-12 h-12 rounded-[1.25rem] border-2 border-[#09090b] bg-white/5 flex items-center justify-center text-[10px] font-black text-gray-400 shadow-2xl relative z-10 backdrop-blur-md"
                     >
                         +{overflowCount}
                     </motion.div>

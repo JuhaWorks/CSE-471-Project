@@ -3,11 +3,13 @@ import * as Dialog from '@radix-ui/react-dialog';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { X, Calendar, FolderPlus, ArrowRight, ArrowLeft, Loader2, Upload, Image as ImageIcon } from 'lucide-react';
+import { X, Calendar, FolderPlus, ArrowRight, ArrowLeft, Loader2, Upload, Activity, Target } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
+import Button from '../ui/Button';
+import Input from '../ui/Input';
 
 const projectSchema = z.object({
     name: z.string().min(3, 'Project name must be at least 3 characters').max(100),
@@ -16,9 +18,6 @@ const projectSchema = z.object({
     startDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid start date' }),
     endDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid end date' }),
     coverImageUrl: z.string().url('Please enter a valid URL').optional().or(z.literal('')),
-}).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
-    message: "End date must be after start date",
-    path: ["endDate"],
 }).refine((data) => new Date(data.endDate) > new Date(data.startDate), {
     message: "End date must be after start date",
     path: ["endDate"],
@@ -53,7 +52,6 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
             const res = await api.post('/projects', data);
             const project = res.data.data;
 
-            // If a file was selected, upload it now
             if (selectedFile) {
                 const formData = new FormData();
                 formData.append('coverImage', selectedFile);
@@ -66,11 +64,11 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-            toast.success('Project created successfully! 🚀');
+            toast.success('Project dispatched to workspace engine! 🛰️');
             handleClose();
         },
         onError: (err) => {
-            toast.error(err.response?.data?.message || 'Failed to create project');
+            toast.error(err.response?.data?.message || 'Dispatch failure. Check node status.');
         }
     });
 
@@ -93,43 +91,45 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
 
         const isStepValid = await trigger(fieldsToValidate);
         if (isStepValid) setStep(s => s + 1);
-        else toast.error('Please fill all required fields correctly');
     };
+    
     const prevStep = () => setStep(s => s - 1);
 
     return (
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
-                <Dialog.Overlay className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] animate-in fade-in duration-300" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-3xl shadow-2xl z-[70] overflow-hidden focus:outline-none animate-in zoom-in-95 duration-200">
-
-                    {/* Progress Bar */}
-                    <div className="absolute top-0 left-0 w-full h-1 bg-[var(--border-subtle)]">
+                <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] animate-in fade-in duration-300" />
+                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl glass-2 border-white/10 bg-[#09090b]/90 rounded-[2.5rem] shadow-2xl z-[70] overflow-hidden focus:outline-none animate-in zoom-in-95 duration-200">
+                    
+                    {/* Header with Visual Indicator */}
+                    <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
                         <motion.div
-                            className="h-full bg-emerald-500"
+                            className="h-full bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.6)]"
                             initial={{ width: '33.33%' }}
                             animate={{ width: `${(step / 3) * 100}%` }}
                         />
                     </div>
 
-                    <div className="p-8">
-                        <div className="flex items-center justify-between mb-8">
+                    <div className="p-10">
+                        <header className="flex items-center justify-between mb-10">
                             <div>
-                                <Dialog.Title className="text-xl font-bold text-[var(--text-main)] tracking-tight">
-                                    {step === 1 && "Start a New Journey"}
-                                    {step === 2 && "The Finer Details"}
-                                    {step === 3 && "Timeline & Goal"}
+                                <Dialog.Title className="text-2xl font-black text-white tracking-tighter">
+                                    {step === 1 && "Initialization"}
+                                    {step === 2 && "Classification"}
+                                    {step === 3 && "Scheduling"}
                                 </Dialog.Title>
-                                <Dialog.Description className="text-sm text-[var(--text-muted)] mt-1">
-                                    Step {step} of 3 • {step === 1 ? "Basic Info" : step === 2 ? "Category" : "Timeline"}
+                                <Dialog.Description className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em] mt-1">
+                                    Nexus Protocol • Step {step} of 3
                                 </Dialog.Description>
                             </div>
-                            <Dialog.Close className="p-2 text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-subtle)] rounded-full transition-all text-white">
-                                <X className="w-5 h-5" />
+                            <Dialog.Close asChild>
+                                <button className="p-3 text-gray-500 hover:text-white hover:bg-white/5 rounded-2xl transition-all outline-none">
+                                    <X className="w-5 h-5" />
+                                </button>
                             </Dialog.Close>
-                        </div>
+                        </header>
 
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
                             <AnimatePresence mode="wait">
                                 {step === 1 && (
                                     <motion.div
@@ -137,58 +137,51 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-5"
+                                        className="space-y-6"
                                     >
+                                        <Input
+                                            label="Project Identifier"
+                                            placeholder="e.g. Project Orion"
+                                            error={errors.name?.message}
+                                            {...register('name')}
+                                        />
+                                        
                                         <div className="space-y-2">
-                                            <label className="text-[13px] font-semibold text-[var(--text-muted)] ml-1">Project Name</label>
-                                            <input
-                                                {...register('name')}
-                                                placeholder="e.g. Project Orion"
-                                                className="w-full bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-2xl px-4 py-3 text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all"
-                                            />
-                                            {errors.name && <p className="text-xs text-red-400 ml-1">{errors.name.message}</p>}
-                                        </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[13px] font-semibold text-[var(--text-muted)] ml-1">Description</label>
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Mission Objective</label>
                                             <textarea
                                                 {...register('description')}
                                                 rows={3}
-                                                placeholder="What are we building today?"
-                                                className="w-full bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-2xl px-4 py-3 text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all resize-none"
+                                                placeholder="Define the architectural goal..."
+                                                className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:ring-4 focus:ring-cyan-500/5 focus:border-cyan-500/30 transition-all resize-none font-medium text-sm"
                                             />
-                                            {errors.description && <p className="text-xs text-red-400 ml-1">{errors.description.message}</p>}
+                                            {errors.description && <p className="text-xs text-red-400 ml-1 font-bold">{errors.description.message}</p>}
                                         </div>
-                                        <div className="space-y-2">
-                                            <label className="text-[13px] font-semibold text-[var(--text-muted)] ml-1">Cover Image (Optional)</label>
 
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Visual Asset (Soft-Link)</label>
                                             <div className="flex gap-4">
                                                 <div
                                                     onClick={() => fileInputRef.current.click()}
-                                                    className="w-24 h-24 rounded-2xl border border-[var(--border-subtle)] bg-[var(--bg-base)] flex flex-col items-center justify-center cursor-pointer hover:bg-[var(--border-subtle)] transition-all overflow-hidden relative group"
+                                                    className="w-24 h-24 rounded-2xl border border-white/5 bg-white/5 flex flex-col items-center justify-center cursor-pointer hover:bg-white/10 transition-all overflow-hidden relative group shrink-0"
                                                 >
                                                     {previewUrl ? (
                                                         <img src={previewUrl} className="w-full h-full object-cover" alt="Preview" />
                                                     ) : (
                                                         <>
-                                                            <Upload className="w-5 h-5 text-[var(--text-muted)] mb-1" />
-                                                            <span className="text-[10px] font-bold text-[var(--text-muted)] uppercase">File</span>
+                                                            <Upload className="w-6 h-6 text-gray-500 mb-1" />
+                                                            <span className="text-[9px] font-black text-gray-600 uppercase">Uplink</span>
                                                         </>
-                                                    )}
-                                                    {previewUrl && (
-                                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                                                            <Upload className="w-5 h-5 text-white" />
-                                                        </div>
                                                     )}
                                                 </div>
 
-                                                <div className="flex-1 space-y-2">
-                                                    <input
+                                                <div className="flex-1 space-y-3">
+                                                    <Input
+                                                        placeholder="...or CDN endpoint"
+                                                        error={errors.coverImageUrl?.message}
                                                         {...register('coverImageUrl')}
-                                                        placeholder="...or paste image URL"
-                                                        className="w-full bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-2xl px-4 py-3 text-[var(--text-main)] placeholder:text-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all font-medium text-sm"
                                                     />
-                                                    <p className="text-[10px] text-zinc-500 italic ml-1 leading-relaxed">
-                                                        Heads up: Files take priority over URLs!
+                                                    <p className="text-[10px] text-gray-700 italic font-medium leading-relaxed">
+                                                        Note: Physical file uplinks override external CDN endpoints.
                                                     </p>
                                                 </div>
                                             </div>
@@ -206,7 +199,6 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                                     }
                                                 }}
                                             />
-                                            {errors.coverImageUrl && <p className="text-xs text-red-400 ml-1">{errors.coverImageUrl.message}</p>}
                                         </div>
                                     </motion.div>
                                 )}
@@ -217,27 +209,29 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-5"
+                                        className="space-y-6"
                                     >
-                                        <div className="space-y-2">
-                                            <label className="text-[13px] font-semibold text-[var(--text-muted)] ml-1">Category</label>
+                                        <div className="space-y-4">
+                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Select Domain</label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map((cat) => (
                                                     <button
                                                         key={cat}
                                                         type="button"
                                                         onClick={() => setValue('category', cat, { shouldValidate: true })}
-                                                        className={`px-4 py-3 rounded-2xl border text-sm font-medium transition-all ${watch('category') === cat
-                                                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.1)]'
-                                                            : 'bg-[var(--bg-base)] border-[var(--border-subtle)] text-[var(--text-muted)] hover:border-[var(--text-muted)] hover:text-[var(--text-main)]'
-                                                            }`}
+                                                        className={cn(
+                                                            "px-5 py-4 rounded-2xl border text-sm font-black transition-all",
+                                                            watch('category') === cat
+                                                                ? "bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
+                                                                : "bg-white/5 border-white/5 text-gray-500 hover:border-white/10 hover:text-white"
+                                                        )}
                                                     >
                                                         {cat}
                                                     </button>
                                                 ))}
                                             </div>
                                             <input type="hidden" {...register('category')} />
-                                            {errors.category && <p className="text-xs text-red-400 ml-1">{errors.category.message}</p>}
+                                            {errors.category && <p className="text-xs text-red-400 ml-1 font-bold">{errors.category.message}</p>}
                                         </div>
                                     </motion.div>
                                 )}
@@ -248,75 +242,50 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         initial={{ opacity: 0, x: 20 }}
                                         animate={{ opacity: 1, x: 0 }}
                                         exit={{ opacity: 0, x: -20 }}
-                                        className="space-y-5"
+                                        className="space-y-6"
                                     >
                                         <div className="grid grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <label className="text-[13px] font-semibold text-[var(--text-muted)] ml-1">Start Date</label>
-                                                <div className="relative">
-                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                                                    <input
-                                                        type="date"
-                                                        {...register('startDate')}
-                                                        className="w-full bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-2xl pl-11 pr-4 py-3 text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all font-bold"
-                                                    />
-                                                </div>
-                                                {errors.startDate && <p className="text-xs text-red-400 ml-1">{errors.startDate.message}</p>}
-                                            </div>
-                                            <div className="space-y-2">
-                                                <label className="text-[13px] font-semibold text-[var(--text-muted)] ml-1">End Date</label>
-                                                <div className="relative">
-                                                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-[var(--text-muted)]" />
-                                                    <input
-                                                        type="date"
-                                                        {...register('endDate')}
-                                                        className="w-full bg-[var(--bg-base)] border border-[var(--border-subtle)] rounded-2xl pl-11 pr-4 py-3 text-[var(--text-main)] focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500/40 transition-all font-bold"
-                                                    />
-                                                </div>
-                                                {errors.endDate && <p className="text-xs text-red-400 ml-1">{errors.endDate.message}</p>}
-                                            </div>
+                                            <Input
+                                                id="startDate"
+                                                label="Launch Day"
+                                                type="date"
+                                                leftIcon={Calendar}
+                                                error={errors.startDate?.message}
+                                                {...register('startDate')}
+                                            />
+                                            <Input
+                                                id="endDate"
+                                                label="Target Horizon"
+                                                type="date"
+                                                leftIcon={Target}
+                                                error={errors.endDate?.message}
+                                                {...register('endDate')}
+                                            />
                                         </div>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
 
-                            <div className="flex items-center gap-3 pt-4">
+                            <footer className="flex items-center gap-4 pt-6">
                                 {step > 1 && (
-                                    <button
-                                        type="button"
+                                    <Button
+                                        variant="secondary"
                                         onClick={prevStep}
-                                        className="flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[var(--bg-base)] border border-[var(--border-subtle)] text-[var(--text-main)] font-semibold hover:bg-[var(--border-subtle)] transition-all outline-none"
-                                    >
-                                        <ArrowLeft className="w-4 h-4" />
-                                    </button>
+                                        leftIcon={ArrowLeft}
+                                        className="px-6"
+                                    />
                                 )}
 
-                                {step < 3 ? (
-                                    <button
-                                        type="button"
-                                        onClick={nextStep}
-                                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[var(--text-main)] text-[var(--bg-base)] font-bold hover:opacity-90 transition-all outline-none shadow-lg"
-                                    >
-                                        Continue
-                                        <ArrowRight className="w-4 h-4" />
-                                    </button>
-                                ) : (
-                                    <button
-                                        type="submit"
-                                        disabled={createProjectMutation.isPending || !isValid}
-                                        className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-emerald-600 text-zinc-50 font-bold hover:bg-emerald-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed outline-none shadow-lg shadow-emerald-500/20"
-                                    >
-                                        {createProjectMutation.isPending ? (
-                                            <Loader2 className="w-5 h-5 animate-spin" />
-                                        ) : (
-                                            <>
-                                                Launch Project
-                                                <FolderPlus className="w-4 h-4" />
-                                            </>
-                                        )}
-                                    </button>
-                                )}
-                            </div>
+                                <Button
+                                    type={step === 3 ? "submit" : "button"}
+                                    onClick={step < 3 ? nextStep : undefined}
+                                    isLoading={createProjectMutation.isPending}
+                                    fullWidth
+                                    rightIcon={step < 3 ? ArrowRight : FolderPlus}
+                                >
+                                    {step === 3 ? "Launch Initiative" : "Next Segment"}
+                                </Button>
+                            </footer>
                         </form>
                     </div>
                 </Dialog.Content>

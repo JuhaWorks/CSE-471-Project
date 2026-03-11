@@ -4,9 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Mail, Lock } from 'lucide-react';
+import { Mail, Lock, ShieldCheck, ShieldAlert, Key, Zap, Info, ChevronRight } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import EmailUpdateModal from './EmailUpdateModal';
+import Button from '../ui/Button';
+import Card from '../ui/Card';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const securitySchema = z
     .object({
@@ -19,41 +22,45 @@ const securitySchema = z
             if (data.newPassword.length < 8) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Password must be at least 8 characters long',
+                    message: 'Encryption must be at least 8 segments',
                     path: ['newPassword'],
                 });
             }
             if (!/[0-9]/.test(data.newPassword)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Password must contain at least one number',
+                    message: 'Protocol requires numerical markers',
                     path: ['newPassword'],
                 });
             }
             if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(data.newPassword)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Password must contain at least one special character',
+                    message: 'Symbolic entropy required',
                     path: ['newPassword'],
                 });
             }
             if (!data.currentPassword) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Current password is required to set a new password',
+                    message: 'Current authorization required',
                     path: ['currentPassword'],
                 });
             }
             if (data.newPassword !== data.confirmNewPassword) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Passwords do not match',
+                    message: 'Neural sequences do not match',
                     path: ['confirmNewPassword'],
                 });
             }
         }
     });
 
+/**
+ * Modern 2026 SecurityTab
+ * High-fidelity security orchestration with Glassmorphism 2.0
+ */
 export default function SecurityTab() {
     const { user } = useAuthStore();
     const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -82,7 +89,7 @@ export default function SecurityTab() {
         },
         onSuccess: (data) => {
             if (data.message) {
-                toast.success(data.message);
+                toast.success('Security protocols rotated.');
                 reset((formValues) => ({
                     ...formValues,
                     currentPassword: '',
@@ -95,7 +102,7 @@ export default function SecurityTab() {
             }
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Failed to update security settings');
+            toast.error(error.response?.data?.message || 'Protocol rotation failed.');
         }
     });
 
@@ -104,122 +111,155 @@ export default function SecurityTab() {
     };
 
     return (
-        <div>
-            <div className="mb-6 pb-6 border-b border-white/[0.06]">
-                <h2 className="text-[17px] font-bold text-white tracking-tight">Security Information</h2>
-                <p className="text-[13px] text-gray-500 mt-1">Update your email and manage your password.</p>
+        <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
+            {/* Security Metadata */}
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                <div className="space-y-1">
+                    <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Security <span className="text-indigo-400">Firewall.</span></h2>
+                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Neural Encryption & Access Management</p>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl shadow-xl">
+                    <ShieldCheck className="w-4 h-4 text-indigo-400" />
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Quantum Guard Active</span>
+                </div>
             </div>
 
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                {/* Email Section */}
-                <div className="pb-6 border-b border-white/[0.06]">
-                    <div className="flex items-center justify-between mb-1.5">
-                        <label className="block text-[13px] font-semibold text-gray-300">
-                            Email Address
-                        </label>
-                        <button
-                            type="button"
-                            onClick={() => setIsEmailModalOpen(true)}
-                            className="text-[12px] font-medium text-emerald-400 hover:text-emerald-300 transition-colors px-3 py-1 bg-emerald-500/10 hover:bg-emerald-500/20 rounded-lg"
-                        >
-                            Update Email
-                        </button>
-                    </div>
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                            <Mail className="h-4 w-4 text-gray-500" />
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+                {/* Email Orchestration */}
+                <Card padding="p-0" className="overflow-hidden border-white/5">
+                    <div className="px-10 py-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Mail className="w-4 h-4 text-gray-600" />
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Access Identifier</span>
                         </div>
-                        <input
-                            type="email"
-                            disabled
-                            value={user?.email || ''}
-                            className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.04] rounded-xl text-[13px] bg-white/[0.02] text-gray-400 cursor-not-allowed shadow-inner shadow-black/20"
-                        />
+                        <Button 
+                            type="button" 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setIsEmailModalOpen(true)}
+                            className="rounded-xl border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
+                        >
+                            Rotate Email
+                        </Button>
                     </div>
-                    {user?.pendingNewEmail && (
-                        <p className="text-xs text-amber-400 mt-2 flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse"></span>
-                            Change pending confirmation: <strong>{user.pendingNewEmail}</strong>
-                        </p>
-                    )}
-                </div>
-
-                {/* Password Section */}
-                <div className="space-y-5 pt-2">
-                    <h3 className="text-[14px] font-bold text-white tracking-tight">Change Password</h3>
-
-                    <div className="space-y-1.5">
-                        <label htmlFor="currentPassword" className="block text-[13px] font-semibold text-gray-300">
-                            Current Password
-                        </label>
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                <Lock className="h-4 w-4 text-gray-500" />
-                            </div>
+                    <div className="p-10 space-y-6">
+                        <div className="relative group opacity-60">
+                            <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700" />
                             <input
-                                id="currentPassword"
-                                type="password"
-                                placeholder="••••••••"
-                                {...register('currentPassword')}
-                                className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
+                                type="email"
+                                disabled
+                                value={user?.email || ''}
+                                className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white font-medium text-sm cursor-not-allowed"
                             />
                         </div>
-                        {errors.currentPassword && <p className="text-xs text-red-400 mt-1.5">{errors.currentPassword.message}</p>}
+                        {user?.pendingNewEmail && (
+                            <motion.div 
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex items-center gap-4 p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl"
+                            >
+                                <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
+                                    <Zap className="w-4 h-4 text-amber-500 animate-pulse" />
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Rotation Pending</span>
+                                    <span className="text-[11px] text-gray-500 font-medium">Verify confirmation at {user.pendingNewEmail}</span>
+                                </div>
+                            </motion.div>
+                        )}
                     </div>
+                </Card>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                        <div className="space-y-1.5">
-                            <label htmlFor="newPassword" className="block text-[13px] font-semibold text-gray-300">
-                                New Password
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Lock className="h-4 w-4 text-gray-500" />
-                                </div>
-                                <input
-                                    id="newPassword"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    {...register('newPassword')}
-                                    className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
-                                />
-                            </div>
-                            {errors.newPassword && <p className="text-xs text-red-400 mt-1.5">{errors.newPassword.message}</p>}
-                        </div>
-
-                        <div className="space-y-1.5">
-                            <label htmlFor="confirmNewPassword" className="block text-[13px] font-semibold text-gray-300">
-                                Confirm Password
-                            </label>
-                            <div className="relative">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
-                                    <Lock className="h-4 w-4 text-gray-500" />
-                                </div>
-                                <input
-                                    id="confirmNewPassword"
-                                    type="password"
-                                    placeholder="••••••••"
-                                    {...register('confirmNewPassword')}
-                                    className="block w-full pl-10 px-3.5 py-2.5 border border-white/[0.06] rounded-xl text-[13px] bg-white/[0.02] text-gray-200 placeholder-gray-600 focus:bg-white/[0.04] focus:ring-1 focus:ring-emerald-500/50 focus:border-emerald-500/50 outline-none transition-all duration-200 shadow-inner shadow-black/20"
-                                />
-                            </div>
-                            {errors.confirmNewPassword && <p className="text-xs text-red-400 mt-1.5">{errors.confirmNewPassword.message}</p>}
+                {/* Password Encryption */}
+                <Card padding="p-0" className="overflow-hidden border-white/5">
+                    <div className="px-10 py-6 border-b border-white/5 bg-white/[0.02]">
+                        <div className="flex items-center gap-3">
+                            <Key className="w-4 h-4 text-gray-600" />
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Neural Encryption</span>
                         </div>
                     </div>
-                </div>
+                    <div className="p-10 space-y-8">
+                        <div className="space-y-3">
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Current Authorization</label>
+                            <div className="relative group">
+                                <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-cyan-400 transition-colors" />
+                                <input
+                                    type="password"
+                                    placeholder="••••••••"
+                                    {...register('currentPassword')}
+                                    className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
+                                />
+                            </div>
+                            {errors.currentPassword && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">{errors.currentPassword.message}</p>}
+                        </div>
 
-                <div className="pt-2 flex justify-end">
-                    <button
-                        type="submit"
-                        disabled={securityMutation.isPending}
-                        className="inline-flex items-center justify-center px-4 py-2.5 text-[13px] font-semibold text-white bg-emerald-600 hover:bg-emerald-500 rounded-xl transition-all shadow-lg shadow-emerald-500/20 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                        {securityMutation.isPending ? 'Saving...' : 'Update Security'}
-                    </button>
-                </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">New Sequence</label>
+                                <div className="relative group">
+                                    <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-emerald-400 transition-colors" />
+                                    <input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        {...register('newPassword')}
+                                        className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-emerald-500/30 focus:ring-8 focus:ring-emerald-500/5 transition-all font-medium text-sm"
+                                    />
+                                </div>
+                                {errors.newPassword && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">{errors.newPassword.message}</p>}
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Verify Sequence</label>
+                                <div className="relative group">
+                                    <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-emerald-400 transition-colors" />
+                                    <input
+                                        type="password"
+                                        placeholder="••••••••"
+                                        {...register('confirmNewPassword')}
+                                        className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-emerald-500/30 focus:ring-8 focus:ring-emerald-500/5 transition-all font-medium text-sm"
+                                    />
+                                </div>
+                                {errors.confirmNewPassword && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">{errors.confirmNewPassword.message}</p>}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="px-10 py-8 border-t border-white/5 flex items-center justify-between bg-black/10">
+                        <div className="flex items-center gap-3">
+                            <Info className="w-4 h-4 text-gray-700" />
+                            <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest leading-relaxed">
+                                Sequence updates require valid current authorization for security integrity.
+                            </p>
+                        </div>
+                        <Button
+                            type="submit"
+                            isLoading={securityMutation.isPending}
+                            disabled={securityMutation.isPending}
+                            className="px-12 py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500"
+                        >
+                            Rotate Protocols
+                        </Button>
+                    </div>
+                </Card>
             </form>
 
             <EmailUpdateModal isOpen={isEmailModalOpen} onClose={() => setIsEmailModalOpen(false)} />
+
+            {/* Account Recovery (Mock for UI) */}
+            <Card padding="p-8" className="border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 cursor-pointer group hover:border-white/10 transition-all">
+                <div className="flex items-center gap-6">
+                    <div className="w-16 h-16 rounded-3xl bg-white/5 flex items-center justify-center group-hover:bg-white/10 transition-colors">
+                        <ShieldAlert className="w-8 h-8 text-gray-600 group-hover:text-amber-500/60 transition-colors" />
+                    </div>
+                    <div className="space-y-1">
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Multi-Factor Synchronization</h4>
+                        <p className="text-[11px] text-gray-500 font-medium">Add an additional layer of neural verification to your identity.</p>
+                    </div>
+                </div>
+                <div className="flex items-center gap-2 text-indigo-400 group-hover:text-white transition-colors">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em]">Configure</span>
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                </div>
+            </Card>
         </div>
     );
 }

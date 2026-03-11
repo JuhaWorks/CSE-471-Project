@@ -3,11 +3,17 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUpdateProject, useUploadProjectImage } from '../../hooks/projects/useProjectQueries';
-import { Save, Loader2, Layout, Upload, Image as ImageIcon, X } from 'lucide-react';
+import { Save, Loader2, Layout, Upload, Image as ImageIcon, X, Trash2, Calendar, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useState, useRef, useEffect } from 'react';
 import LockedInput from './LockedInput';
 import { useSocketStore } from '../../store/useSocketStore';
+import Card from '../ui/Card';
+import Button from '../ui/Button';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 
 const projectSchema = z.object({
     name: z.string().min(3, 'Project name must be at least 3 characters').max(100),
@@ -23,7 +29,6 @@ const projectSchema = z.object({
 
 const CoreDetailsTab = ({ project, isAuthorized }) => {
     const updateMutation = useUpdateProject();
-
     const uploadMutation = useUploadProjectImage();
     const fileInputRef = useRef(null);
     const [previewUrl, setPreviewUrl] = useState(project.coverImageUrl || '');
@@ -53,9 +58,8 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
         const file = e.target.files[0];
         if (!file) return;
 
-        // Basic validation
         if (file.size > 10 * 1024 * 1024) {
-            toast.error('File too large (max 10MB)');
+            toast.error('Data volume limit exceeded (max 10MB)');
             return;
         }
 
@@ -64,10 +68,8 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
 
         try {
             await uploadMutation.mutateAsync({ id: project._id, file });
-            // After successful upload, the server returns the new URL
-            // and the hook updates the query data automatically.
+            toast.success('Visual asset uplinked to node.');
         } catch (err) {
-            // Error handled by mutation
             setPreviewUrl(project.coverImageUrl || '');
         }
     };
@@ -76,69 +78,92 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
         updateMutation.mutate({
             id: project._id,
             data,
-            version: project.__v // Send version for OCC
+            version: project.__v
         });
     };
 
     return (
-        <section className="bg-zinc-950/50 border border-white/5 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl">
-            <div className="p-6 border-b border-white/5 flex items-center justify-between bg-white/[0.02]">
-                <div className="flex items-center gap-2">
-                    <Layout className="w-5 h-5 text-emerald-400" />
-                    <h2 className="font-bold text-white tracking-tight">General Information</h2>
+        <Card className="overflow-hidden" padding="p-0">
+            <header className="px-10 py-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+                <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex items-center justify-center">
+                        <Layout className="w-5 h-5 text-emerald-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-white tracking-tighter">Core Configuration</h2>
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Metadata Node</p>
+                    </div>
                 </div>
                 {!isAuthorized && (
-                    <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest bg-white/5 px-3 py-1 rounded-full">Read Only</span>
+                    <div className="flex items-center gap-2 px-4 py-1.5 glass-2 bg-white/5 border-white/10 rounded-xl">
+                        <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Isolated Environment</span>
+                    </div>
                 )}
-            </div>
+            </header>
 
-            <div className="p-8">
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-                    <div className="grid grid-cols-1 gap-8">
-                        {/* Project Name */}
-                        <LockedInput
-                            projectId={project._id}
-                            fieldId="name"
-                            label="Project Name"
-                            register={register}
-                            error={errors.name}
-                            disabled={!isAuthorized || updateMutation.isPending}
-                            placeholder="Enter project name..."
-                        />
+            <div className="p-10">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-10">
+                    <div className="space-y-10">
+                        {/* Project Name & Description */}
+                        <div className="grid grid-cols-1 gap-10">
+                            <LockedInput
+                                projectId={project._id}
+                                fieldId="name"
+                                label="Nexus Identifier"
+                                register={register}
+                                error={errors.name}
+                                disabled={!isAuthorized || updateMutation.isPending}
+                                placeholder="Enter project identifier..."
+                            />
 
-                        {/* Description */}
-                        <LockedInput
-                            projectId={project._id}
-                            fieldId="description"
-                            label="Description"
-                            as="textarea"
-                            rows={4}
-                            register={register}
-                            error={errors.description}
-                            disabled={!isAuthorized || updateMutation.isPending}
-                            placeholder="What is this project about?"
-                        />
+                            <LockedInput
+                                projectId={project._id}
+                                fieldId="description"
+                                label="Mission Directive"
+                                as="textarea"
+                                register={register}
+                                error={errors.description}
+                                disabled={!isAuthorized || updateMutation.isPending}
+                                placeholder="Define the primary objective..."
+                            />
+                        </div>
 
-                        {/* Cover Image Section */}
-                        <div className="space-y-4">
-                            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Project Cover</label>
+                        {/* Visual Asset Section */}
+                        <div className="space-y-6">
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Hero Asset Uplink</label>
 
-                            <div className="flex flex-col lg:flex-row gap-6">
-                                {/* Preview & Upload Area */}
-                                <div className="relative group w-full lg:w-1/3 aspect-video rounded-2xl overflow-hidden border border-white/10 bg-zinc-900 flex items-center justify-center">
-                                    {previewUrl || coverImageUrl ? (
-                                        <img src={previewUrl || coverImageUrl} className="w-full h-full object-cover" alt="Cover Preview" />
-                                    ) : (
-                                        <ImageIcon className="w-10 h-10 text-zinc-800" />
-                                    )}
+                            <div className="flex flex-col lg:flex-row gap-8">
+                                <div className="relative group w-full lg:w-[320px] aspect-video rounded-3xl overflow-hidden border border-white/5 bg-[#09090b] flex items-center justify-center shadow-2xl">
+                                    <AnimatePresence mode="wait">
+                                        {previewUrl || coverImageUrl ? (
+                                            <motion.img 
+                                                key="preview"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                src={previewUrl || coverImageUrl} 
+                                                className="w-full h-full object-cover" 
+                                                alt="Asset Preview" 
+                                            />
+                                        ) : (
+                                            <motion.div 
+                                                key="empty"
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                className="text-gray-800"
+                                            >
+                                                <ImageIcon className="w-12 h-12" />
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
 
                                     {isAuthorized && (
-                                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
+                                        <div className="absolute inset-0 bg-black/80 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center gap-4">
                                             <button
                                                 type="button"
                                                 onClick={() => fileInputRef.current.click()}
                                                 disabled={uploadMutation.isPending}
-                                                className="p-3 bg-white text-zinc-950 rounded-xl hover:scale-105 transition-transform disabled:opacity-50"
+                                                className="p-4 bg-white text-black rounded-2xl hover:scale-110 active:scale-95 transition-all shadow-xl"
                                             >
                                                 {uploadMutation.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <Upload className="w-5 h-5" />}
                                             </button>
@@ -149,9 +174,9 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                                         setValue('coverImageUrl', '', { shouldDirty: true });
                                                         setPreviewUrl('');
                                                     }}
-                                                    className="p-3 bg-red-500 text-white rounded-xl hover:scale-105 transition-transform"
+                                                    className="p-4 bg-red-600/20 border border-red-500/20 text-red-500 rounded-2xl hover:scale-110 active:scale-95 transition-all"
                                                 >
-                                                    <X className="w-5 h-5" />
+                                                    <Trash2 className="w-5 h-5" />
                                                 </button>
                                             )}
                                         </div>
@@ -163,88 +188,109 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                         className="hidden"
                                         accept="image/*"
                                     />
+                                    {/* Shimmer overlay for loading */}
+                                    <AnimatePresence>
+                                        {uploadMutation.isPending && (
+                                            <motion.div 
+                                                initial={{ opacity: 0 }}
+                                                animate={{ opacity: 1 }}
+                                                exit={{ opacity: 0 }}
+                                                className="absolute inset-0 bg-white/5 animate-pulse" 
+                                            />
+                                        )}
+                                    </AnimatePresence>
                                 </div>
 
-                                <div className="flex-1 space-y-4">
+                                <div className="flex-1 space-y-6">
                                     <div className="space-y-3">
-                                        <p className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Option 1: Paste Image URL</p>
+                                        <label className="text-[10px] font-black text-gray-600 uppercase tracking-widest block ml-1">External CDN Link</label>
                                         <input
                                             {...register('coverImageUrl')}
                                             disabled={!isAuthorized || updateMutation.isPending}
                                             placeholder="https://images.unsplash.com/..."
-                                            className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white placeholder:text-zinc-700 focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all font-medium text-sm"
+                                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-gray-800 focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-medium text-sm"
                                         />
-                                        {errors.coverImageUrl && <p className="text-xs text-red-400 ml-1 font-medium">{errors.coverImageUrl.message}</p>}
+                                        {errors.coverImageUrl && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.coverImageUrl.message}</p>}
                                     </div>
-                                    <div className="p-4 bg-emerald-500/5 border border-emerald-500/10 rounded-2xl">
-                                        <p className="text-[10px] text-emerald-400 font-bold uppercase tracking-widest leading-relaxed">
-                                            Tip: You can either paste a direct link to an image or upload one from your device. Recommended ratio is 16:9.
+                                    <div className="p-5 glass-2 bg-emerald-500/5 border border-emerald-500/10 rounded-[1.5rem] flex items-center gap-4">
+                                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                                        <p className="text-[10px] text-emerald-400/80 font-black uppercase tracking-widest leading-relaxed">
+                                            Asset Guideline: Recommended ratio 16:9 for optimal neural rendering.
                                         </p>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {/* Category */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Category</label>
-                            <div className="relative">
-                                <select
-                                    {...register('category')}
-                                    disabled={!isAuthorized || updateMutation.isPending}
-                                    className="w-full bg-[#0c0c16] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all appearance-none cursor-pointer font-medium text-sm"
-                                >
-                                    <option value="" disabled>Select category</option>
-                                    {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map(cat => (
-                                        <option key={cat} value={cat}>{cat}</option>
-                                    ))}
-                                </select>
-                                <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-zinc-500">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" /></svg>
+                        {/* Metadata Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Domain Class</label>
+                                <div className="relative">
+                                    <select
+                                        {...register('category')}
+                                        disabled={!isAuthorized || updateMutation.isPending}
+                                        className="w-full bg-[#09090b] border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all appearance-none cursor-pointer font-black text-xs uppercase tracking-widest"
+                                    >
+                                        <option value="" disabled>Select Domain</option>
+                                        {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                    <div className="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-600 transition-colors group-hover:text-white">
+                                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" /></svg>
+                                    </div>
                                 </div>
+                                {errors.category && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.category.message}</p>}
                             </div>
-                            {errors.category && <p className="text-xs text-red-400 ml-1 font-medium">{errors.category.message}</p>}
-                        </div>
 
-                        {/* Dates */}
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">Start Date</label>
-                            <input
-                                type="date"
-                                {...register('startDate')}
-                                disabled={!isAuthorized || updateMutation.isPending}
-                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all font-medium text-sm [color-scheme:dark]"
-                            />
-                            {errors.startDate && <p className="text-xs text-red-400 ml-1 font-medium">{errors.startDate.message}</p>}
-                        </div>
-                        <div className="space-y-3">
-                            <label className="text-[11px] font-bold text-zinc-500 uppercase tracking-wider ml-1">End Date</label>
-                            <input
-                                type="date"
-                                {...register('endDate')}
-                                disabled={!isAuthorized || updateMutation.isPending}
-                                className="w-full bg-white/[0.03] border border-white/[0.08] rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 disabled:opacity-50 transition-all font-medium text-sm [color-scheme:dark]"
-                            />
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Temporal Start</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                                    <input
+                                        type="date"
+                                        {...register('startDate')}
+                                        disabled={!isAuthorized || updateMutation.isPending}
+                                        className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:dark]"
+                                    />
+                                </div>
+                                {errors.startDate && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.startDate.message}</p>}
+                            </div>
+
+                            <div className="space-y-3">
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Temporal Horizon</label>
+                                <div className="relative">
+                                    <Target className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
+                                    <input
+                                        type="date"
+                                        {...register('endDate')}
+                                        disabled={!isAuthorized || updateMutation.isPending}
+                                        className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:dark]"
+                                    />
+                                </div>
+                                {errors.endDate && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.endDate.message}</p>}
+                            </div>
                         </div>
                     </div>
 
                     {isAuthorized && (
-                        <div className="pt-8 border-t border-white/5 flex justify-end">
-                            <button
+                        <footer className="pt-10 border-t border-white/5 flex justify-end">
+                            <Button
                                 type="submit"
                                 disabled={!isDirty || !isValid || updateMutation.isPending}
-                                className="flex items-center gap-3 px-10 py-4 rounded-2xl bg-white text-zinc-950 font-bold text-sm hover:bg-zinc-200 transition-all disabled:opacity-20 disabled:cursor-not-allowed shadow-[0_20px_40px_rgba(255,255,255,0.05)] active:scale-95"
+                                isLoading={updateMutation.isPending}
+                                leftIcon={Save}
+                                size="lg"
+                                className="px-12"
                             >
-                                {updateMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                                Save Changes
-                            </button>
-                        </div>
+                                Dispatch Changes
+                            </Button>
+                        </footer>
                     )}
                 </form>
             </div >
-        </section >
+        </Card >
     );
 };
 
