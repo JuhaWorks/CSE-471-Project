@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&display=swap');
+/* Font loading moved to index.html for better performance */
 
 @tailwind base;
 @tailwind components;
@@ -38,6 +38,15 @@
     /* Silver outline */
     --k-text-dim: #9ca3af;
     /* Silver text */
+
+    /* ── Gradient Tokens ── */
+    --grad-primary: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 100%);
+    --grad-glow: radial-gradient(circle at center, rgba(16, 185, 129, 0.15) 0%, transparent 70%);
+    --grad-mesh: radial-gradient(at 0% 0%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+                 radial-gradient(at 100% 0%, rgba(52, 211, 153, 0.05) 0%, transparent 50%),
+                 radial-gradient(at 100% 100%, rgba(16, 185, 129, 0.05) 0%, transparent 50%),
+                 radial-gradient(at 0% 100%, rgba(52, 211, 153, 0.05) 0%, transparent 50%);
 
     /* Dynamic Theme Overrides (Default: Sage Emerald) */
     --theme-400: 78 205 163;  /* Softer sage-teal #4ecda3 */
@@ -106,34 +115,55 @@
     background: var(--bg-base);
     color: var(--text-main);
     min-height: 100vh;
-    font-family: 'Osiris', 'Orbitron', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Osiris', 'Orbitron', 'Syncopate', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
 @layer components {
   .serif {
-    font-family: 'Osiris', 'Orbitron', serif;
+    font-family: 'Osiris', 'Orbitron', 'Syncopate', serif;
   }
 
   .k-card {
-    @apply bg-[var(--bg-surface)] border border-[var(--border-subtle)] backdrop-blur-md rounded-2xl transition-all duration-300;
+    @apply bg-[var(--bg-surface)] border border-[var(--border-subtle)] backdrop-blur-xl rounded-2xl transition-all duration-500;
+    background-image: var(--grad-surface);
   }
 
   .k-card-hover {
-    @apply hover:border-[rgba(var(--theme-500),0.2)] hover:shadow-lg hover:-translate-y-0.5 shadow-sm;
+    @apply hover:border-[rgba(var(--theme-500),0.3)] hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:-translate-y-1 shadow-sm;
   }
 
   .k-input {
-    @apply w-full bg-[var(--bg-surface)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-200 focus:border-[rgba(var(--theme-500),0.4)] focus:ring-4 focus:ring-[rgba(var(--theme-500),0.1)] placeholder:text-[var(--text-muted)];
+    @apply w-full bg-[rgba(var(--bg-surface),0.5)] border border-[var(--border-subtle)] rounded-xl px-4 py-2.5 text-sm outline-none transition-all duration-300 focus:border-[rgba(var(--theme-500),0.5)] focus:ring-4 focus:ring-[rgba(var(--theme-500),0.05)] placeholder:text-[var(--text-muted)];
+    backdrop-filter: blur(10px);
   }
 
   .k-button-primary {
-    @apply bg-gradient-to-br from-emerald-500 to-emerald-600 text-black font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-500/10 hover:shadow-emerald-500/20 -tracking-wide active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none;
+    @apply relative overflow-hidden text-black font-bold py-2.5 px-6 rounded-xl shadow-lg shadow-emerald-500/10 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none;
+    background: var(--grad-primary);
+  }
+
+  .k-button-primary::after {
+    content: '';
+    @apply absolute inset-0 bg-white/10 opacity-0 transition-opacity duration-300;
+  }
+
+  .k-button-primary:hover::after {
+    @apply opacity-100;
   }
 
   .k-glass {
-    @apply bg-[var(--bg-surface)] backdrop-blur-md border border-[var(--border-subtle)];
+    @apply bg-[rgba(var(--bg-surface),0.7)] backdrop-blur-2xl border border-[var(--border-subtle)];
+    background-image: var(--grad-surface);
+  }
+
+  .glass-stroke {
+    @apply border border-white/5 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)];
+  }
+
+  .mesh-bg {
+    background-image: var(--grad-mesh);
   }
 }
 

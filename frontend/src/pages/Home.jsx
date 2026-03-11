@@ -128,12 +128,12 @@ const Home = () => {
             <header className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                 <div>
                     <h1 className="serif text-4xl tracking-tight text-white mb-2">
-                        {greeting}, <span className="bg-gradient-to-r from-gray-400 to-emerald-400 bg-clip-text text-transparent italic">{firstName}</span> 👋
+                        {greeting}, <span className="bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-transparent italic">{firstName}</span> 👋
                     </h1>
-                    <p className="text-sm font-medium text-gray-500">
+                    <p className="text-sm font-medium text-gray-400 max-w-md leading-relaxed">
                         {user?.role === 'Admin'
-                            ? "Platform security and oversight control center."
-                            : "Here's what's happening across your workspace."}
+                            ? "Platform security and oversight control center. Monitoring all neural nodes."
+                            : "Welcome back. Here's your workspace overview and recent activity."}
                     </p>
                 </div>
 
@@ -148,25 +148,30 @@ const Home = () => {
             {/* ── Stats ── */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 {STATS.map((s, i) => (
-                    <div key={i} className="k-card k-card-hover p-6 relative overflow-hidden group">
+                    <div key={i} className="k-card k-card-hover p-6 relative overflow-hidden group border-white/5">
                         {/* subtle bg glow */}
-                        <div className="absolute top-[-30px] right-[-30px] w-32 h-32 rounded-full opacity-30 pointer-events-none transition-opacity group-hover:opacity-60" style={{ background: `radial-gradient(circle, ${s.glow} 0%, transparent 70%)` }} />
+                        <div className="absolute -top-10 -right-10 w-32 h-32 rounded-full opacity-20 pointer-events-none transition-all duration-700 group-hover:opacity-40 blur-3xl" style={{ background: s.g[1] }} />
 
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center mb-5 shadow-lg"
+                        <div className="w-11 h-11 rounded-xl flex items-center justify-center mb-5 glass-stroke transition-transform duration-500 group-hover:scale-110 group-hover:rotate-3"
                             style={{ background: `linear-gradient(135deg, ${s.g[0]}, ${s.g[1]})`, boxShadow: `0 8px 16px -4px ${s.glow}` }}>
-                            <Ico d={s.icon} size={18} stroke="white" sw={2} />
+                            <Ico d={s.icon} size={20} stroke="black" sw={2.5} />
                         </div>
 
-                        <div className="flex flex-col gap-1">
-                            <span className="text-3xl font-bold text-white tracking-tight">
+                        <div className="flex flex-col gap-1 relative z-10">
+                            <span className="text-3xl font-bold text-white tracking-tighter mb-0.5">
                                 {s.label === 'Team Members' ? onlineUsers.filter(u => u.status !== 'Offline').length : s.value}
                             </span>
-                            <span className="text-xs font-bold uppercase tracking-widest text-gray-500">
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 group-hover:text-emerald-400 transition-colors">
                                 {s.label}
                             </span>
-                            <span className="text-[10px] font-medium text-gray-700 mt-2">
-                                {s.label === 'Team Members' ? `${onlineUsers.filter(u => u.status !== 'Offline').length} node(s) active` : s.sub}
-                            </span>
+                            <div className="flex items-center gap-2 mt-3">
+                                <div className="h-1 flex-1 bg-white/[0.04] rounded-full overflow-hidden">
+                                    <div className="h-full bg-gradient-to-r from-emerald-500/50 to-emerald-400/50 w-2/3 rounded-full" />
+                                </div>
+                                <span className="text-[9px] font-bold text-gray-700 whitespace-nowrap">
+                                    {s.label === 'Team Members' ? `${onlineUsers.filter(u => u.status !== 'Offline').length} node(s)` : s.sub}
+                                </span>
+                            </div>
                         </div>
                     </div>
                 ))}

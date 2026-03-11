@@ -41,14 +41,19 @@ export default function Button({
 
     // 3. Style variants (Linear / Apple aesthetic)
     const variantClasses = {
-        primary: "bg-emerald-600 text-white shadow-sm-soft hover:bg-emerald-700 hover:-translate-y-0.5 focus:ring-emerald-500/50",
+        primary: "text-black shadow-lg shadow-emerald-500/10 hover:-translate-y-0.5 focus:ring-emerald-500/50",
         secondary: "bg-white text-zinc-900 border border-zinc-200/80 shadow-sm-soft hover:bg-zinc-50 hover:border-zinc-300 hover:-translate-y-0.5 focus:ring-zinc-400/50",
         destructive: "bg-red-600 text-white shadow-sm-soft hover:bg-red-700 hover:-translate-y-0.5 focus:ring-red-500/50",
-        ghost: "bg-transparent text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 focus:ring-zinc-400/50",
+        ghost: "bg-transparent text-[var(--text-muted)] hover:bg-[var(--border-subtle)] hover:text-[var(--text-main)] focus:ring-[rgba(var(--theme-500),0.3)]",
     };
 
     // Merge all resulting classes safely
-    const combinedClasses = cn(baseClass, sizeClasses[size], variantClasses[variant], className);
+    const combinedClasses = cn(
+        baseClass, 
+        sizeClasses[size], 
+        variant === 'primary' ? 'k-button-primary' : variantClasses[variant], 
+        className
+    );
 
     // 4. Micro-interactions
     // We disable tap scale if it's already loading/disabled to avoid weird jittering

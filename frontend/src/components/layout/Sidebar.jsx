@@ -47,15 +47,15 @@ const SidebarComponent = ({ isOpen, onClose }) => {
             )}
 
             <aside className={`
-                fixed top-0 left-0 h-full z-50 w-[260px] bg-[var(--bg-surface)] border-r border-[var(--border-subtle)]
+                fixed top-0 left-0 h-full z-50 w-[260px] k-glass border-r border-[var(--border-subtle)]
                 flex flex-col transition-transform duration-300 ease-in-out
                 lg:relative lg:translate-x-0
                 ${isOpen ? 'translate-x-0' : '-translate-x-full'}
             `}>
                 {/* Brand */}
                 <div className="h-16 flex items-center gap-3 px-5 border-b border-white/[0.06] flex-shrink-0">
-                    <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[rgb(var(--theme-600))] to-[rgb(var(--theme-500))] flex items-center justify-center shadow-lg shadow-[rgba(var(--theme-500),0.25)]">
-                        <svg className="w-[18px] h-[18px] text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                    <div className="w-9 h-9 rounded-xl flex items-center justify-center shadow-lg shadow-emerald-500/20" style={{ background: 'var(--grad-primary)' }}>
+                        <svg className="w-[18px] h-[18px] text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
                         </svg>
                     </div>
@@ -120,19 +120,26 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                                 end={item.path === '/'}
                                 onClick={onClose}
                                 onMouseEnter={() => handlePrefetch(item.path)}
-                                className={({ isActive }) => `
-                                    flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200
-                                    ${isActive
-                                        ? 'bg-[rgba(var(--theme-500),0.1)] text-[rgb(var(--theme-400))] border border-[rgba(var(--theme-500),0.1)]'
-                                        : 'text-[var(--text-muted)] hover:text-[var(--text-main)] hover:bg-[var(--border-subtle)] border border-transparent'
-                                    }
-                                `}
-                            >
-                                <svg className="w-[18px] h-[18px] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                    <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
-                                </svg>
-                                {item.label}
-                            </NavLink>
+                                    className={({ isActive }) => `
+                                        flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-300 relative overflow-hidden group
+                                        ${isActive
+                                            ? 'text-[rgb(var(--theme-400))] shadow-[0_4px_12px_-4px_rgba(var(--theme-500),0.2)]'
+                                            : 'text-[var(--text-muted)] hover:text-[var(--text-main)]'
+                                        }
+                                    `}
+                                >
+                                    {({ isActive }) => (
+                                        <>
+                                            {isActive && (
+                                                <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-transparent pointer-events-none" />
+                                            )}
+                                            <svg className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${isActive ? 'text-emerald-400' : 'group-hover:text-emerald-400'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
+                                            </svg>
+                                            <span className="relative z-10">{item.label}</span>
+                                        </>
+                                    )}
+                                </NavLink>
                         ))}
                 </nav>
 
