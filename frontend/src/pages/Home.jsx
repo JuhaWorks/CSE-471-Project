@@ -60,9 +60,9 @@ const Home = () => {
     const kineticLetterSpacing = useTransform(scrollYProgress, [0, 0.2], ['-0.05em', '0em'], KINETIC_SPRING);
     const kineticScale = useTransform(scrollYProgress, [0, 0.2], [1, 0.95]);
 
-    // LCP Speculative Preload
+    // Removed speculative preload that may cause hanging network requests
     useEffect(() => {
-        preload('/fonts/Inter-Black.woff2', { as: 'font', type: 'font/woff2', fetchpriority: 'high', crossOrigin: 'anonymous' });
+        // Font loading handles naturally by CSS
     }, []);
 
     const { data: actRes, isLoading: actLoading } = useQuery({

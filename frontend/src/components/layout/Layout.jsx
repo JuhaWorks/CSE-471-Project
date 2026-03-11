@@ -60,8 +60,7 @@ const Layout = () => {
     const layoutVibe = isFocusMode ? 'bg-[#050508]' : 'bg-[#09090b]';
 
     useEffect(() => {
-        // Preload core aesthetic assets immediately
-        preload('https://grainy-gradients.vercel.app/noise.svg', { as: 'image', fetchpriority: 'low' });
+        // Asset loading handled gracefully by CSS
     }, [location.pathname]);
 
     // Intent Handshake for routing transitions

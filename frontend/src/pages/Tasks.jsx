@@ -122,9 +122,9 @@ export default function Tasks() {
         });
     };
 
-    // Preload Critical Assets (Vanguard Performance)
+    // Removed speculative preload
     useEffect(() => {
-        preload('/fonts/Inter-Black.woff2', { as: 'font', type: 'font/woff2', crossOrigin: 'anonymous' });
+        // Assets handled via standard cascading
     }, []);
 
     // Fetch projects for filter. Suspense is handled at a higher level or gracefully falls back.

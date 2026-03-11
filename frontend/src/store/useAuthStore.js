@@ -126,8 +126,8 @@ export const useAuthStore = create((set, get) => ({
     // Uses /auth/me which IS allowed to trigger the 401 refresh interceptor.
     // Flow: GET /me → 401 (no token) → interceptor calls /refresh with cookie → gets token → retries /me → success
     checkAuth: async () => {
-        // Prevent concurrent or redundant checks
-        if (get().isCheckingAuth || get().isAuthenticated) return;
+        // Prevent redundant checks if already authenticated
+        if (get().isAuthenticated) return;
 
         set({ isCheckingAuth: true, error: null });
         try {

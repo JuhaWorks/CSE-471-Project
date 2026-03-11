@@ -1,9 +1,13 @@
-import { useEffect, useState, useOptimistic } from 'react';
+import React, { useEffect, useState, useOptimistic } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+const cn = (...inputs) => twMerge(clsx(inputs));
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, ArrowRight, Github, Chrome, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
