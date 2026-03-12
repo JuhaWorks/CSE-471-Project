@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 Vite-Optimized Loading States
@@ -33,7 +32,7 @@ export const PageLoader = () => (
         </div>
         
         <div className="flex flex-col items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-cyan-400/80">Synchronizing</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Loading</span>
             <div className="flex gap-1.5">
                 {[0, 1, 2].map(i => (
                     <motion.div
@@ -70,33 +69,17 @@ export const GlobalLoadingScreen = () => (
                     className="h-full w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
                 />
             </div>
-            <p className="text-xs font-black uppercase tracking-[0.4em] text-gray-500">Initializing Workspace</p>
+            <p className="text-xs font-black uppercase tracking-[0.4em] text-gray-500">Loading application</p>
         </div>
 
-        {/* System Diagnostics (Agentic Feel) */}
-        <div className="absolute bottom-12 left-1/2 -translate-x-1/2 flex items-center gap-8 opacity-40">
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[8px] font-black uppercase tracking-tighter text-gray-400">Memory Cluster</span>
-                <span className="text-[10px] font-bold text-cyan-400">ONLINE</span>
-            </div>
-            <div className="w-px h-6 bg-white/10" />
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[8px] font-black uppercase tracking-tighter text-gray-400">E2E Protocol</span>
-                <span className="text-[10px] font-bold text-cyan-400">ACTIVE</span>
-            </div>
-            <div className="w-px h-6 bg-white/10" />
-            <div className="flex flex-col items-center gap-1">
-                <span className="text-[8px] font-black uppercase tracking-tighter text-gray-400">Quantum Node</span>
-                <span className="text-[10px] font-bold text-cyan-400">STABLE</span>
-            </div>
-        </div>
+        {/* Standard footer removed for professional simplicity */}
     </div>
 );
 
 export const Skeleton = ({ className }) => (
-    <div className={cn(
+    <div className={twMerge(clsx(
         "bg-white/5 rounded-xl animate-pulse relative overflow-hidden",
         "after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/[0.03] after:to-transparent after:animate-[shimmer_2s_infinite]",
         className
-    )} />
+    ))} />
 );

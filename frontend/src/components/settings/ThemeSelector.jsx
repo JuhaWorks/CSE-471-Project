@@ -5,7 +5,6 @@ import { Palette, Check, Zap } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 ThemeSelector
@@ -17,36 +16,36 @@ export default function ThemeSelector() {
     const themes = [
         {
             id: THEMES.EMERALD,
-            name: 'Emerald Core',
-            description: 'Hyper-vibrant flora. The OSIRIS signature sequence.',
-            color: '#2db38a',
+            name: 'Emerald',
+            description: 'A professional green accent, clean and energetic.',
+            color: '#10b981',
             bg: 'bg-emerald-500/10',
             border: 'border-emerald-500/20',
             glow: 'shadow-emerald-500/20'
         },
         {
             id: THEMES.NEON_PURPLE,
-            name: 'Violet Nebula',
-            description: 'Deep-space ultra-violet for high-focus neural links.',
-            color: '#9b87f5',
+            name: 'Violet',
+            description: 'A deep purple accent for a creative, focused feel.',
+            color: '#8b5cf6',
             bg: 'bg-violet-500/10',
             border: 'border-violet-500/20',
             glow: 'shadow-violet-500/20'
         },
         {
             id: THEMES.CYBER_YELLOW,
-            name: 'Amber Kinetic',
-            description: 'High-contrast solar amber. Optimized for operational awareness.',
-            color: '#f5be50',
+            name: 'Amber',
+            description: 'A warm, high-visibility amber for clarity.',
+            color: '#f59e0b',
             bg: 'bg-amber-500/10',
             border: 'border-amber-500/20',
             glow: 'shadow-amber-500/20'
         },
         {
             id: THEMES.CRIMSON_RED,
-            name: 'Rose Reactor',
-            description: 'Aggressive coral-rose. Engineered for high-stress response.',
-            color: '#f06473',
+            name: 'Crimson',
+            description: 'A bold, sophisticated Red accent.',
+            color: '#ef4444',
             bg: 'bg-rose-500/10',
             border: 'border-rose-500/20',
             glow: 'shadow-rose-500/20'
@@ -58,9 +57,9 @@ export default function ThemeSelector() {
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
                     <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-3">
-                        Spectral <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 uppercase">Aesthetic.</span>
+                        Theme <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500 uppercase">Colors.</span>
                     </h3>
-                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Neural Interface Calibration</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Personalize your workspace palette</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/5 rounded-2xl shadow-xl">
                     <Palette className="w-4 h-4 text-cyan-400" />
@@ -75,25 +74,25 @@ export default function ThemeSelector() {
                         <button
                             key={t.id}
                             onClick={() => setTheme(t.id)}
-                            className={cn(
+                            className={twMerge(clsx(
                                 "group relative flex items-start gap-6 p-6 rounded-[2.5rem] border text-left transition-all duration-500",
                                 isActive 
                                     ? "bg-white/5 border-white/20 shadow-[0_20px_40px_rgba(0,0,0,0.5)] scale-[1.02]" 
                                     : "bg-transparent border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
-                            )}
+                            ))}
                         >
                             {/* Color Core */}
                             <div className="relative shrink-0">
-                                <div className={cn(
+                                <div className={twMerge(clsx(
                                     "w-16 h-16 rounded-[1.5rem] border transition-all duration-500 flex items-center justify-center p-4",
                                     t.border, t.bg,
                                     isActive ? "scale-110 shadow-2xl" : "group-hover:scale-105"
-                                )}>
+                                ))}>
                                     <div 
-                                        className={cn(
+                                        className={twMerge(clsx(
                                             "w-full h-full rounded-xl transition-transform duration-500",
                                             isActive ? "scale-100 rotate-0" : "scale-75 rotate-45 group-hover:rotate-0 group-hover:scale-100"
-                                        )}
+                                        ))}
                                         style={{ backgroundColor: t.color }}
                                     />
                                 </div>
@@ -108,10 +107,10 @@ export default function ThemeSelector() {
                             {/* Directive Label */}
                             <div className="space-y-2 flex-1">
                                 <div className="flex items-center justify-between">
-                                    <h4 className={cn(
+                                    <h4 className={twMerge(clsx(
                                         "font-black text-sm uppercase tracking-widest",
                                         isActive ? "text-white" : "text-gray-500 group-hover:text-gray-300"
-                                    )}>
+                                    ))}>
                                         {t.name}
                                     </h4>
                                     {isActive && (
@@ -133,10 +132,10 @@ export default function ThemeSelector() {
 
                             {/* Premium Shadow Interaction */}
                             {isActive && (
-                                <div className={cn(
+                                <div className={twMerge(clsx(
                                     "absolute inset-0 rounded-[2.5rem] blur-3xl opacity-20 -z-10",
                                     t.bg
-                                )} />
+                                ))} />
                             )}
                         </button>
                     );

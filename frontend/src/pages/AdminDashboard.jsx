@@ -221,7 +221,7 @@ const AdminDashboard = () => {
                     )}
                     <Link to="/admin/security" className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-400 rounded-xl text-xs font-black uppercase tracking-widest border border-emerald-500/20 transition-all">
                         <svg className="w-4.5 h-4.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 00-2 2zm10-10V7a4 4 0 00-8 0v4h8z" /></svg>
-                        Neural Feed
+                        Activity Log
                     </Link>
                     <button
                         onClick={() => {
@@ -237,7 +237,7 @@ const AdminDashboard = () => {
                             }`}
                     >
                         <svg className={`w-4.5 h-4.5 ${isMaintenanceMode ? 'animate-pulse' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
-                        {isMaintenanceMode ? 'Lock Protocol: OFF' : 'Schedule Lock'}
+                        {isMaintenanceMode ? 'Disable Maintenance' : 'Schedule Maintenance'}
                     </button>
                 </div>
             </div>
@@ -248,10 +248,10 @@ const AdminDashboard = () => {
                     <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-25 transition-all group-hover:scale-110 duration-500">
                         <svg className="w-14 h-14 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" /></svg>
                     </div>
-                    <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2 px-0.5">Total Registry</p>
+                    <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2 px-0.5">Total Users</p>
                     <div className="flex items-baseline gap-2">
                         <h3 className="text-4xl font-black text-white">{stats.users.total}</h3>
-                        <span className="text-xs text-emerald-400/60 font-medium">Nodes</span>
+                        <span className="text-xs text-emerald-400/60 font-medium">Registered</span>
                     </div>
                     <p className="text-[10px] text-gray-600 mt-4 font-medium flex items-center gap-1.5">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500/40"></span>
@@ -263,7 +263,7 @@ const AdminDashboard = () => {
                     <div className="absolute top-0 right-0 p-5 opacity-10 group-hover:opacity-25 transition-all group-hover:scale-110 duration-500">
                         <svg className="w-14 h-14 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                     </div>
-                    <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2 px-0.5">Active Nodes</p>
+                    <p className="text-gray-500 text-[10px] font-black uppercase tracking-[0.2em] mb-2 px-0.5">Active Users</p>
                     <div className="flex items-baseline gap-2">
                         <h3 className="text-4xl font-black text-white">{stats.users.active}</h3>
                         <span className="text-xs text-emerald-400/60 font-medium">Verified</span>
@@ -296,10 +296,10 @@ const AdminDashboard = () => {
                     <table className="min-w-full">
                         <thead>
                             <tr className="bg-white/[0.01] border-b border-white/[0.04]">
-                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Identity Node</th>
-                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Access Level</th>
-                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Live Status</th>
-                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Registry Date</th>
+                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">User</th>
+                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Role</th>
+                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Status</th>
+                                <th scope="col" className="px-8 py-5 text-left text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Joined Date</th>
                                 <th scope="col" className="relative px-8 py-5"><span className="sr-only">Actions</span></th>
                             </tr>
                         </thead>
@@ -315,7 +315,7 @@ const AdminDashboard = () => {
                             ) : users.length === 0 ? (
                                 <tr>
                                     <td colSpan="5" className="px-8 py-20 text-center text-sm text-gray-500 font-medium">
-                                        No neural signatures matched your query.
+                                        No users found matching your search.
                                     </td>
                                 </tr>
                             ) : (
@@ -405,7 +405,7 @@ const AdminDashboard = () => {
                         <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                             <div>
                                 <p className="text-xs text-gray-500 font-bold uppercase tracking-widest">
-                                    Displaying <span className="text-gray-200">{(page - 1) * 10 + 1}</span> — <span className="text-gray-200">{Math.min(page * 10, meta.total)}</span> / <span className="text-emerald-400">{meta.total}</span> Nodes found
+                                    Displaying <span className="text-gray-200">{(page - 1) * 10 + 1}</span> — <span className="text-gray-200">{Math.min(page * 10, meta.total)}</span> / <span className="text-emerald-400">{meta.total}</span> users found
                                 </p>
                             </div>
                             <div>

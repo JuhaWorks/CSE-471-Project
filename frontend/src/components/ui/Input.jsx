@@ -8,7 +8,6 @@ import { twMerge } from 'tailwind-merge';
  * Adheres to Glassmorphism 2.0 and Agentic UX standards.
  */
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 const Input = forwardRef(({
     className,
@@ -38,7 +37,7 @@ const Input = forwardRef(({
                 <input
                     id={id}
                     ref={ref}
-                    className={cn(
+                    className={twMerge(clsx(
                         'w-full h-11 px-4 text-sm bg-white/5 border border-white/10 rounded-2xl outline-none',
                         'backdrop-blur-xl transition-all duration-300',
                         'placeholder:text-[#4b5563]',
@@ -48,7 +47,7 @@ const Input = forwardRef(({
                         RightIcon && 'pr-11',
                         error && 'border-red-500/30 focus:border-red-500/50 focus:ring-red-500/5',
                         className
-                    )}
+                    ))}
                     {...props}
                 />
                 {RightIcon && (

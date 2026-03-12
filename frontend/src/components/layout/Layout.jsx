@@ -57,7 +57,9 @@ const Layout = () => {
 
     // Context-Driven Theme Analysis based on routing
     const isFocusMode = location.pathname.includes('/tasks') || location.pathname.includes('/whiteboard');
-    const layoutVibe = isFocusMode ? 'bg-[#050508]' : 'bg-[#09090b]';
+    
+    // Use theme-aware background logic
+    const layoutBg = isFocusMode ? 'bg-[#050508]' : 'bg-[var(--bg-base)]';
 
     useEffect(() => {
         // Asset loading handled gracefully by CSS
@@ -69,7 +71,7 @@ const Layout = () => {
     };
 
     return (
-        <div className={`flex h-screen ${layoutVibe} text-white selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`}>
+        <div className={`flex h-screen ${layoutBg} text-[var(--text-main)] selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`}>
             
             {/* Global Anti-grid Grain Layer for Tactile Maximalism */}
             <div className="fixed inset-0 pointer-events-none opacity-[0.04] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay z-[100]" aria-hidden="true" />

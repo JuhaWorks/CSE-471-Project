@@ -4,9 +4,8 @@ import { Shield, Zap, Layout as Kanban, Shapes, Check, ArrowRight } from 'lucide
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
-const WORDS = ['extraordinary products.', 'the future, together.', 'what matters most.'];
+const WORDS = ['high-quality software.', 'your team projects.', 'your workflow efficiently.'];
 const FEATURES = [
     { icon: Zap, label: 'Real-time Sync' },
     { icon: Kanban, label: 'Kanban Boards' },
@@ -59,11 +58,11 @@ const Typewriter = () => {
 
 export const Brand = ({ rightSide }) => {
     return (
-        <aside className={cn(
+        <aside className={twMerge(clsx(
             "hidden lg:flex flex-col justify-between w-[42%] min-h-screen p-16 relative overflow-hidden",
             "bg-[#09090b] border-white/5",
             rightSide ? "border-l" : "border-r"
-        )}>
+        ))}>
             {/* Organic Ambient Glows */}
             <div className="absolute -top-20 -left-20 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
             <div className="absolute -bottom-20 -right-20 w-96 h-96 bg-blue-600/10 rounded-full blur-[120px] pointer-events-none" />
@@ -88,14 +87,14 @@ export const Brand = ({ rightSide }) => {
                     animate={{ opacity: 1, y: 0 }}
                     className="text-xs font-black uppercase tracking-[0.3em] text-cyan-400 mb-6"
                 >
-                    Next-Gen Collaboration
+                    Team Workspace
                 </motion.p>
                 <h2 className="text-6xl font-black leading-none tracking-tighter text-white mb-8">
                     Build great things,<br />
                     <Typewriter />
                 </h2>
                 <p className="text-lg text-gray-400 leading-relaxed max-w-sm mb-12">
-                    Architected for high-performance teams. Real-time engineering for the 2026 ecosystem.
+                    A professional platform for high-performance teams. Streamlined collaboration and project management.
                 </p>
 
                 <div className="grid grid-cols-2 gap-4">
@@ -127,7 +126,7 @@ export const Brand = ({ rightSide }) => {
                     ))}
                 </div>
                 <div className="text-sm font-bold text-gray-500">
-                    <span className="text-cyan-400">2.4k+</span> engineers active now
+                    Trusted by <span className="text-cyan-400">2,400+</span> teams worldwide
                 </div>
             </footer>
         </aside>

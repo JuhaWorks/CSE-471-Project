@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 import { Mail, Lock, Eye, EyeOff, LogIn, ArrowRight, Github, Chrome, AlertCircle, Check } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
@@ -115,9 +114,9 @@ const Login = () => {
 
                         <Input
                             id="email"
-                            label="Corporate Email"
+                            label="Email Address"
                             type="email"
-                            placeholder="architect@klivra.com"
+                            placeholder="name@company.com"
                             leftIcon={Mail}
                             error={errors.email?.message}
                             {...register('email')}
@@ -125,9 +124,9 @@ const Login = () => {
 
                         <Input
                             id="password"
-                            label="Security Key"
+                            label="Password"
                             type={showPw ? 'text' : 'password'}
-                            placeholder="••••••••"
+                            placeholder="Enter your password"
                             leftIcon={Lock}
                             error={errors.password?.message}
                             {...register('password')}
@@ -150,15 +149,15 @@ const Login = () => {
                                         className="peer sr-only"
                                         {...register('remember')}
                                     />
-                                    <div className={cn(
+                                    <div className={twMerge(clsx(
                                         "absolute inset-0 rounded-lg border transition-all duration-300",
                                         "border-white/10 bg-white/5 peer-checked:bg-cyan-500 peer-checked:border-cyan-500",
                                         "group-hover:border-cyan-500/50"
-                                    )} />
+                                    ))} />
                                     <Check className="absolute inset-0 m-auto w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
                                 </div>
                                 <span className="text-sm font-bold text-gray-400 group-hover:text-gray-300 transition-colors">
-                                    Remember instance
+                                    Remember me
                                 </span>
                             </label>
                             
@@ -173,7 +172,7 @@ const Login = () => {
                             isLoading={isLoading} 
                             rightIcon={ArrowRight}
                         >
-                            Establish Connection
+                            Sign In
                         </Button>
                     </form>
 
@@ -181,7 +180,7 @@ const Login = () => {
                         <div className="relative flex items-center gap-4 mb-6">
                             <div className="flex-1 h-px bg-white/5" />
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
-                                SSO Gateways
+                                or continue with
                             </span>
                             <div className="flex-1 h-px bg-white/5" />
                         </div>
@@ -209,7 +208,7 @@ const Login = () => {
 
                 <footer className="mt-8 text-center">
                     <p className="text-xs font-medium text-gray-600">
-                        Protected by Klivra Security Protocol v4.0.26<br />
+                        Secure Access Provided by Klivra<br />
                         © 2026 Klivra Technologies
                     </p>
                 </footer>

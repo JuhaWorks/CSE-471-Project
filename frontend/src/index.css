@@ -6,60 +6,132 @@
 
 @layer base {
   :root {
-    /* ── 2026 Fluid Typography System ── */
-    --font-size-xs: clamp(0.7rem, 0.6rem + 0.5vw, 0.8rem);
-    --font-size-sm: clamp(0.8rem, 0.7rem + 0.5vw, 0.95rem);
-    --font-size-base: clamp(1rem, 0.9rem + 0.5vw, 1.125rem);
-    --font-size-lg: clamp(1.125rem, 1rem + 0.6vw, 1.35rem);
-    --font-size-xl: clamp(1.35rem, 1.2rem + 0.8vw, 1.75rem);
-    --font-size-2xl: clamp(1.75rem, 1.5rem + 1vw, 2.5rem);
+    /* ── Professional Fluid Typography System ── */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-base: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
 
-    /* ── Glassmorphism 2.0 Design Tokens ── */
-    --glass-bg: rgba(255, 255, 255, 0.03);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05), 0 8px 32px rgba(0, 0, 0, 0.2);
-    --glass-blur: blur(24px);
-    
-    /* ── System Adaptive Colors (Prefers Light/Dark fallback) ── */
-    --bg-base: light-dark(#f8fafc, #09090b);
-    --bg-surface: light-dark(rgba(255, 255, 255, 0.7), rgba(15, 15, 18, 0.6));
-    --text-main: light-dark(#1e293b, #f1f5f9);
-    --text-muted: light-dark(#64748b, #94a3b8);
-    --accent-primary: #06b6d4;
-    --accent-secondary: #3b82f6;
+    /* ── Professional Design Tokens ── */
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.75rem;
 
-    /* ── Premium Niche Gradients ── */
-    --grad-primary: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
-    --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.02) 0%, transparent 100%);
-    --grad-mesh: radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.1) 0%, transparent 50%),
-                 radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.1) 0%, transparent 50%);
+    /* ── Theme Hub (Emerald Default) ── */
+    --theme-400: 52 211 153; 
+    --theme-500: 16 185 129; 
+    --theme-600: 5 150 105;  
+    --theme-900: 6 78 59;    
+    --accent-glow: rgba(16, 185, 129, 0.05);
+    --bg-hue-1: rgba(16, 185, 129, 0.12); /* Enhanced dynamic hue */
+    --bg-hue-2: rgba(6, 182, 212, 0.08); /* Secondary matching hue */
+    --bg-hue-3: rgba(139, 92, 246, 0.05); /* Tertiary accent hue */
+
+    /* ── Color Variations for Lighting ── */
+    --bg-base: #ffffff;
+    --bg-surface: rgba(244, 244, 245, 0.8);
+    --text-main: #09090b;
+    --text-muted: #71717a;
+    --border-subtle: rgba(0, 0, 0, 0.1);
     
-    --text-hue: linear-gradient(to right, #00f2fe 0%, #4facfe 30%, #a855f7 70%, #ec4899 100%);
-    
-    color-scheme: light dark;
+    color-scheme: light;
   }
 
-  /* ── Reset & Baseline ── */
-  *, *::before, *::after {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    border-color: var(--glass-border);
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+
+    --bg-base: #050507;
+    --bg-surface: rgba(18, 18, 22, 0.7);
+    --text-main: #f9fafb;
+    --text-muted: #a1a1aa;
+    --border-subtle: rgba(255, 255, 255, 0.05);
+    --bg-hue-1: rgba(16, 185, 129, 0.05);
+    --bg-hue-2: rgba(6, 182, 212, 0.03);
+
+    color-scheme: dark;
   }
 
-  html {
-    font-size: var(--font-size-base);
-    -webkit-font-smoothing: antialiased;
-    scroll-behavior: smooth;
+  /* ── Accent Themes ── */
+  .theme-neon-purple {
+    --theme-400: 167 139 250; 
+    --theme-500: 139 92 246;  
+    --theme-600: 124 58 237;  
+    --theme-900: 76 29 149;   
+    --accent-glow: rgba(139, 92, 246, 0.08);
+    --bg-hue-1: rgba(230, 235, 255, 0.25);
+    --bg-hue-2: rgba(245, 230, 255, 0.2);
+  }
+
+  .theme-cyber-yellow {
+    --theme-400: 251 191 36;  
+    --theme-500: 245 158 11;  
+    --theme-600: 217 119 6;   
+    --theme-900: 120 53 15;   
+    --accent-glow: rgba(245, 158, 11, 0.08);
+    --bg-hue-1: rgba(245, 158, 11, 0.06);
+    --bg-hue-2: rgba(251, 191, 36, 0.03);
+  }
+
+  .theme-crimson-red {
+    --theme-400: 248 113 113; 
+    --theme-500: 239 68 68;   
+    --theme-600: 220 38 38;   
+    --theme-900: 127 29 29;   
+    --accent-glow: rgba(239, 68, 68, 0.08);
+    --bg-hue-1: rgba(239, 68, 68, 0.07);
+    --bg-hue-2: rgba(248, 113, 113, 0.04);
   }
 
   body {
-    background: var(--bg-base);
+    background-color: var(--bg-base);
+    background-image: 
+      radial-gradient(circle at 0% 0%, var(--bg-hue-1), transparent 45%),
+      radial-gradient(circle at 100% 0%, var(--bg-hue-3), transparent 40%),
+      radial-gradient(circle at 100% 100%, var(--bg-hue-2), transparent 45%),
+      radial-gradient(circle at 0% 100%, var(--bg-hue-1), transparent 40%);
+    background-attachment: fixed;
     color: var(--text-main);
-    font-family: 'Inter', 'Outfit', 'Plus Jakarta Sans', system-ui, sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     min-height: 100vh;
     overflow-x: hidden;
-    line-height: 1.6;
+    line-height: 1.5;
   }
 }
 
@@ -106,10 +178,24 @@
   }
 
   .text-hue {
-    @apply bg-clip-text text-transparent opacity-90;
-    background-image: var(--text-hue);
+    @apply bg-clip-text text-transparent opacity-95 transition-all duration-700;
+    background-image: linear-gradient(135deg, 
+      rgb(var(--theme-400)) 0%, 
+      rgb(var(--theme-500)) 50%, 
+      rgb(var(--theme-600)) 100%
+    );
     background-size: 200% auto;
-    animation: text-hue-shift 8s linear infinite;
+    animation: text-hue-shift 5s ease infinite alternate;
+  }
+
+  .text-theme {
+    color: rgb(var(--theme-500));
+    text-shadow: 0 0 20px rgba(var(--theme-500), 0.2);
+  }
+
+  .grad-mesh {
+    background: radial-gradient(circle at 50% 50%, var(--bg-hue-1), transparent),
+                radial-gradient(circle at 0% 0%, var(--bg-hue-2), transparent);
   }
 }
 
@@ -153,45 +239,51 @@ html:not(.dark) {
   [class*="bg-zinc-950"],
   [class*="bg-zinc-900"],
   [class*="bg-\[#0a0a12\]"],
+  [class*="bg-\[#09090b\]"],
   [class*="bg-\[#0a0a0c\]"],
   [class*="bg-\[#12121e\]"],
   [class*="bg-\[#13151c\]"],
-  [class*="bg-\[#0e0f14\]"] {
+  [class*="bg-\[#13151c\]"],
+  [class*="bg-\[#0e0f14\]"],
+  [class*="bg-\[oklch\(100\%_0_0\/0\.05\)\]"],
+  [class*="bg-\[oklch\(100\%_0_0\/0\.02\)\]"],
+  [class*="bg-\[oklch\(100\%_0_0\/0\.01\)\]"] {
     background-color: var(--bg-surface) !important;
   }
 
   /* Force white text → dark charcoal */
-  .text-white {
-    color: #1c1c20 !important;
+  .text-white, 
+  .text-zinc-50, 
+  .text-slate-50,
+  .text-neutral-50 {
+    color: #09090b !important;
   }
 
   /* Light grays (invisible on cream bg) → visible charcoal */
   .text-gray-100,
-  .text-gray-200 {
-    color: #2d2d33 !important;
+  .text-gray-200,
+  .text-zinc-100,
+  .text-zinc-200 {
+    color: #1a1a1e !important;
   }
 
-  .text-gray-300 {
-    color: #3c3c45 !important;
-  }
-
-  .text-gray-400 {
-    color: #555560 !important;
-  }
-
-  /* Zinc variants (used in Projects page) */
+  .text-gray-300,
   .text-zinc-300 {
-    color: #3c3c45 !important;
+    color: #27272a !important;
   }
+
+  .text-gray-400,
   .text-zinc-400 {
-    color: #555560 !important;
+    color: #3f3f46 !important;
   }
   .text-zinc-500 {
     color: #6e6e7a !important;
   }
 
   /* Borders: white-based → warm subtle border */
-  [class*="border-white\/"] {
+  [class*="border-white\/"],
+  [class*="border-\[oklch\(100\%_0_0\/0\.05\)\]"],
+  [class*="border-\[oklch\(100\%_0_0\/0\.03\)\]"] {
     border-color: rgba(60, 50, 40, 0.1) !important;
   }
 
@@ -201,8 +293,11 @@ html:not(.dark) {
   }
 
   /* Active indicator ring on dark backgrounds */
-  .ring-\[#0a0a12\] {
-    --tw-ring-color: var(--bg-surface) !important;
+  .ring-\[#0a0a12\],
+  .ring-\[#050507\],
+  .ring-black,
+  .ring-zinc-950 {
+    --tw-ring-color: rgba(0, 0, 0, 0.05) !important;
   }
 
   /* ── Fixes for Recent UI Overhaul (Light Mode Legibility) ── */

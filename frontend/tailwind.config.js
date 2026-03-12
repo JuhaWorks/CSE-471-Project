@@ -18,7 +18,7 @@ export default {
         sans: ['Inter', 'system-ui', 'sans-serif'],
       },
       colors: {
-        // Global Theme Variables linking to index.css
+        // Base semantic mapping for shadcn-like components
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -31,55 +31,30 @@ export default {
         main: "var(--text-main)",
         "text-muted": "var(--text-muted)",
         subtle: "var(--border-subtle)",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+
+        // THEME REDIRECTION: Map all common accents to the dynamic theme variables
+        // This ensures Sidebar, TopBar, and existing components follow the theme selector.
+        cyan: {
+          400: 'rgb(var(--theme-400) / <alpha-value>)',
+          500: 'rgb(var(--theme-500) / <alpha-value>)',
+          600: 'rgb(var(--theme-600) / <alpha-value>)',
         },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+        indigo: {
+          400: 'rgb(var(--theme-400) / <alpha-value>)',
+          500: 'rgb(var(--theme-500) / <alpha-value>)',
+          600: 'rgb(var(--theme-600) / <alpha-value>)',
         },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+        blue: {
+          400: 'rgb(var(--theme-400) / <alpha-value>)',
+          500: 'rgb(var(--theme-500) / <alpha-value>)',
+          600: 'rgb(var(--theme-600) / <alpha-value>)',
         },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        // Static Brand Mapping
-        brand: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5', // Primary indigo
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
-        },
-        // Hijack the hardcoded green theme to make it dynamic
         emerald: {
           400: 'rgb(var(--theme-400) / <alpha-value>)',
           500: 'rgb(var(--theme-500) / <alpha-value>)',
           600: 'rgb(var(--theme-600) / <alpha-value>)',
           900: 'rgb(var(--theme-900) / <alpha-value>)',
-        }
+        },
       },
       borderRadius: {
         lg: "0.5rem",

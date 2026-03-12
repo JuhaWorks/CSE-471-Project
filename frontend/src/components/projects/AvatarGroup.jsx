@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 AvatarGroup
@@ -16,10 +15,10 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
     return (
         <div
             onClick={onClick}
-            className={cn(
+            className={twMerge(clsx(
                 "flex items-center -space-x-4",
                 onClick && "cursor-pointer hover:opacity-80 transition-opacity"
-            )}
+            ))}
         >
             <AnimatePresence mode="popLayout">
                 {displayViewers.map((viewer, index) => (
@@ -36,11 +35,11 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                         }}
                         className="relative group focus:outline-none"
                     >
-                        <div className={cn(
+                        <div className={twMerge(clsx(
                             "w-12 h-12 rounded-[1.25rem] border-2 border-[#09090b] bg-white/5 shadow-2xl overflow-hidden transition-all duration-500",
                             "group-hover:-translate-y-2 group-hover:scale-110 group-hover:z-50 group-hover:border-cyan-500/30 group-hover:shadow-cyan-500/10",
                             (viewer.status === 'Away' || viewer.status === 'away') ? 'opacity-40 grayscale' : 'opacity-100'
-                        )}>
+                        ))}>
                             {viewer.avatar ? (
                                 <img
                                     src={viewer.avatar}
@@ -55,12 +54,12 @@ const AvatarGroup = ({ viewers = [], max = 4, onClick }) => {
                         </div>
 
                         {/* Status Indicator Grid */}
-                        <div className={cn(
+                        <div className={twMerge(clsx(
                             "absolute bottom-0 right-0 w-4 h-4 rounded-lg border-2 border-[#09090b] z-[2] shadow-xl",
                             (viewer.status === 'Online' || viewer.status === 'active') ? 'bg-emerald-500 shadow-emerald-500/40' :
                                 (viewer.status === 'Away' || viewer.status === 'away') ? 'bg-amber-500 shadow-amber-500/40' :
                                     viewer.status === 'Do Not Disturb' ? 'bg-rose-500 shadow-rose-500/40' : 'bg-gray-600'
-                        )}>
+                        ))}>
                             <div className="absolute inset-0 bg-white/20 rounded-sm scale-[0.3]" />
                         </div>
 

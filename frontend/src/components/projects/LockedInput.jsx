@@ -6,7 +6,6 @@ import { Lock, ShieldAlert } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 LockedInput Component
@@ -76,10 +75,10 @@ const LockedInput = ({
                 </AnimatePresence>
             </div>
 
-            <div className={cn(
+            <div className={twMerge(clsx(
                 "relative transition-all duration-500",
                 isLockedByOthers ? "opacity-60 grayscale-[0.5] scale-[0.98]" : "opacity-100"
-            )}>
+            ))}>
                 <Component
                     {...register(fieldId)}
                     {...props}
@@ -88,12 +87,12 @@ const LockedInput = ({
                     disabled={externalDisabled || isLockedByOthers}
                     onFocus={handleFocus}
                     onBlur={handleBlur}
-                    className={cn(
+                    className={twMerge(clsx(
                         "w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-gray-700 transition-all font-medium text-sm",
                         "focus:outline-none focus:ring-4 focus:ring-cyan-500/5 focus:border-cyan-500/30",
                         isLockedByOthers && "cursor-not-allowed border-amber-500/20 bg-amber-500/[0.02]",
                         as === 'textarea' && "resize-none leading-relaxed h-32"
-                    )}
+                    ))}
                 />
 
                 {isLockedByOthers && (

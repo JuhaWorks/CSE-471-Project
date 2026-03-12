@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, ArrowRight, Github, Chrome, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
@@ -45,7 +44,7 @@ const SuccessScreen = () => (
             transition={{ delay: 0.1 }}
             className="text-4xl font-black tracking-tighter text-white mb-4"
         >
-            Identity Verified
+            Account Created
         </motion.h2>
         <motion.p 
             initial={{ y: 10, opacity: 0 }}
@@ -53,7 +52,7 @@ const SuccessScreen = () => (
             transition={{ delay: 0.2 }}
             className="text-gray-500 font-medium mb-12"
         >
-            Redirecting you to the workspace gateway…
+            Redirecting you to the login page…
         </motion.p>
         
         <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden">
@@ -135,7 +134,7 @@ const Register = () => {
                     >
                         Already registered?{' '}
                         <Link to="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors">
-                            Enter Gate
+                            Sign In
                         </Link>
                     </motion.p>
                 </header>
@@ -163,9 +162,9 @@ const Register = () => {
 
                         <Input
                             id="r-name"
-                            label="Operator Name"
+                            label="Full Name"
                             type="text"
-                            placeholder="Jane Smith"
+                            placeholder="John Doe"
                             leftIcon={User}
                             error={errors.name?.message}
                             {...register('name')}
@@ -173,9 +172,9 @@ const Register = () => {
 
                         <Input
                             id="r-email"
-                            label="Corporate Email"
+                            label="Email Address"
                             type="email"
-                            placeholder="architect@klivra.com"
+                            placeholder="name@company.com"
                             leftIcon={Mail}
                             error={errors.email?.message}
                             {...register('email')}
@@ -184,9 +183,9 @@ const Register = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input
                                 id="r-pass"
-                                label="Security Key"
+                                label="Password"
                                 type={showPw ? 'text' : 'password'}
-                                placeholder="••••••••"
+                                placeholder="Min 8 characters"
                                 leftIcon={Lock}
                                 error={errors.password?.message}
                                 {...register('password')}
@@ -203,7 +202,7 @@ const Register = () => {
 
                             <Input
                                 id="r-confirm"
-                                label="Verify Key"
+                                label="Confirm Password"
                                 type="password"
                                 placeholder="••••••••"
                                 leftIcon={Lock}
@@ -219,15 +218,15 @@ const Register = () => {
                                     {[1, 2, 3, 4, 5].map((i) => (
                                         <div 
                                             key={i} 
-                                            className={cn(
+                                            className={twMerge(clsx(
                                                 "flex-1 rounded-full transition-all duration-500",
                                                 i <= (pw.length / 3) ? "bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.4)]" : "bg-white/5"
-                                            )}
+                                            ))}
                                         />
                                     ))}
                                 </div>
                                 <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">
-                                    Entropy level: <span className="text-cyan-400">{pw.length < 8 ? 'Weak' : 'Secured'}</span>
+                                    Strength: <span className="text-cyan-400">{pw.length < 8 ? 'Weak' : 'Strong'}</span>
                                 </p>
                             </div>
                         )}
@@ -239,7 +238,7 @@ const Register = () => {
                             rightIcon={UserPlus}
                             disabled={!isValid}
                         >
-                            Initialize Account
+                            Create Account
                         </Button>
                     </form>
 
@@ -247,7 +246,7 @@ const Register = () => {
                         <div className="relative flex items-center gap-4 mb-6">
                             <div className="flex-1 h-px bg-white/5" />
                             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-600">
-                                Third-Party SSO
+                                or continue with
                             </span>
                             <div className="flex-1 h-px bg-white/5" />
                         </div>
@@ -273,8 +272,8 @@ const Register = () => {
 
                 <footer className="mt-8 text-center px-4">
                     <p className="text-xs font-medium text-gray-600">
-                        All data is E2E encrypted before transmission.<br />
-                        Klivra Node: 2026.GLOBAL.PROT
+                        Secure Registration Provided by Klivra<br />
+                        © 2026 Klivra Technologies
                     </p>
                 </footer>
             </div>

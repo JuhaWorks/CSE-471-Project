@@ -21,7 +21,6 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Card from '../ui/Card';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 TaskCard
@@ -65,10 +64,10 @@ const TaskCard = React.memo(({ task, onDragStart }) => {
 
                     <div className="flex flex-wrap items-center gap-2">
                         {task.priority && (
-                            <div className={cn(
+                            <div className={twMerge(clsx(
                                 "flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[9px] font-black uppercase tracking-widest transition-all",
                                 priorityStyles[task.priority] || priorityStyles.Low
-                            )}>
+                            ))}>
                                 <Flame className="w-3 h-3" />
                                 {task.priority}
                             </div>
@@ -210,7 +209,7 @@ const KanbanBoard = ({ projectId, searchQuery = '' }) => {
                 >
                     <div className="flex items-center justify-between mb-6 px-4">
                         <div className="flex items-center gap-3">
-                            <div className={cn("p-2 rounded-xl bg-white/5 border border-white/5 shadow-xl", col.color)}>
+                            <div className={twMerge(clsx("p-2 rounded-xl bg-white/5 border border-white/5 shadow-xl", col.color))}>
                                 <col.icon className="w-4 h-4" />
                             </div>
                             <div className="flex flex-col">

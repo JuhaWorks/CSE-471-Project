@@ -15,6 +15,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
 import { Skeleton } from '../ui/Loading';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 
 /**
  * Modern 2026 InsightsTab
@@ -87,7 +90,7 @@ const InsightsTab = ({ projectId }) => {
                         <div className="flex flex-col h-full gap-6">
                             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Node Vitality</span>
                             <div className="flex items-center gap-5">
-                                <div className={cn("p-4 rounded-2xl border transition-all duration-500 shadow-xl", healthColor)}>
+                                <div className={twMerge(clsx("p-4 rounded-2xl border transition-all duration-500 shadow-xl", healthColor))}>
                                     <HealthIcon className="w-8 h-8" />
                                 </div>
                                 <div className="space-y-1">

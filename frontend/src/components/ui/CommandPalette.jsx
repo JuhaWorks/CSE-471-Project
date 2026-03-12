@@ -8,9 +8,11 @@ import { Search, Settings, User, LogOut, FileText, Moon, Sun, ArrowRight } from 
  * Global Command Palette (CmdK Menu)
  * This sits at the root of the app and listens for Cmd+K (Mac) or Ctrl+K (Windows).
  */
+import { useTheme } from '../../store/useTheme';
+
 export default function CommandPalette() {
     const [open, setOpen] = useState(false);
-    const [theme, setTheme] = useState('light');
+    const { mode, setMode } = useTheme();
     const navigate = useNavigate();
 
     // Toggle logic for Cmd/Ctrl + K
@@ -32,10 +34,7 @@ export default function CommandPalette() {
     };
 
     const toggleTheme = () => {
-        const newTheme = theme === 'light' ? 'dark' : 'light';
-        setTheme(newTheme);
-        if (newTheme === 'dark') document.documentElement.classList.add('dark');
-        else document.documentElement.classList.remove('dark');
+        setMode(mode === 'light' ? 'dark' : 'light');
     };
 
     return (
@@ -110,7 +109,7 @@ export default function CommandPalette() {
                                         onSelect={() => runCommand(toggleTheme)}
                                         className="flex items-center px-3 py-2.5 my-1 text-sm rounded-lg cursor-pointer aria-selected:bg-accent aria-selected:text-accent-foreground data-[disabled]:opacity-50 transition-colors"
                                     >
-                                        {theme === 'light' ? (
+                                        {mode === 'light' ? (
                                             <Moon className="w-4 h-4 mr-3 text-muted-foreground" />
                                         ) : (
                                             <Sun className="w-4 h-4 mr-3 text-muted-foreground" />

@@ -12,8 +12,9 @@ import axios from 'axios';
 // Production: relative path — Vercel rewrites /api → Render backend (same-origin, cookies work)
 let BASE_URL = '/api';
 
-// Override via env var if explicitly set (e.g. for staging environments)
-if (import.meta.env.VITE_API_URL) {
+// Override via env var if explicitly set AND NOT in local dev
+// This ensures that local dev always uses the Vite proxy to localhost:5000
+if (import.meta.env.VITE_API_URL && !import.meta.env.DEV) {
     BASE_URL = `${import.meta.env.VITE_API_URL.replace(/\/$/, '')}/api`;
 }
 
@@ -123,25 +124,39 @@ export const useAuthStore = create((set, get) => ({
     clearError: () => set({ error: null }),
 
     // 1. Session validation on page reload
-    // Uses /auth/me which IS allowed to trigger the 401 refresh interceptor.
-    // Flow: GET /me → 401 (no token) → interceptor calls /refresh with cookie → gets token → retries /me → success
     checkAuth: async () => {
-        // Prevent redundant checks if already authenticated
-        if (get().isAuthenticated) return;
+        // Prevent redundant checks
+        if (get().isAuthenticated) {
+            set({ isCheckingAuth: false });
+            return;
+        }
 
         set({ isCheckingAuth: true, error: null });
+        
+        // Safety timeout to prevent the "infinity loading" reported by user
+        // even if the interceptor/backend hangs.
+        const authCheckPromise = api.get('/auth/me');
+        const timeoutPromise = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 5000)
+        );
+
         try {
-            console.log('[AUTH] Checking session...');
-            // Force a fast fail on the initial load check—don't let the global 10s timeout hang the UI
-            const response = await api.get('/auth/me', { timeout: 3000 });
+            console.log('[AUTH] Checking session status...');
+            const response = await Promise.race([authCheckPromise, timeoutPromise]);
+            
             set({
                 user: response.data.data,
-                // The refresh interceptor might have updated our state.accessToken automatically
-                // but if not, we should check if the interceptor logic should be more explicit.
                 isAuthenticated: true,
                 isCheckingAuth: false
             });
+            console.log('[AUTH] Session verified successfully.');
         } catch (error) {
+            if (error.message === 'AUTH_TIMEOUT') {
+                console.warn('[AUTH] Session check timed out. Proceeding as guest.');
+            } else {
+                console.log('[AUTH] No active session found.');
+            }
+            
             set({
                 user: null,
                 accessToken: null,

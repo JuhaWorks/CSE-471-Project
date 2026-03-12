@@ -11,6 +11,9 @@ import ModeSelector from './ModeSelector';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { motion } from 'framer-motion';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 
 const generalSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -46,7 +49,7 @@ export default function GeneralTab() {
         },
         onSuccess: (data) => {
             useAuthStore.setState((state) => ({ user: { ...state.user, ...data.data } }));
-            toast.success('Identity protocols synchronized.');
+            toast.success('Profile updated successfully.');
         },
         onError: (error) => {
             toast.error(error.response?.data?.message || 'Synchronization failed.');
@@ -62,12 +65,12 @@ export default function GeneralTab() {
             {/* Component Metadata Section */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Platform <span className="text-cyan-400">Identity.</span></h2>
-                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Core Persona Orchestration</p>
+                    <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Profile <span className="text-cyan-400">Info.</span></h2>
+                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Manage your public profile</p>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl shadow-xl">
+                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
                     <BadgeCheck className="w-4 h-4 text-emerald-400" />
-                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Verified Nexus Link</span>
+                    <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">Verified Account</span>
                 </div>
             </div>
 
@@ -76,20 +79,20 @@ export default function GeneralTab() {
                 <div className="px-10 py-6 border-b border-white/5 bg-white/[0.02]">
                     <div className="flex items-center gap-3">
                         <User className="w-4 h-4 text-gray-600" />
-                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Attribute Calibration</span>
+                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Account Details</span>
                     </div>
                 </div>
                 <form onSubmit={handleSubmit(onSubmit)} className="p-10 space-y-10">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                         {/* Name Field */}
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Identifier</label>
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Name</label>
                             <div className="relative group">
                                 <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-cyan-400 transition-colors" />
                                 <input
                                     id="name"
                                     type="text"
-                                    placeholder="Neural Identifier"
+                                    placeholder="Enter your name"
                                     {...register('name')}
                                     className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
                                 />
@@ -100,11 +103,11 @@ export default function GeneralTab() {
                         {/* Status Message Field */}
                         <div className="space-y-3">
                             <div className="flex justify-between items-center px-1">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Operational Directive</label>
-                                <span className={cn(
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Bio</label>
+                                <span className={twMerge(clsx(
                                     "text-[9px] font-black uppercase tracking-widest",
                                     bioValue.length >= 250 ? 'text-rose-500' : 'text-gray-700'
-                                )}>
+                                ))}>
                                     {bioValue.length} / 250
                                 </span>
                             </div>
@@ -113,7 +116,7 @@ export default function GeneralTab() {
                                 <textarea
                                     id="customMessage"
                                     rows={1}
-                                    placeholder="Neural broadcast message..."
+                                    placeholder="Tell us about yourself..."
                                     {...register('customMessage')}
                                     className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm resize-none h-[54px] align-middle pt-4"
                                 />
@@ -125,7 +128,7 @@ export default function GeneralTab() {
                         <div className="flex items-center gap-3">
                             <Info className="w-4 h-4 text-gray-700" />
                             <p className="text-[9px] font-black text-gray-600 uppercase tracking-widest max-w-[300px] leading-relaxed">
-                                Changes to your identity markers will propagate to all connected neural segments in real-time.
+                                Updates to your profile will be reflected across the platform immediately.
                             </p>
                         </div>
                         <Button
@@ -134,7 +137,7 @@ export default function GeneralTab() {
                             disabled={updateMutation.isPending}
                             className="px-12 py-5 rounded-2xl"
                         >
-                            Commit Protocols
+                            Save Changes
                         </Button>
                     </div>
                 </form>
@@ -153,8 +156,8 @@ export default function GeneralTab() {
                     <Zap className="w-6 h-6 text-cyan-400" />
                 </div>
                 <div className="flex flex-col">
-                    <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Neural Sync Active</span>
-                    <span className="text-[10px] text-gray-500 font-medium tracking-wide">All identity markers are now synchronized with Phase 4 core protocols.</span>
+                    <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Profile Synced</span>
+                    <span className="text-[10px] text-gray-500 font-medium tracking-wide">All profile updates has been successfully and updated globally.</span>
                 </div>
             </div>
         </div>

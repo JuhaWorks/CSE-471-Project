@@ -22,13 +22,12 @@ import { useTheme, MODES } from '../../store/useTheme';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
     { label: 'Projects', path: '/projects', icon: FolderKanban },
     { label: 'Tasks', path: '/tasks', icon: CheckSquare },
-    { label: 'Whiteboard', path: '/whiteboard/team-alpha', icon: Presentation },
+    { label: 'Whiteboard', path: '/whiteboard/main-workspace', icon: Presentation },
 ];
 
 const SidebarItem = ({ item, isActive, onClose, onPrefetch }) => {
@@ -40,11 +39,11 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch }) => {
             end={item.path === '/'}
             onClick={onClose}
             onMouseEnter={() => onPrefetch(item.path)}
-            className={({ isActive: linkActive }) => cn(
+            className={({ isActive: linkActive }) => twMerge(clsx(
                 "group relative flex items-center gap-4 px-4 py-3 rounded-2xl transition-all duration-300",
                 "hover:bg-white/[0.04] active:scale-[0.98]",
                 linkActive ? "text-cyan-400" : "text-gray-400 hover:text-gray-200"
-            )}
+            ))}
         >
             {isActive && (
                 <motion.div
@@ -54,10 +53,10 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch }) => {
                 />
             )}
             
-            <Icon className={cn(
+            <Icon className={twMerge(clsx(
                 "w-5 h-5 transition-colors z-10",
                 isActive ? "text-cyan-400" : "group-hover:text-cyan-300"
-            )} />
+            ))} />
             
             <span className="font-bold text-sm tracking-tight z-10">{item.label}</span>
             
@@ -110,13 +109,13 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                 )}
             </AnimatePresence>
 
-            <aside className={cn(
-                "fixed top-0 left-0 h-full z-50 w-[280px] glass-2 border-r border-white/5",
+            <aside className={twMerge(clsx(
+                "fixed top-0 left-0 h-full z-50 w-[280px] glass-2 border-r border-white/5 bg-[var(--bg-surface)]",
                 "flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
                 "lg:relative lg:translate-x-0 rounded-none",
                 isOpen ? 'translate-x-0' : '-translate-x-full'
-            )}>
-                {/* 2026 Ambient Light Effect */}
+            ))}>
+                {/* Theme Ambient Effect */}
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
 
                 {/* Brand */}
@@ -125,8 +124,8 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                         <span className="text-white font-black text-xl">K</span>
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-lg font-black tracking-tighter text-white">Klivra</span>
-                        <span className="text-[10px] font-bold text-cyan-400 uppercase tracking-widest">Enterprise</span>
+                        <span className="text-lg font-black tracking-tighter text-[var(--text-main)]">Klivra</span>
+                        <span className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Workspace</span>
                     </div>
                     <button onClick={onClose} className="lg:hidden ml-auto p-2 text-gray-500 hover:text-white rounded-xl transition-all hover:bg-white/5">
                         <X className="w-5 h-5" />
@@ -135,22 +134,22 @@ const SidebarComponent = ({ isOpen, onClose }) => {
 
                 {/* Nav */}
                 <nav className="flex-1 py-6 px-4 space-y-2 overflow-y-auto relative z-10">
-                    <p className="px-4 mb-4 text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">Platform Nav</p>
+                    <p className="px-4 mb-4 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">Navigation</p>
 
                     {user?.role === 'Admin' && (
                         <div className="mb-6 space-y-2">
-                             <NavLink
+                            <NavLink
                                 to="/admin"
                                 onClick={onClose}
-                                className={({ isActive }) => cn(
+                                className={({ isActive }) => twMerge(clsx(
                                     "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
                                     isActive 
-                                        ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20" 
-                                        : "text-emerald-400/60 hover:text-emerald-300 hover:bg-emerald-500/5 border border-emerald-500/5"
-                                )}
+                                        ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" 
+                                        : "text-gray-400 hover:text-white"
+                                ))}
                             >
                                 <ShieldAlert className="w-5 h-5" />
-                                <span>Platform Admin</span>
+                                <span>Admin Panel</span>
                                 <motion.span 
                                     animate={{ scale: [1, 1.2, 1] }}
                                     transition={{ repeat: Infinity, duration: 2 }}
@@ -161,12 +160,12 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                             <NavLink
                                 to="/admin/security"
                                 onClick={onClose}
-                                className={({ isActive }) => cn(
+                                className={({ isActive }) => twMerge(clsx(
                                     "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
                                     isActive 
                                         ? "bg-red-500/10 text-red-400 border border-red-500/20" 
                                         : "text-red-400/60 hover:text-red-300 hover:bg-red-500/5 border border-red-500/5"
-                                )}
+                                ))}
                             >
                                 <Activity className="w-5 h-5" />
                                 <span>Security Feed</span>
@@ -192,10 +191,10 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                         <NavLink
                             to="/settings"
                             onClick={onClose}
-                            className={({ isActive }) => cn(
+                            className={({ isActive }) => twMerge(clsx(
                                 "flex items-center gap-4 px-4 py-3 rounded-2xl text-sm font-bold transition-all duration-300",
                                 isActive ? "bg-white/5 text-white" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
-                            )}
+                            ))}
                         >
                             <Settings className="w-5 h-5" />
                             <span>Settings</span>
@@ -209,16 +208,18 @@ const SidebarComponent = ({ isOpen, onClose }) => {
                                 {mode === MODES.DARK ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
                                 <span className="text-xs font-bold leading-none">{mode === MODES.DARK ? 'Light' : 'Dark'}</span>
                             </button>
-                            
-                            <button
-                                onClick={handleLogout}
-                                className="flex items-center justify-center gap-2 h-11 px-3 rounded-2xl bg-red-500/5 text-red-400/80 hover:text-red-400 hover:bg-red-500/10 transition-all border border-red-500/10"
-                            >
-                                <LogOut className="w-4 h-4" />
-                                <span className="text-xs font-bold leading-none">Logout</span>
-                            </button>
                         </div>
                     </div>
+
+                    <div className="mt-auto px-6 py-8 border-t border-white/5 space-y-6">
+                    <button 
+                        onClick={handleLogout}
+                        className="w-full flex items-center gap-4 px-4 py-3 rounded-2xl text-gray-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all group"
+                    >
+                        <LogOut className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                        <span className="font-bold text-sm">Sign Out</span>
+                    </button>
+                        </div>
 
                     <div className="mt-6 flex items-center gap-3 px-3 py-3 rounded-3xl bg-white/5 border border-white/5">
                         <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">

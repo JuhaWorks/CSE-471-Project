@@ -3,12 +3,7 @@ import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-/**
- * Modern 2026 Vite-Optimized Card
- * Glassmorphism 2.0, Anti-grid tendencies, and subtle spring interactions.
- */
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 const Card = ({
     children,
@@ -23,23 +18,26 @@ const Card = ({
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            whileHover={hoverable ? { 
-                y: -5, 
-                transition: { type: 'spring', stiffness: 400, damping: 25 } 
+            whileHover={hoverable ? {
+                y: -5,
+                transition: { type: 'spring', stiffness: 400, damping: 25 }
             } : {}}
-            className={cn(
+            className={twMerge(clsx(
                 'relative flex flex-col overflow-hidden rounded-[2rem] transition-all duration-500',
-                variant === 'glass' && 'glass-2 border-white/5 bg-white/[0.02]',
-                variant === 'solid' && 'bg-[#13151c] border border-white/5',
+                variant === 'glass' && 'glass-2 border-white/10 bg-[var(--bg-surface)]',
+                variant === 'solid' && 'bg-[var(--bg-surface)] border border-white/10',
                 variant === 'outline' && 'bg-transparent border border-white/10',
                 padding,
                 className
-            )}
+            ))}
             {...props}
         >
             {/* 2026 Structural Reinforcement Glow */}
+            {variant === 'glass' && hoverable && (
+                <div className="absolute -top-24 -right-24 w-48 h-48 bg-theme-500/5 rounded-full blur-[60px] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            )}
             <span className="absolute inset-0 rounded-[inherit] pointer-events-none shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]" aria-hidden />
-            
+
             <div className="relative z-10 flex flex-col h-full">
                 {children}
             </div>

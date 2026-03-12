@@ -4,7 +4,6 @@ import { Sun, Moon, Sparkles, Zap, Layout, Monitor } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 ModeSelector
@@ -16,8 +15,8 @@ export default function ModeSelector() {
     const variants = {
         [MODES.DARK]: {
             id: MODES.DARK,
-            name: 'Void Protocol',
-            description: 'Low-light neural link. Optimized for high-focus operations.',
+            name: 'Dark Mode',
+            description: 'A dark interface for focused work in low-light environments.',
             icon: Moon,
             accent: 'text-indigo-400',
             bg: 'bg-[#09090b]',
@@ -35,10 +34,10 @@ export default function ModeSelector() {
         },
         [MODES.LIGHT]: {
             id: MODES.LIGHT,
-            name: 'Solar Link',
-            description: 'High-fidelity luminosity. Engineered for ambient awareness.',
+            name: 'Light Mode',
+            description: 'A clean, high-contrast interface for bright spaces.',
             icon: Sun,
-            accent: 'text-amber-500',
+            accent: 'text-emerald-600',
             bg: 'bg-white',
             preview: (
                 <div className="w-full h-24 rounded-2xl bg-white border border-black/5 flex items-center gap-3 px-4 overflow-hidden relative shadow-sm">
@@ -58,9 +57,9 @@ export default function ModeSelector() {
             <div className="flex items-center justify-between">
                 <div className="space-y-1">
                     <h3 className="text-xl font-black text-white tracking-tight flex items-center gap-3">
-                        Lumina <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-rose-400 uppercase">Orchestration.</span>
+                        Appearance <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-500 uppercase">Settings.</span>
                     </h3>
-                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Brightness protocol & Visual Density</p>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-[0.3em]">Choose your visual experience</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/5 rounded-2xl shadow-xl">
                     <Layout className="w-4 h-4 text-amber-400" />
@@ -75,12 +74,12 @@ export default function ModeSelector() {
                         <button
                             key={variant.id}
                             onClick={() => setMode(variant.id)}
-                            className={cn(
+                            className={twMerge(clsx(
                                 "group relative flex flex-col items-start gap-4 p-6 rounded-[2.5rem] border text-left transition-all duration-500",
                                 isActive 
                                     ? "bg-white/5 border-white/20 shadow-[0_20px_40px_rgba(0,0,0,0.5)] scale-[1.02]" 
                                     : "bg-transparent border-white/5 hover:border-white/10 hover:bg-white/[0.02]"
-                            )}
+                            ))}
                         >
                             {/* Visual Preview Segment */}
                             {variant.preview}
@@ -89,11 +88,11 @@ export default function ModeSelector() {
                             <div className="space-y-2 w-full">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
-                                        <variant.icon className={cn("w-4 h-4 transition-colors", isActive ? variant.accent : "text-gray-500")} />
-                                        <h4 className={cn(
+                                        <variant.icon className={twMerge(clsx("w-4 h-4 transition-colors", isActive ? variant.accent : "text-gray-500"))} />
+                                        <h4 className={twMerge(clsx(
                                             "font-black text-sm uppercase tracking-widest",
                                             isActive ? "text-white" : "text-gray-500 group-hover:text-gray-300"
-                                        )}>
+                                        ))}>
                                             {variant.name}
                                         </h4>
                                     </div>

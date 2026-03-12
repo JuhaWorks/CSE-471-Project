@@ -100,9 +100,9 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
             {
                 clientID: process.env.GOOGLE_CLIENT_ID,
                 clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-                // Use absolute URL if BACKEND_URL is set, otherwise fallback to relative
+                // Use absolute URL if BACKEND_URL is set, otherwise resolve dynamically from request properties
                 callbackURL: process.env.BACKEND_URL
-                    ? `${process.env.BACKEND_URL}/api/auth/google/callback`
+                    ? `${process.env.BACKEND_URL.replace(/\/$/, '')}/api/auth/google/callback`
                     : '/api/auth/google/callback',
                 scope: ['profile', 'email'],
                 proxy: true,
@@ -127,7 +127,7 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
                 clientID: process.env.GITHUB_CLIENT_ID,
                 clientSecret: process.env.GITHUB_CLIENT_SECRET,
                 callbackURL: process.env.BACKEND_URL
-                    ? `${process.env.BACKEND_URL}/api/auth/github/callback`
+                    ? `${process.env.BACKEND_URL.replace(/\/$/, '')}/api/auth/github/callback`
                     : '/api/auth/github/callback',
                 scope: ['user:email'],
                 proxy: true,

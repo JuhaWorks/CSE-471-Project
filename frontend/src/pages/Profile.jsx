@@ -27,7 +27,6 @@ import Card from '../components/ui/Card';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 const STATUSES = ['Online', 'Away', 'Do Not Disturb', 'Offline'];
 const STATUS_CONFIG = {
@@ -115,7 +114,7 @@ export default function Profile() {
                         <span>Identity Node</span>
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-6xl font-black text-white tracking-tighter leading-none">
+                        <h1 className="text-6xl font-black text-[var(--text-main)] tracking-tighter leading-none">
                             Agent <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Profile.</span>
                         </h1>
                         <p className="text-gray-500 font-medium text-lg max-w-xl">
@@ -131,18 +130,18 @@ export default function Profile() {
                     <Card className="overflow-hidden relative group" padding="p-8">
                         <div className="flex flex-col items-center text-center gap-6">
                             <div className="relative">
-                                <div className="w-32 h-32 rounded-[2.5rem] bg-[#09090b] border-2 border-white/10 p-1 overflow-hidden shadow-2xl group-hover:border-cyan-500/30 transition-all duration-500">
+                                <div className="w-32 h-32 rounded-[2.5rem] bg-[var(--bg-surface)] border-2 border-white/10 p-1 overflow-hidden shadow-2xl group-hover:border-cyan-500/30 transition-all duration-500">
                                     <img 
                                         src={user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
                                         alt={user?.name}
                                         className="w-full h-full object-cover rounded-[2.25rem]"
                                     />
                                 </div>
-                                <div className={cn(
-                                    "absolute bottom-1 right-1 w-6 h-6 rounded-xl border-4 border-[#09090b] z-10 shadow-xl",
+                                <div className={twMerge(clsx(
+                                    "absolute bottom-1 right-1 w-6 h-6 rounded-xl border-4 border-[var(--bg-base)] z-10 shadow-xl",
                                     STATUS_CONFIG[user?.status]?.color,
                                     STATUS_CONFIG[user?.status]?.shadow
-                                )} />
+                                ))} />
                                 <label className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-sm">
                                     <Camera className="w-8 h-8 text-white" />
                                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
@@ -150,12 +149,12 @@ export default function Profile() {
                             </div>
 
                             <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-white tracking-tight">{user?.name}</h2>
+                                <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight">{user?.name}</h2>
                                 <p className="text-xs font-medium text-gray-500 uppercase tracking-[0.2em]">{user?.email}</p>
-                                <div className={cn(
+                                <div className={twMerge(clsx(
                                     "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black text-white bg-gradient-to-r shadow-xl uppercase tracking-widest mt-2",
                                     ROLE_GRADIENT[user?.role] || ROLE_GRADIENT.Guest
-                                )}>
+                                ))}>
                                     <ShieldCheck className="w-3 h-3" />
                                     {user?.role} Protocol
                                 </div>
@@ -200,7 +199,7 @@ export default function Profile() {
                     <Card padding="p-0" className="overflow-hidden">
                         <div className="px-10 py-6 border-b border-white/5 flex items-center gap-3">
                             <Settings className="w-4 h-4 text-gray-600" />
-                            <h3 className="text-xs font-black text-white uppercase tracking-[0.3em]">Core Synchronization</h3>
+                            <h3 className="text-xs font-black text-[var(--text-main)] uppercase tracking-[0.3em]">Core Synchronization</h3>
                         </div>
                         <form onSubmit={saveProfile} className="p-10 space-y-10">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -212,7 +211,7 @@ export default function Profile() {
                                             type="text" 
                                             value={form.name}
                                             onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
-                                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-[var(--text-main)] focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
                                         />
                                     </div>
                                 </div>
@@ -223,7 +222,7 @@ export default function Profile() {
                                         <input 
                                             disabled
                                             value={user?.email}
-                                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white cursor-not-allowed font-medium text-sm"
+                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-[var(--text-main)] cursor-not-allowed font-medium text-sm opacity-60"
                                         />
                                     </div>
                                 </div>
@@ -243,17 +242,17 @@ export default function Profile() {
                                             key={s}
                                             type="button"
                                             onClick={() => setStatus(s)}
-                                            className={cn(
+                                            className={twMerge(clsx(
                                                 "flex items-center gap-3 px-4 py-4 rounded-2xl border transition-all relative group overflow-hidden",
                                                 form.status === s 
                                                     ? "bg-white text-black border-white shadow-2xl" 
                                                     : "bg-white/5 border-white/5 text-gray-500 hover:border-white/10 hover:text-gray-300"
-                                            )}
+                                            ))}
                                         >
-                                            <div className={cn(
+                                            <div className={twMerge(clsx(
                                                 "w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.4)]",
                                                 STATUS_CONFIG[s].color
-                                            )} />
+                                            ))} />
                                             <span className="text-[10px] font-black uppercase tracking-widest relative z-10">{s}</span>
                                         </button>
                                     ))}

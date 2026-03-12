@@ -10,6 +10,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 
 const projectSchema = z.object({
     name: z.string().min(3, 'Project name must be at least 3 characters').max(100),
@@ -219,12 +222,12 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                                         key={cat}
                                                         type="button"
                                                         onClick={() => setValue('category', cat, { shouldValidate: true })}
-                                                        className={cn(
+                                                        className={twMerge(clsx(
                                                             "px-5 py-4 rounded-2xl border text-sm font-black transition-all",
                                                             watch('category') === cat
                                                                 ? "bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.15)]"
                                                                 : "bg-white/5 border-white/5 text-gray-500 hover:border-white/10 hover:text-white"
-                                                        )}
+                                                        ))}
                                                     >
                                                         {cat}
                                                     </button>

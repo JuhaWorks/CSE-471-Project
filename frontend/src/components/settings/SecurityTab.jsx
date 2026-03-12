@@ -22,35 +22,35 @@ const securitySchema = z
             if (data.newPassword.length < 8) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Encryption must be at least 8 segments',
+                    message: 'Password must be at least 8 characters',
                     path: ['newPassword'],
                 });
             }
             if (!/[0-9]/.test(data.newPassword)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Protocol requires numerical markers',
+                    message: 'Password requires at least one number',
                     path: ['newPassword'],
                 });
             }
             if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]+/.test(data.newPassword)) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Symbolic entropy required',
+                    message: 'Password requires at least one special character',
                     path: ['newPassword'],
                 });
             }
             if (!data.currentPassword) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Current authorization required',
+                    message: 'Current password is required',
                     path: ['currentPassword'],
                 });
             }
             if (data.newPassword !== data.confirmNewPassword) {
                 ctx.addIssue({
                     code: z.ZodIssueCode.custom,
-                    message: 'Neural sequences do not match',
+                    message: 'Passwords do not match',
                     path: ['confirmNewPassword'],
                 });
             }
@@ -58,8 +58,8 @@ const securitySchema = z
     });
 
 /**
- * Modern 2026 SecurityTab
- * High-fidelity security orchestration with Glassmorphism 2.0
+ * Security Settings Tab
+ * Professional security configuration with a clean aesthetic.
  */
 export default function SecurityTab() {
     const { user } = useAuthStore();
@@ -89,7 +89,7 @@ export default function SecurityTab() {
         },
         onSuccess: (data) => {
             if (data.message) {
-                toast.success('Security protocols rotated.');
+                toast.success('Security settings updated.');
                 reset((formValues) => ({
                     ...formValues,
                     currentPassword: '',
@@ -102,7 +102,7 @@ export default function SecurityTab() {
             }
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Protocol rotation failed.');
+            toast.error(error.response?.data?.message || 'Update failed.');
         }
     });
 
@@ -115,12 +115,12 @@ export default function SecurityTab() {
             {/* Security Metadata */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Security <span className="text-indigo-400">Firewall.</span></h2>
-                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Neural Encryption & Access Management</p>
+                    <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Security <span className="text-indigo-400">Settings.</span></h2>
+                    <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Password and Access Management</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl shadow-xl">
                     <ShieldCheck className="w-4 h-4 text-indigo-400" />
-                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Quantum Guard Active</span>
+                    <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">Enhanced Protection Active</span>
                 </div>
             </div>
 
@@ -130,7 +130,7 @@ export default function SecurityTab() {
                     <div className="px-10 py-6 border-b border-white/5 bg-white/[0.02] flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Mail className="w-4 h-4 text-gray-600" />
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Access Identifier</span>
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Email Address</span>
                         </div>
                         <Button 
                             type="button" 
@@ -139,7 +139,7 @@ export default function SecurityTab() {
                             onClick={() => setIsEmailModalOpen(true)}
                             className="rounded-xl border-indigo-500/30 text-indigo-400 hover:bg-indigo-500/10"
                         >
-                            Rotate Email
+                            Change Email
                         </Button>
                     </div>
                     <div className="p-10 space-y-6">
@@ -162,7 +162,7 @@ export default function SecurityTab() {
                                     <Zap className="w-4 h-4 text-amber-500 animate-pulse" />
                                 </div>
                                 <div className="flex flex-col">
-                                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Rotation Pending</span>
+                                    <span className="text-[10px] font-black text-amber-500 uppercase tracking-widest leading-none">Change Pending</span>
                                     <span className="text-[11px] text-gray-500 font-medium">Verify confirmation at {user.pendingNewEmail}</span>
                                 </div>
                             </motion.div>
@@ -175,12 +175,12 @@ export default function SecurityTab() {
                     <div className="px-10 py-6 border-b border-white/5 bg-white/[0.02]">
                         <div className="flex items-center gap-3">
                             <Key className="w-4 h-4 text-gray-600" />
-                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Neural Encryption</span>
+                            <span className="text-[10px] font-black text-white uppercase tracking-widest">Change Password</span>
                         </div>
                     </div>
                     <div className="p-10 space-y-8">
                         <div className="space-y-3">
-                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Current Authorization</label>
+                            <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Current Password</label>
                             <div className="relative group">
                                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-cyan-400 transition-colors" />
                                 <input
@@ -195,7 +195,7 @@ export default function SecurityTab() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">New Sequence</label>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">New Password</label>
                                 <div className="relative group">
                                     <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-emerald-400 transition-colors" />
                                     <input
@@ -209,7 +209,7 @@ export default function SecurityTab() {
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Verify Sequence</label>
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Confirm New Password</label>
                                 <div className="relative group">
                                     <ShieldCheck className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-emerald-400 transition-colors" />
                                     <input
@@ -227,7 +227,7 @@ export default function SecurityTab() {
                         <div className="flex items-center gap-3">
                             <Info className="w-4 h-4 text-gray-700" />
                             <p className="text-[9px] font-black text-gray-700 uppercase tracking-widest leading-relaxed">
-                                Sequence updates require valid current authorization for security integrity.
+                                Password updates require your current password for security verification.
                             </p>
                         </div>
                         <Button
@@ -236,7 +236,7 @@ export default function SecurityTab() {
                             disabled={securityMutation.isPending}
                             className="px-12 py-5 rounded-2xl bg-indigo-600 hover:bg-indigo-500"
                         >
-                            Rotate Protocols
+                            Update Security
                         </Button>
                     </div>
                 </Card>
@@ -251,8 +251,8 @@ export default function SecurityTab() {
                         <ShieldAlert className="w-8 h-8 text-gray-600 group-hover:text-amber-500/60 transition-colors" />
                     </div>
                     <div className="space-y-1">
-                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Multi-Factor Synchronization</h4>
-                        <p className="text-[11px] text-gray-500 font-medium">Add an additional layer of neural verification to your identity.</p>
+                        <h4 className="text-sm font-black text-white uppercase tracking-widest">Multi-Factor Authentication</h4>
+                        <p className="text-[11px] text-gray-500 font-medium">Add an additional layer of security to your account.</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2 text-indigo-400 group-hover:text-white transition-colors">

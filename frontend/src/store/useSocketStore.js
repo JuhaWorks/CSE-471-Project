@@ -3,7 +3,8 @@ import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from './useAuthStore';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://syncforge-io.onrender.com';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 
+                    (import.meta.env.DEV ? 'http://127.0.0.1:5000' : 'https://syncforge-io.onrender.com');
 
 export const useSocketStore = create((set, get) => ({
     socket: null,

@@ -18,6 +18,9 @@ import { useSocketStore } from '../../store/useSocketStore';
 import { useProjectSocket } from '../../hooks/projects/useProjectSocket';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../ui/Button';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 
 // Tabs Components
 import CoreDetailsTab from './CoreDetailsTab';
@@ -145,14 +148,14 @@ const ProjectSettingsDashboard = () => {
                                 <div className="w-px h-8 bg-white/10" />
                                 <div className="flex items-center gap-3 pr-3">
                                     <div className="relative flex h-3 w-3">
-                                        <div className={cn(
+                                        <div className={twMerge(clsx(
                                             "absolute inset-0 rounded-full animate-ping opacity-75",
                                             isConnected ? "bg-emerald-400" : "bg-red-400"
-                                        )} />
-                                        <div className={cn(
+                                        ))} />
+                                        <div className={twMerge(clsx(
                                             "relative rounded-full h-3 w-3",
                                             isConnected ? "bg-emerald-500" : "bg-red-500"
-                                        )} />
+                                        ))} />
                                     </div>
                                     <span className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
                                         {isConnected ? 'Sync Active' : 'Disconnected'}
@@ -172,12 +175,12 @@ const ProjectSettingsDashboard = () => {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={cn(
+                                className={twMerge(clsx(
                                     "relative flex items-center gap-3 px-8 py-3.5 rounded-2xl text-[11px] font-black uppercase tracking-[0.15em] transition-all duration-300 outline-none",
                                     isActive ? "text-white" : "text-gray-500 hover:text-gray-300"
-                                )}
+                                ))}
                             >
-                                <Icon className={cn("w-4 h-4 transition-colors", isActive ? (tab.color || 'text-cyan-400') : 'text-gray-600')} />
+                                <Icon className={twMerge(clsx("w-4 h-4 transition-colors", isActive ? (tab.color || 'text-cyan-400') : 'text-gray-600'))} />
                                 <span className="relative z-10">{tab.label}</span>
                                 {isActive && (
                                     <motion.div

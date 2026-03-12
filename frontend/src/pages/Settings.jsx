@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 Settings Page
@@ -18,9 +17,9 @@ export default function Settings() {
     const [activeTab, setActiveTab] = useState('general');
 
     const tabs = [
-        { id: 'general', label: 'General Identity', icon: User, color: 'text-cyan-400' },
-        { id: 'security', label: 'Security Firewall', icon: ShieldCheck, color: 'text-indigo-400' },
-        { id: 'danger', label: 'Terminal Protocols', icon: ShieldAlert, color: 'text-rose-500' }
+        { id: 'general', label: 'General', icon: User, color: 'text-cyan-400' },
+        { id: 'security', label: 'Security', icon: ShieldCheck, color: 'text-indigo-400' },
+        { id: 'danger', label: 'Account Status', icon: ShieldAlert, color: 'text-rose-500' }
     ];
 
     return (
@@ -32,14 +31,14 @@ export default function Settings() {
                 <div className="space-y-4">
                     <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]">
                         <SettingsIcon className="w-4 h-4" />
-                        <span>System Configuration</span>
+                        <span>Global Settings</span>
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-6xl font-black text-white tracking-tighter leading-none">
-                            System <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">Node Hub.</span>
+                        <h1 className="text-6xl font-black text-theme tracking-tighter leading-none">
+                            Settings.
                         </h1>
                         <p className="text-gray-500 font-medium text-lg max-w-xl">
-                            Orchestrate global authentication protocols, identity markers, and terminal account directives.
+                            Manage your account settings, security preferences, and general profile information.
                         </p>
                     </div>
                 </div>
@@ -53,12 +52,12 @@ export default function Settings() {
                             <button
                                 key={tab.id}
                                 onClick={() => setActiveTab(tab.id)}
-                                className={cn(
+                                className={twMerge(clsx(
                                     "flex items-center gap-4 px-6 py-4 rounded-2xl transition-all relative group whitespace-nowrap lg:whitespace-normal",
                                     activeTab === tab.id
                                         ? "text-white"
                                         : "text-gray-500 hover:text-gray-200"
-                                )}
+                                ))}
                             >
                                 {activeTab === tab.id && (
                                     <motion.div
@@ -67,10 +66,10 @@ export default function Settings() {
                                         transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                     />
                                 )}
-                                <tab.icon className={cn(
+                                <tab.icon className={twMerge(clsx(
                                     "w-5 h-5 transition-colors relative z-10",
                                     activeTab === tab.id ? tab.color : "group-hover:text-gray-400"
-                                )} />
+                                ))} />
                                 <span className="font-black text-[10px] uppercase tracking-[0.2em] relative z-10">{tab.label}</span>
                                 {activeTab === tab.id && (
                                     <ChevronRight className="ml-auto w-4 h-4 text-gray-700 hidden lg:block relative z-10" />
@@ -83,10 +82,10 @@ export default function Settings() {
                         <div className="glass-2 bg-gradient-to-br from-cyan-500/10 to-transparent border border-white/5 rounded-3xl p-6 space-y-4">
                             <div className="flex items-center gap-3">
                                 <Zap className="w-4 h-4 text-cyan-400" />
-                                <span className="text-[10px] font-black text-white uppercase tracking-widest">Protocol Version</span>
+                                <span className="text-[10px] font-black text-theme uppercase tracking-widest">System Version</span>
                             </div>
                             <p className="text-[11px] text-gray-500 font-medium leading-relaxed">
-                                You are currently synchronized with the 2026 High-Fidelity Infrastructure. Global latency: <span className="text-emerald-400">12ms</span>
+                                Your workspace is up to date with the latest standards.
                             </p>
                         </div>
                     </div>

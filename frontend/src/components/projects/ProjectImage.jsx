@@ -4,7 +4,6 @@ import { ImageIcon } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 Project Image Primitive
@@ -19,7 +18,7 @@ const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
     const initial = project?.name?.charAt(0) || 'P';
 
     return (
-        <div className={cn("relative overflow-hidden group", aspect, className)}>
+        <div className={twMerge(clsx("relative overflow-hidden group", aspect, className))}>
             <AnimatePresence mode="wait">
                 {hasImage ? (
                     <motion.div
@@ -34,10 +33,10 @@ const ProjectImage = ({ project, className = "", aspect = "aspect-video" }) => {
                             alt={project.name}
                             onLoad={() => setImageLoaded(true)}
                             onError={() => setImageError(true)}
-                            className={cn(
+                            className={twMerge(clsx(
                                 "w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105",
                                 !imageLoaded && "opacity-0"
-                            )}
+                            ))}
                         />
                         {/* Shimmer overlay for loading */}
                         <AnimatePresence>

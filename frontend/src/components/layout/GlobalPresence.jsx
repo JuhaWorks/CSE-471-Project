@@ -23,19 +23,21 @@ const GlobalPresence = () => {
 
     const displayList = useMemo(() => {
         if (presenceUsers && presenceUsers.length > 0) {
-            return presenceUsers.map(member => {
-                const userIdStr = (member.userId?._id || member.userId).toString();
-                // Find if they are currently online/active in the socket state
-                const socketState = onlineUsers.find(u => u.userId === userIdStr) ||
-                    activeViewers.find(v => v.userId === userIdStr);
+            return presenceUsers
+                .filter(member => member.userId) // Ensure we have a valid user ID
+                .map(member => {
+                    const userIdStr = (member.userId?._id || member.userId).toString();
+                    // Find if they are currently online/active in the socket state
+                    const socketState = onlineUsers.find(u => u.userId === userIdStr) ||
+                        activeViewers.find(v => v.userId === userIdStr);
 
-                return {
-                    userId: userIdStr,
-                    name: member.userId?.name || member.name || 'Unknown',
-                    avatar: member.userId?.avatar || member.avatar,
-                    status: socketState?.status || 'Offline'
-                };
-            });
+                    return {
+                        userId: userIdStr,
+                        name: member.userId?.name || member.name || 'Unknown',
+                        avatar: member.userId?.avatar || member.avatar,
+                        status: socketState?.status || 'Offline'
+                    };
+                });
         }
         return onlineUsers;
     }, [presenceUsers, onlineUsers, activeViewers]);

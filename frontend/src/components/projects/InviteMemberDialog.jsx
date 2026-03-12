@@ -5,7 +5,6 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Button from '../ui/Button';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 InviteMemberDialog
@@ -78,12 +77,12 @@ const InviteMemberDialog = forwardRef(({
                                         key={r}
                                         type="button"
                                         onClick={() => onRoleChange(r)}
-                                        className={cn(
+                                        className={twMerge(clsx(
                                             "relative px-4 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border group overflow-hidden",
                                             role === r
                                                 ? "bg-white text-black border-white shadow-[0_10px_30px_rgba(255,255,255,0.1)]"
                                                 : "bg-white/5 border-white/5 text-gray-500 hover:border-white/10 hover:text-gray-300"
-                                        )}
+                                        ))}
                                     >
                                         <span className="relative z-10">{r}</span>
                                         {role === r && (

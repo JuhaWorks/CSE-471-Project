@@ -1,11 +1,11 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useUpdateProject, useUploadProjectImage } from '../../hooks/projects/useProjectQueries';
 import { Save, Loader2, Layout, Upload, Image as ImageIcon, X, Trash2, Calendar, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { useState, useRef, useEffect } from 'react';
 import LockedInput from './LockedInput';
 import { useSocketStore } from '../../store/useSocketStore';
 import Card from '../ui/Card';

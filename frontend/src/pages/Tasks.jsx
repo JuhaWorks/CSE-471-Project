@@ -67,7 +67,7 @@ const TasksContent = ({ projectId, searchQuery, viewMode, activeProject }) => {
                             <div className="absolute inset-0 bg-cyan-500/10 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
                         </div>
                         <div className="space-y-3">
-                            <h2 className="text-[length:clamp(1.5rem,3vw,2.5rem)] font-black text-white tracking-tighter">Domain Uninitialized.</h2>
+                            <h2 className="text-[length:clamp(1.5rem,3vw,2.5rem)] font-black text-[var(--text-main)] tracking-tighter">Domain Uninitialized.</h2>
                             <p className="text-gray-500 font-medium max-w-sm mx-auto text-[length:clamp(0.875rem,1.5vw,1rem)] line-clamp-3">
                                 Select a project segment from the architecture to synchronize with its operational task domain.
                             </p>
@@ -149,8 +149,8 @@ export default function Tasks() {
                         <span>Core Operations</span>
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-[length:clamp(3rem,6vw,4rem)] font-black text-white tracking-tighter leading-none">
-                            Task <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-indigo-500">Nexus.</span>
+                        <h1 className="text-[length:clamp(3rem,6vw,4rem)] font-black text-[var(--text-main)] tracking-tighter leading-none">
+                            Task <span className="text-theme">Nexus.</span>
                         </h1>
                         <p className="text-gray-500 font-medium text-[length:clamp(0.875rem,2vw,1.125rem)] max-w-xl">
                             Orchestrate complex project segments through high-fidelity task synchronization and real-time state management.
@@ -165,13 +165,13 @@ export default function Tasks() {
                             <button 
                                 key={mode}
                                 onClick={() => handleViewChange(mode)}
-                                className={`relative z-10 p-2.5 rounded-xl transition-colors duration-300 ${optimisticView === mode ? 'text-black' : 'text-gray-500 hover:text-white'}`}
+                                className={`relative z-10 p-2.5 rounded-xl transition-colors duration-300 ${optimisticView === mode ? 'text-[var(--bg-base)]' : 'text-gray-500 hover:text-white'}`}
                                 aria-label={`${mode} view`}
                             >
                                 {optimisticView === mode && (
                                     <motion.div 
                                         layoutId="view-highlight"
-                                        className="absolute inset-0 bg-white rounded-xl shadow-[0_5px_15px_rgba(255,255,255,0.2)] -z-10"
+                                        className="absolute inset-0 bg-[var(--text-main)] rounded-xl shadow-[0_5px_15px_rgba(255,255,255,0.2)] -z-10"
                                         transition={LIQUID_SPRING}
                                     />
                                 )}
@@ -200,7 +200,7 @@ export default function Tasks() {
                         placeholder="Search neural link for tasks..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-[oklch(0%_0_0/0.2)] border border-[oklch(100%_0_0/0.05)] rounded-2xl pl-16 pr-6 py-4 text-white placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/30 focus:ring-[6px] focus:ring-cyan-500/10 transition-all font-medium text-sm shadow-[inset_0_2px_4px_rgba(0,0,0,0.3)]"
+                        className="w-full bg-[var(--bg-surface)] border border-white/10 rounded-2xl pl-16 pr-6 py-4 text-[var(--text-main)] placeholder:text-gray-600 focus:outline-none focus:border-cyan-500/30 focus:ring-[6px] focus:ring-cyan-500/10 transition-all font-medium text-sm shadow-inner"
                     />
                 </div>
 
@@ -224,8 +224,8 @@ export default function Tasks() {
                 {/* Statistics Shaper */}
                 <div className="hidden @2xl:flex items-center gap-6 px-4">
                     <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-black text-gray-600 uppercase tracking-[0.2em] mb-1">Active</span>
-                        <span className="text-sm font-black text-white px-3 py-1 bg-white/5 rounded-lg border border-white/5">12</span>
+                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-[0.2em] mb-1">Active</span>
+                        <span className="text-sm font-black text-theme px-3 py-1 bg-white/5 rounded-lg border border-white/10">12</span>
                     </div>
                     <div className="w-px h-8 bg-white/5 shadow-[2px_0_5px_rgba(255,255,255,0.05)]" />
                     <div className="flex flex-col items-center">

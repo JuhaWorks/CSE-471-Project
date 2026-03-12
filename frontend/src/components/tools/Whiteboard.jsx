@@ -17,7 +17,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 Whiteboard
@@ -221,10 +220,10 @@ const Whiteboard = ({ roomId }) => {
                 <div className="flex gap-2 px-2">
                     <button
                         onClick={() => setActiveTool('pen')}
-                        className={cn(
+                        className={twMerge(clsx(
                             "p-4 rounded-2xl transition-all duration-300 relative group",
                             activeTool === 'pen' ? "bg-white text-black shadow-2xl scale-110" : "text-gray-500 hover:text-white hover:bg-white/5"
-                        )}
+                        ))}
                         title="Neural Pen"
                     >
                         <Pencil className="w-5 h-5 relative z-10" />
@@ -234,10 +233,10 @@ const Whiteboard = ({ roomId }) => {
                     </button>
                     <button
                         onClick={() => setActiveTool('eraser')}
-                        className={cn(
+                        className={twMerge(clsx(
                             "p-4 rounded-2xl transition-all duration-300 relative group",
                             activeTool === 'eraser' ? "bg-white text-black shadow-2xl scale-110" : "text-gray-500 hover:text-white hover:bg-white/5"
-                        )}
+                        ))}
                         title="Neural Eraser"
                     >
                         <Eraser className="w-5 h-5 relative z-10" />
@@ -255,12 +254,12 @@ const Whiteboard = ({ roomId }) => {
                         <button
                             key={c.name}
                             onClick={() => { setStrokeColor(c.hex); setActiveTool('pen'); }}
-                            className={cn(
+                            className={twMerge(clsx(
                                 "w-6 h-6 rounded-lg transition-all duration-300 hover:scale-125 hover:rotate-12 relative",
                                 strokeColor === c.hex && activeTool === 'pen' 
                                     ? "ring-4 ring-white/20 scale-125 border border-white/40" 
                                     : "border border-white/5"
-                            )}
+                            ))}
                             style={{ backgroundColor: c.hex }}
                             title={c.name}
                         >
@@ -307,10 +306,10 @@ const Whiteboard = ({ roomId }) => {
             <div ref={containerRef} className="flex-1 overflow-hidden relative">
                 <canvas
                     ref={canvasRef}
-                    className={cn(
+                    className={twMerge(clsx(
                         "w-full h-full touch-none",
                         activeTool === 'eraser' ? 'cursor-cell' : 'cursor-crosshair'
-                    )}
+                    ))}
                     onMouseDown={startDrawing}
                     onMouseMove={draw}
                     onMouseUp={stopDrawing}

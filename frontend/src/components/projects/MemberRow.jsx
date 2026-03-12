@@ -5,7 +5,6 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion } from 'framer-motion';
 
-const cn = (...inputs) => twMerge(clsx(inputs));
 
 /**
  * Modern 2026 MemberRow Component
@@ -61,10 +60,10 @@ const MemberRow = ({
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger
                         disabled={isViewer || (isSelf && isOnlyManager) || isUpdating}
-                        className={cn(
+                        className={twMerge(clsx(
                             "flex items-center gap-3 px-4 py-2 rounded-xl border border-white/5 bg-white/[0.02] text-[10px] font-black uppercase tracking-widest text-gray-300 transition-all outline-none",
                             "hover:border-cyan-500/30 hover:text-white disabled:opacity-30 disabled:cursor-not-allowed group/trigger"
-                        )}
+                        ))}
                     >
                         <Shield className="w-3.5 h-3.5 text-cyan-500/60 transition-colors group-hover/trigger:text-cyan-400" />
                         <span>{member.role}</span>
@@ -81,16 +80,16 @@ const MemberRow = ({
                                 <DropdownMenu.Item
                                     key={role}
                                     onClick={() => onUpdateRole(member.userId._id, role)}
-                                    className={cn(
+                                    className={twMerge(clsx(
                                         "flex items-center gap-3 px-4 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl cursor-pointer outline-none transition-all",
                                         member.role === role ? "bg-cyan-500/10 text-cyan-400" : "text-gray-400",
                                         "hover:bg-white/5 hover:text-white"
-                                    )}
+                                    ))}
                                 >
-                                    <div className={cn(
+                                    <div className={twMerge(clsx(
                                         "w-1.5 h-1.5 rounded-full transition-all",
                                         member.role === role ? "bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)]" : "bg-gray-800"
-                                    )} />
+                                    ))} />
                                     {role}
                                 </DropdownMenu.Item>
                             ))}
