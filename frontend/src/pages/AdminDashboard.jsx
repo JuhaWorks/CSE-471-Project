@@ -5,7 +5,7 @@ import { Navigate, Link } from 'react-router-dom';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import * as Dialog from '@radix-ui/react-dialog';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import * as Command from '@radix-ui/react-command';
+
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer, Tooltip as ReTooltip } from 'recharts';
 import toast from 'react-hot-toast';
