@@ -29,7 +29,7 @@ const navItems = [
     { label: 'Whiteboard', path: '/whiteboard/main-workspace', icon: Presentation },
 ];
 
-const SidebarItem = ({ item, isActive, onClose, onPrefetch }) => {
+const SidebarItem = ({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
     const Icon = item.icon;
     
     return (
@@ -214,6 +214,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                 isActive={location.pathname === item.path}
                                 onClose={onClose} 
                                 onPrefetch={handlePrefetch}
+                                isCollapsed={isCollapsed}
                             />
                         ))}
                     </div>
