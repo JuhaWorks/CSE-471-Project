@@ -31,7 +31,7 @@ const Button = forwardRef(({
     as,
     ...props
 }, ref) => {
-    const Component = as ? motion(as) : motion.button;
+    const Component = as ? motion.create(as) : motion.button;
     const internalRef = useRef(null);
     const buttonRef = ref || internalRef;
     const [isHovered, setIsHovered] = useState(false);

@@ -17,6 +17,12 @@ router.get('/email/confirm/:token', confirmEmailChange);
 // All other settings routes must be protected
 router.use(protect);
 
+// PUT    /api/settings/profile      - Update profile info (name, bio)
+router.put('/profile', updateProfile);
+
+// PUT    /api/settings/security     - Update password
+router.put('/security', updateSecurity);
+
 // PUT    /api/settings/deactivate   - Deactivate user account (isActive = false)
 router.put('/deactivate', deactivateAccount);
 

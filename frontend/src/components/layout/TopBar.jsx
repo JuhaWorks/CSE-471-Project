@@ -52,7 +52,7 @@ const TopBar = ({ onMenuToggle }) => {
             <div className="flex items-center gap-4 flex-1">
                 <button 
                     onClick={onMenuToggle} 
-                    className="lg:hidden p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+                    className="p-2 text-gray-500 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
                 >
                     <Menu className="w-5 h-5" />
                 </button>

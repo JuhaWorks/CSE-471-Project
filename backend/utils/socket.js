@@ -9,9 +9,21 @@ module.exports = {
     init: (httpServer) => {
         io = new Server(httpServer, {
             cors: {
-                origin: process.env.NODE_ENV === 'production'
-                    ? [process.env.FRONTEND_URL, ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : [])].filter(Boolean).map(o => o.trim())
-                    : ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:5175'],
+                origin: (origin, cb) => {
+                    const allowedOrigins = new Set([
+                        'http://localhost:5173',
+                        'http://localhost:5174',
+                        'http://localhost:5175',
+                        'http://localhost:3000',
+                        'http://127.0.0.1:5173',
+                        'https://klivra.vercel.app',
+                        ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
+                        process.env.FRONTEND_URL?.replace(/\/$/, '')
+                    ].filter(Boolean).map(o => o.trim()));
+
+                    if (!origin || allowedOrigins.has(origin)) cb(null, true);
+                    else cb(new Error('Not allowed by CORS'));
+                },
                 credentials: true
             }
         });

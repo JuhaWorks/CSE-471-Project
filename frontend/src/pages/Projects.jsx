@@ -91,7 +91,7 @@ const Projects = () => {
                             <LayoutGrid className="w-3 h-3" />
                             <span>Project Management</span>
                         </div>
-                        <h1 className="text-6xl font-black text-primary tracking-tighter">Projects</h1>
+                        <h1 className="text-4xl md:text-6xl font-black text-primary tracking-tighter">Projects</h1>
                         <p className="text-secondary font-medium text-lg max-w-xl leading-relaxed">
                             Manage and collaborate on team projects efficiently in a centralized workspace.
                         </p>

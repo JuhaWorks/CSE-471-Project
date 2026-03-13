@@ -130,10 +130,9 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
 
             <aside className={twMerge(clsx(
                 "fixed top-0 left-0 h-full z-50 glass-2 border-r border-default bg-surface",
-                "flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
-                "lg:relative lg:translate-x-0 rounded-none",
+                "flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] rounded-none",
                 isCollapsed ? "w-[80px]" : "w-[280px]",
-                isOpen ? 'translate-x-0' : '-translate-x-full'
+                isOpen ? 'translate-x-0 shadow-2xl shadow-black/50' : '-translate-x-full'
             ))}>
                 {/* Theme Ambient Effect */}
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
@@ -154,12 +153,16 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     )}
                     <button 
                         onClick={onToggleCollapse} 
-                        className="hidden lg:flex ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken"
+                        className="hidden lg:flex p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken"
                         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
                         <ChevronRight className={twMerge(clsx("w-5 h-5 transition-transform", !isCollapsed && "rotate-180"))} />
                     </button>
-                    <button onClick={onClose} className="lg:hidden ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken">
+                    <button 
+                        onClick={onClose} 
+                        className="ml-auto p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5"
+                        title="Hide Sidebar"
+                    >
                         <X className="w-5 h-5" />
                     </button>
                 </div>

@@ -33,65 +33,73 @@ const ApodWidget = () => {
     });
 
     const display = isError || !apod ? FALLBACK : apod;
-    const imgSrc = display.media_type === 'video'
-        ? (display.thumbnail_url || FALLBACK.url)
-        : (display.url || FALLBACK.url);
+    // Prioritize HD URL for "full image" experience
+    const rawSrc = display.hdurl || display.url || (display.media_type === 'video' ? display.thumbnail_url : null);
+    const imgSrc = rawSrc || FALLBACK.url;
 
     return (
-        <Card className="group h-full min-h-[300px] overflow-hidden" padding="p-0">
-            <div className="absolute top-4 left-4 z-20 flex gap-2">
+        <Card className="group h-full min-h-[450px] overflow-hidden flex flex-col" padding="p-0">
+            {/* Header Badge */}
+            <div className="absolute top-4 left-4 z-30">
                 <div className="px-3 py-1.5 rounded-xl glass-2 bg-black/40 backdrop-blur-md border-white/10 flex items-center gap-2">
                     <Rocket className="w-3 h-3 text-cyan-400" />
                     <span className="text-[10px] font-black uppercase tracking-widest text-white">Inspiration</span>
                 </div>
             </div>
 
-            <div className="relative h-full flex flex-col">
-                {apodLoading ? (
-                    <Skeleton className="w-full h-full" />
-                ) : (
-                    <>
-                        <motion.img
-                            initial={{ scale: 1.1, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
+            {apodLoading ? (
+                <Skeleton className="w-full h-full flex-1" />
+            ) : (
+                <>
+                    {/* Image Section */}
+                    <div className="relative h-[220px] shrink-0 overflow-hidden">
+                        <img
                             src={imgSrc}
                             alt={display.title}
-                            className="absolute inset-0 w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-                            onError={(e) => { e.target.src = FALLBACK.url; }}
+                            loading="eager"
+                            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                            onError={(e) => { 
+                                if (e.target.src !== FALLBACK.url) e.target.src = FALLBACK.url;
+                            }}
                         />
-                        
-                        {/* 2026 Cinematic Overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/20 to-transparent pointer-events-none" />
-                        
-                        <div className="absolute inset-0 p-8 flex flex-col justify-end">
-                            <motion.div
-                                initial={{ y: 20, opacity: 0 }}
-                                animate={{ y: 0, opacity: 1 }}
-                                transition={{ delay: 0.3 }}
-                                className="space-y-3"
-                            >
-                                <div className="flex items-center gap-2 text-gray-400">
-                                    <Calendar className="w-3 h-3" />
-                                    <span className="text-[9px] font-black uppercase tracking-widest">Temporal Log: {new Date().toLocaleDateString()}</span>
-                                </div>
-                                
-                                <h3 className="text-xl font-black text-white tracking-tighter leading-tight">
-                                    {display.title}
-                                </h3>
-                                
-                                <p className="text-xs font-medium text-gray-400 line-clamp-2 leading-relaxed opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                                    "{display.explanation}"
-                                </p>
-                                
-                                <div className="pt-2 flex items-center gap-4">
-                                    <div className="h-px flex-1 bg-white/10" />
-                                    <span className="text-[9px] font-black text-gray-600 uppercase tracking-widest shrink-0">NASA Segment</span>
-                                </div>
-                            </motion.div>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                        <h3 className="absolute bottom-4 left-6 right-6 text-lg font-black text-white tracking-tight leading-tight drop-shadow-md">
+                            {display.title}
+                        </h3>
+                    </div>
+
+                    {/* Content Section - High Contrast / Traditional Layout */}
+                    <div className="flex-1 p-6 flex flex-col gap-3 overflow-hidden bg-[var(--bg-surface)]">
+                        <div className="flex items-center gap-2 text-zinc-500">
+                            <Calendar className="w-3 h-3" />
+                            <span className="text-[9px] font-bold uppercase tracking-widest">Temporal Log: {new Date().toLocaleDateString()}</span>
                         </div>
-                    </>
-                )}
-            </div>
+
+                        <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+                            <div>
+                                <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest block mb-1">Explanation</span>
+                                <p className="text-xs font-medium text-[var(--text-secondary)] leading-relaxed">
+                                    {display.explanation}
+                                </p>
+                            </div>
+
+                            {display.copyright && (
+                                <div>
+                                    <p className="text-[10px] font-bold text-[var(--text-tertiary)] flex items-center gap-1">
+                                        <Info className="w-3 h-3" />
+                                        Image Credit & Copyright: <span className="text-[var(--text-primary)]">{display.copyright}</span>
+                                    </p>
+                                </div>
+                            )}
+                        </div>
+
+                        <div className="pt-2 flex items-center gap-4">
+                            <div className="h-px flex-1 bg-[var(--border-subtle)]" />
+                            <span className="text-[9px] font-black text-[var(--text-tertiary)] uppercase tracking-widest shrink-0">NASA Segment</span>
+                        </div>
+                    </div>
+                </>
+            )}
         </Card>
     );
 };

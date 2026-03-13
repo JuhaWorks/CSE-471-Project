@@ -257,12 +257,12 @@ const Home = () => {
                 }
             `}</style>
 
-            <article className="h-root h-bg-grid min-h-screen pb-20 space-y-10 relative overflow-y-auto h-scroll">
+            <article className="h-root h-bg-grid min-h-full pb-20 space-y-10 relative">
 
                 {/* Ambient top glow */}
-                <div style={{ position: 'fixed', top: -180, left: '50%', transform: 'translateX(-50%)', width: 700, height: 380, background: 'radial-gradient(ellipse, rgba(34,211,238,0.055) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+                <div className="fixed top-[-180px] left-1/2 -translate-x-1/2 w-[700px] h-[380px] bg-[radial-gradient(ellipse,rgba(34,211,238,0.055)_0%,transparent_70%)] pointer-events-none z-0" />
 
-                <div style={{ position: 'relative', zIndex: 1, maxWidth: 1300, margin: '0 auto', padding: '36px 32px 0' }}>
+                <div className="max-w-[1300px] mx-auto px-6 md:px-8 pt-8 relative z-20">
                     <DashboardErrorBoundary>
 
                         {/* ── HEADER ────────────────────────────────── */}
@@ -270,22 +270,22 @@ const Home = () => {
                             initial={{ opacity: 0, y: -12 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={EASE}
-                            style={{ marginBottom: 40 }}
+                            className="mb-10"
                         >
-                            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', flexWrap: 'wrap', gap: 20 }}>
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
                                 <div>
                                     {/* system status chip */}
                                         <motion.div
                                         initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }}
                                         transition={{ ...EASE, delay: .08 }}
-                                        style={{ display: 'inline-flex', alignItems: 'center', gap: 7, padding: '4px 12px', borderRadius: 100, border: '1px solid var(--border-subtle)', background: 'var(--bg-sunken)', marginBottom: 18 }}
+                                        className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/5 bg-white/[0.02] mb-5"
                                     >
                                         <StatusPip active />
-                                        <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.14em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>
+                                        <span className="text-[10px] font-bold uppercase tracking-widest text-tertiary font-mono">
                                             All systems operational
                                         </span>
-                                        <span style={{ fontSize: 10, color: 'var(--border-strong)', fontFamily: 'var(--mono)' }}>·</span>
-                                        <span style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>{timeString}</span>
+                                        <span className="text-[10px] text-strong font-mono">·</span>
+                                        <span className="text-[10px] text-tertiary font-mono">{timeString}</span>
                                     </motion.div>
 
                                     {/* greeting */}
@@ -293,12 +293,12 @@ const Home = () => {
                                         initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }}
                                         transition={{ ...SPRING, delay: .06 }}
                                     >
-                                        <h1 style={{ fontSize: 34, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.6px', lineHeight: 1.15, margin: 0 }}>
+                                        <h1 className="text-3xl md:text-5xl font-bold text-primary tracking-tight leading-[1.15] m-0">
                                             {greeting},{' '}
-                                            <span style={{ color: 'var(--accent-500)' }}>{firstName}</span>
-                                            <span style={{ color: 'var(--accent-500)' }}>.</span>
+                                            <span className="text-theme">{firstName}</span>
+                                            <span className="text-theme">.</span>
                                         </h1>
-                                        <p style={{ marginTop: 8, fontSize: 13.5, color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: 480 }}>
+                                        <p className="mt-2 text-sm text-secondary leading-relaxed max-w-md">
                                             {user?.role === 'Admin'
                                                 ? 'Your workspace is active. Below is a summary of current platform activity and project status.'
                                                 : 'Your project environment is ready. All services are running within expected parameters.'}
@@ -314,7 +314,7 @@ const Home = () => {
                                         leftIcon={Plus}
                                         as={Link}
                                         to="/projects"
-                                        style={{ boxShadow: '0 12px 28px rgba(34,211,238,0.18), inset 0 1px 0 rgba(255,255,255,0.15)' }}
+                                        className="shadow-[0_12px_28px_rgba(34,211,238,0.18),inset_0_1px_0_rgba(255,255,255,0.15)]"
                                     >
                                         New Project
                                     </Button>
@@ -323,7 +323,7 @@ const Home = () => {
                         </motion.header>
 
                         {/* ── STAT CARDS ────────────────────────────── */}
-                        <section style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 14, marginBottom: 28 }} aria-label="Workspace overview">
+                        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10" aria-label="Workspace overview">
                             {STATS.map((s, i) => (
                                 <motion.div
                                     key={s.label}
@@ -367,7 +367,7 @@ const Home = () => {
                         </section>
 
                         {/* ── MAIN CONTENT GRID ─────────────────────── */}
-                        <section style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 16, alignItems: 'start' }}>
+                        <section className="grid grid-cols-1 lg:grid-cols-[1fr_360px] gap-6 items-start">
 
                             {/* ── ACTIVITY FEED ── */}
                             <motion.div
@@ -556,16 +556,16 @@ const Home = () => {
                         {/* ── FOOTER STATUS BAR ─────────────────────── */}
                         <motion.footer
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .6 }}
-                            style={{ marginTop: 20, display: 'flex', alignItems: 'center', gap: 14, paddingBottom: 4 }}
+                            className="mt-10 flex flex-wrap items-center gap-4 pb-4"
                         >
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div className="flex items-center gap-2">
                                 <StatusPip active />
-                                <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)' }}>Platform operational</span>
+                                <span className="text-[10px] font-mono text-tertiary">Platform operational</span>
                             </div>
-                            <span style={{ fontSize: 10, color: 'var(--border-subtle)' }}>·</span>
-                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.08em' }}>{roleLabel}</span>
-                            <span style={{ fontSize: 10, color: 'var(--border-subtle)' }}>·</span>
-                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)' }}>{user?.email}</span>
+                            <span className="text-[10px] text-subtle">·</span>
+                            <span className="text-[10px] font-mono text-tertiary uppercase tracking-wider">{roleLabel}</span>
+                            <span className="text-[10px] text-subtle">·</span>
+                            <span className="text-[10px] font-mono text-tertiary">{user?.email}</span>
                         </motion.footer>
 
                     </DashboardErrorBoundary>

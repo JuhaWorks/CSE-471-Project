@@ -7,6 +7,8 @@ import TopBar from './TopBar';
 import GlobalPresence from './GlobalPresence';
 import { useIdleTimer } from '../../hooks/useIdleTimer';
 import { RefreshCw } from 'lucide-react/dist/esm/lucide-react';
+import { clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
 
 // ── Vanguard 2026: Physics Configuration ──
 const LIQUID_SPRING = { type: "spring", stiffness: 260, damping: 20, mass: 0.5 };
@@ -52,9 +54,18 @@ const PageSkeleton = () => (
 const Layout = () => {
     useIdleTimer(); // Global idle tracking
     const location = useLocation();
-    const [isSidebarExpanded, setIsSidebarExpanded] = useState(false);
+    const [isSidebarExpanded, setIsSidebarExpanded] = useState(
+        localStorage.getItem('klivra-sidebar-visible') === null ? true : localStorage.getItem('klivra-sidebar-visible') === 'true'
+    );
     const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('klivra-sidebar-collapsed') === 'true');
     const [isPending, startTransition] = useTransition();
+
+    // Toggle Visibility (Full Hide)
+    const toggleSidebar = () => {
+        const next = !isSidebarExpanded;
+        setIsSidebarExpanded(next);
+        localStorage.setItem('klivra-sidebar-visible', String(next));
+    };
 
     // Context-Driven Theme Analysis based on routing
     const isFocusMode = location.pathname.includes('/tasks') || location.pathname.includes('/whiteboard');
@@ -78,7 +89,7 @@ const Layout = () => {
     };
 
     return (
-        <div className={`flex h-screen ${layoutBg} text-[var(--text-main)] selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`}>
+        <div className={`flex h-dvh ${layoutBg} text-[var(--text-main)] selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`}>
             
             {/* Global Anti-grid Grain Layer for Tactile Maximalism */}
             <div className="fixed inset-0 pointer-events-none opacity-[0.04] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay z-[100]" aria-hidden="true" />
@@ -98,10 +109,13 @@ const Layout = () => {
             />
 
             {/* Main Operational Area */}
-            <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative z-10" aria-label="Core operational quadrant">
+            <main className={twMerge(clsx(
+                "flex-1 flex flex-col min-w-0 overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
+                isSidebarExpanded ? (isCollapsed ? "lg:pl-[80px]" : "lg:pl-[280px]") : "pl-0"
+            ))} aria-label="Core operational quadrant">
                 {/* Top Command Bar */}
                 <header className="shrink-0 z-20">
-                    <TopBar onMenuToggle={() => setIsSidebarExpanded(!isSidebarExpanded)} />
+                    <TopBar onMenuToggle={toggleSidebar} />
                 </header>
 
                 {/* Vanguard Viewport with Morphing Transitions */}
