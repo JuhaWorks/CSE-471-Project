@@ -1,112 +1,142 @@
 import React, { useState } from 'react';
-import { User, ShieldCheck, ShieldAlert, Settings as SettingsIcon, Zap, ChevronRight } from 'lucide-react';
-import { Toaster } from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+    User, Shield, Bell, Palette, AlertCircle, 
+    Settings as SettingsIcon, ChevronRight, Globe, 
+    Smartphone, History, Activity, CreditCard
+} from 'lucide-react';
+import { useAuthStore } from '../store/useAuthStore';
+import { useTheme } from '../store/useTheme';
+
+// Import real components
 import GeneralTab from '../components/settings/GeneralTab';
 import SecurityTab from '../components/settings/SecurityTab';
-import AccountStatusTab from '../components/settings/DangerZoneTab';
-import { motion, AnimatePresence } from 'framer-motion';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import NotificationsTab from '../components/settings/NotificationsTab';
+import DangerZoneTab from '../components/settings/DangerZoneTab';
 
+const TABS = [
+    { id: 'general', label: 'General', icon: User, color: '#10b981' },
+    { id: 'security', label: 'Security', icon: Shield, color: '#6366f1' },
+    { id: 'notifications', label: 'Notifications', icon: Bell, color: '#f59e0b' },
+    { id: 'appearance', label: 'Appearance', icon: Palette, color: '#ec4899' },
+    { id: 'status', label: 'Account Status', icon: Activity, color: '#f43f5e' },
+];
 
-/**
- * Modern 2026 Settings Page
- * High-fidelity orchestration of global preferences with Glassmorphism 2.0
- */
+const TabButton = ({ tab, active, onClick }) => {
+    const Icon = tab.icon;
+    return (
+        <button
+            onClick={() => onClick(tab.id)}
+            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+                active 
+                ? 'bg-white dark:bg-white/10 shadow-sm border border-zinc-200 dark:border-white/10' 
+                : 'hover:bg-zinc-100 dark:hover:bg-white/5 border border-transparent'
+            }`}
+        >
+            <div className={`p-1.5 rounded-lg transition-colors ${
+                active ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-white'
+            }`}>
+                <Icon className="w-3.5 h-3.5" />
+            </div>
+            <span className={`text-xs font-semibold uppercase tracking-widest ${
+                active ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200'
+            }`}>
+                {tab.label}
+            </span>
+            {active && (
+                <motion.div 
+                    layoutId="active-pill"
+                    className="ml-auto w-1 h-1 rounded-full bg-zinc-900 dark:bg-white"
+                />
+            )}
+        </button>
+    );
+};
+
 export default function Settings() {
+    const { user } = useAuthStore();
     const [activeTab, setActiveTab] = useState('general');
 
-    const tabs = [
-        { id: 'general', label: 'General', icon: User, color: 'text-cyan-400' },
-        { id: 'security', label: 'Security', icon: ShieldCheck, color: 'text-indigo-400' },
-        { id: 'danger', label: 'Account Status', icon: ShieldAlert, color: 'text-rose-500' }
-    ];
-
     return (
-        <div className="min-h-screen pb-20 pt-8 px-6 lg:px-10 space-y-10 max-w-7xl mx-auto">
-            <Toaster position="bottom-right" reverseOrder={false} />
-
-            {/* Cinematic Header */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-8">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]">
-                        <SettingsIcon className="w-4 h-4" />
-                        <span>Global Settings</span>
-                    </div>
-                    <div className="space-y-2">
-                        <h1 className="text-6xl font-black text-theme tracking-tighter leading-none">
-                            Settings.
-                        </h1>
-                        <p className="text-secondary font-medium text-lg max-w-xl">
-                            Manage your account settings, security preferences, and general profile information.
-                        </p>
-                    </div>
-                </div>
-            </header>
-
-            <div className="flex flex-col lg:flex-row gap-12 items-start">
-                {/* Horizontal / Vertical Hybrid Navigation */}
-                <aside className="w-full lg:w-72 shrink-0">
-                    <nav className="flex lg:flex-col overflow-x-auto lg:overflow-visible gap-3 pb-6 lg:pb-0 no-scrollbar">
-                        {tabs.map((tab) => (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={twMerge(clsx(
-                                    "flex items-center gap-4 px-6 py-4 rounded-2xl transition-all relative group whitespace-nowrap lg:whitespace-normal",
-                                    activeTab === tab.id
-                                        ? "text-white"
-                                        : "text-secondary hover:text-primary"
-                                ))}
-                            >
-                                {activeTab === tab.id && (
-                                    <motion.div
-                                        layoutId="settings-tab-bg"
-                                        className="absolute inset-0 glass-2 bg-white/5 border border-white/10 rounded-2xl shadow-xl"
-                                        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                                    />
-                                )}
-                                <tab.icon className={twMerge(clsx(
-                                    "w-5 h-5 transition-colors relative z-10",
-                                    activeTab === tab.id ? tab.color : "group-hover:text-primary/70"
-                                ))} />
-                                <span className="font-black text-[10px] uppercase tracking-[0.2em] relative z-10">{tab.label}</span>
-                                {activeTab === tab.id && (
-                                    <ChevronRight className="ml-auto w-4 h-4 text-tertiary hidden lg:block relative z-10" />
-                                )}
-                            </button>
-                        ))}
-                    </nav>
-
-                    <div className="mt-10 hidden lg:block">
-                        <div className="glass-2 bg-gradient-to-br from-cyan-500/10 to-transparent border border-white/5 rounded-3xl p-6 space-y-4">
-                            <div className="flex items-center gap-3">
-                                <Zap className="w-4 h-4 text-cyan-400" />
-                                <span className="text-[10px] font-black text-theme uppercase tracking-widest">System Version</span>
-                            </div>
-                            <p className="text-[11px] text-tertiary font-medium leading-relaxed">
-                                Your workspace is up to date with the latest standards.
-                            </p>
+        <div className="flex flex-col gap-8 pb-20">
+            {/* Header / Breadcrumb area */}
+            <div className="border-b border-default bg-surface/50 backdrop-blur-xl -mx-6 lg:-mx-12 px-6 lg:px-12">
+                <div className="max-w-screen-2xl mx-auto py-8 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-2xl bg-theme flex items-center justify-center shadow-lg shadow-theme/10">
+                            <SettingsIcon className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-lg font-bold text-primary tracking-tight leading-none uppercase tracking-[0.2em]">Settings</h1>
+                            <p className="text-[10px] font-medium text-tertiary mt-1 uppercase tracking-widest">Workspace Orchestration</p>
                         </div>
                     </div>
-                </aside>
+                </div>
+            </div>
 
-                {/* Main Dynamic Domain */}
-                <main className="flex-1 min-w-0 w-full animate-in fade-in slide-in-from-bottom-5 duration-700">
-                    <AnimatePresence mode="wait">
-                        <motion.div
-                            key={activeTab}
-                            initial={{ opacity: 0, x: 20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                        >
-                            {activeTab === 'general' && <GeneralTab />}
-                            {activeTab === 'security' && <SecurityTab />}
-                            {activeTab === 'danger' && <AccountStatusTab />}
-                        </motion.div>
-                    </AnimatePresence>
-                </main>
+            {/* Main Content */}
+            <div className="max-w-screen-2xl mx-auto w-full">
+                <div className="flex flex-col lg:flex-row gap-16">
+                    {/* Sidebar */}
+                    <aside className="w-full lg:w-64 shrink-0 space-y-8">
+                        <div className="space-y-1.5">
+                            <p className="text-[10px] font-black text-zinc-400 dark:text-zinc-600 uppercase tracking-[0.3em] px-4 mb-4">Configuration</p>
+                            {TABS.map(tab => (
+                                <TabButton 
+                                    key={tab.id} 
+                                    tab={tab} 
+                                    active={activeTab === tab.id} 
+                                    onClick={setActiveTab} 
+                                />
+                            ))}
+                        </div>
+
+                        {/* Additional Info */}
+                        <div className="px-4 py-6 rounded-3xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+                            <div className="flex items-center gap-2 mb-3">
+                                <Globe className="w-3.5 h-3.5 text-zinc-400" />
+                                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Platform Status</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                                <span className="text-[11px] font-medium text-zinc-600 dark:text-zinc-300">v4.2.1 Stable</span>
+                            </div>
+                        </div>
+                    </aside>
+
+                    {/* Content Area */}
+                    <main className="flex-1">
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+                            >
+                                {activeTab === 'general' && <GeneralTab />}
+                                {activeTab === 'security' && <SecurityTab />}
+                                {activeTab === 'notifications' && <NotificationsTab />}
+                                {activeTab === 'appearance' && (
+                                    <div className="space-y-12">
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                            <div className="space-y-1">
+                                                <h2 className="text-2xl font-black text-primary tracking-tighter uppercase">Appearance <span className="text-theme">Design.</span></h2>
+                                                <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em]">Personalize your workspace aesthetics</p>
+                                            </div>
+                                            <div className="flex items-center gap-2 px-4 py-2 bg-theme-bg border border-theme rounded-2xl shadow-theme">
+                                                <Palette className="w-4 h-4 text-theme" />
+                                                <span className="text-[9px] font-black text-theme uppercase tracking-widest">Active UI</span>
+                                            </div>
+                                        </div>
+                                        <GeneralTab showOnlyAppearance />
+                                    </div>
+                                )}
+                                {activeTab === 'status' && <DangerZoneTab />}
+                            </motion.div>
+                        </AnimatePresence>
+                    </main>
+                </div>
             </div>
         </div>
     );

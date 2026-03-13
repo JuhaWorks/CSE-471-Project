@@ -1,5 +1,5 @@
-import React from 'react';
-import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import React, { memo } from 'react';
+import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
     LayoutDashboard, 
@@ -29,7 +29,7 @@ const navItems = [
     { label: 'Whiteboard', path: '/whiteboard/main-workspace', icon: Presentation },
 ];
 
-const SidebarItem = ({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
+const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
     const Icon = item.icon;
     
     return (
@@ -39,16 +39,16 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
             onClick={onClose}
             onMouseEnter={() => onPrefetch(item.path)}
             className={({ isActive: linkActive }) => twMerge(clsx(
-                "group relative flex items-center rounded-2xl transition-all duration-300",
+                "group relative flex items-center rounded-2xl transition-all duration-200",
                 isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                 "hover:bg-white/[0.04] active:scale-[0.98]",
-                linkActive ? "text-cyan-400" : "text-gray-400 hover:text-gray-200"
+                linkActive ? "text-theme" : "text-gray-400 hover:text-gray-200"
             ))}
         >
             {isActive && (
                 <motion.div
                     layoutId="sidebar-active"
-                    className="absolute inset-0 bg-cyan-500/10 rounded-2xl border border-cyan-500/20"
+                    className="absolute inset-0 bg-theme/5 rounded-2xl border border-theme/20 shadow-[0_0_20px_rgba(var(--theme-rgb),0.05)] backdrop-blur-sm"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
             )}
@@ -58,12 +58,13 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
                 isActive ? "text-theme" : "group-hover:text-theme-lt"
             ))} />
             
-            <AnimatePresence>
+            <AnimatePresence mode="wait">
                 {!isCollapsed && (
                     <motion.span 
-                        initial={{ opacity: 0, x: -10 }}
+                        initial={{ opacity: 0, x: -5 }}
                         animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10 }}
+                        exit={{ opacity: 0, x: -5 }}
+                        transition={{ duration: 0.15 }}
                         className="font-bold text-sm tracking-tight z-10 truncate"
                     >
                         {item.label}
@@ -75,12 +76,15 @@ const SidebarItem = ({ item, isActive, onClose, onPrefetch, isCollapsed }) => {
                 <motion.div
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.6)] z-10"
+                    className={twMerge(clsx(
+                        "w-1.5 h-1.5 rounded-full bg-theme shadow-theme z-10",
+                        isCollapsed ? "absolute bottom-1 left-1/2 -translate-x-1/2" : "ml-auto"
+                    ))}
                 />
             )}
         </NavLink>
     );
-};
+});
 
 const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
     const { logout, user } = useAuthStore();
@@ -109,7 +113,6 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
         navigate('/login');
     };
 
-    // Filter nav items: keep only Dashboard if in admin section
     const visibleNavItems = isAdminSection 
         ? navItems.filter(item => item.path === '/')
         : navItems;
@@ -128,58 +131,79 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 )}
             </AnimatePresence>
 
-            <aside className={twMerge(clsx(
-                "fixed top-0 left-0 h-full z-50 glass-2 border-r border-default bg-surface",
-                "flex flex-col transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] rounded-none",
-                isCollapsed ? "w-[80px]" : "w-[280px]",
-                isOpen ? 'translate-x-0 shadow-2xl shadow-black/50' : '-translate-x-full'
+            <motion.aside 
+                initial={false}
+                animate={{ 
+                    width: isCollapsed ? 80 : 280,
+                    x: isOpen ? 0 : '-100%'
+                }}
+                transition={{ 
+                    type: 'spring', 
+                    stiffness: 300, 
+                    damping: 35,
+                    mass: 0.8
+                }}
+                style={{ willChange: 'width, transform' }}
+                className={twMerge(clsx(
+                "fixed top-0 left-0 h-screen z-50 glass-2 border-r border-default bg-surface",
+                "flex flex-col rounded-none shadow-2xl shadow-black/50 overflow-hidden"
             ))}>
                 {/* Theme Ambient Effect */}
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-cyan-500/10 to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-theme-bg to-transparent pointer-events-none" />
 
                 {/* Brand */}
                 <div className={twMerge(clsx(
-                    "h-20 flex items-center relative z-10",
+                    "h-20 flex items-center relative z-10 shrink-0",
                     isCollapsed ? "justify-center px-0" : "gap-4 px-6"
                 ))}>
-                    <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10">
+                    <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform">
                         <span className="text-white font-black text-xl">K</span>
                     </div>
                     {!isCollapsed && (
-                        <div className="flex flex-col">
-                            <span className="text-lg font-black tracking-tighter text-primary">Klivra</span>
-                            <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest">{isAdminSection ? 'Administration' : 'Workspace'}</span>
-                        </div>
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="flex flex-col min-w-0"
+                        >
+                            <span className="text-lg font-black tracking-tighter text-primary truncate">Klivra</span>
+                            <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest truncate">{isAdminSection ? 'Administration' : 'Workspace'}</span>
+                        </motion.div>
                     )}
                     <button 
                         onClick={onToggleCollapse} 
-                        className="hidden lg:flex p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken"
+                        className="hidden lg:flex ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken"
                         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
-                        <ChevronRight className={twMerge(clsx("w-5 h-5 transition-transform", !isCollapsed && "rotate-180"))} />
+                        <ChevronRight className={twMerge(clsx("w-5 h-5 transition-transform duration-300", !isCollapsed && "rotate-180"))} />
                     </button>
-                    <button 
-                        onClick={onClose} 
-                        className="ml-auto p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5"
-                        title="Hide Sidebar"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+                    {!isCollapsed && (
+                        <button 
+                            onClick={onClose} 
+                            className="p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5 lg:hidden"
+                            title="Hide Sidebar"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                    )}
                 </div>
 
                 {/* Nav */}
                 <nav className={twMerge(clsx(
-                    "flex-1 py-6 space-y-2 overflow-y-auto relative z-10",
+                    "flex-1 py-6 space-y-2 overflow-y-auto overflow-x-hidden relative z-10 scrollbar-hide",
                     isCollapsed ? "px-2" : "px-4"
                 ))}>
                     {!isCollapsed && (
-                        <p className="px-4 mb-4 text-[10px] font-black text-tertiary uppercase tracking-[0.2em]">
+                        <motion.p 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="px-4 mb-4 text-[10px] font-black text-tertiary uppercase tracking-[0.2em]"
+                        >
                             {isAdminSection ? 'System Control' : 'Navigation'}
-                        </p>
+                        </motion.p>
                     )}
 
                     {user?.role === 'Admin' && (
-                        <div className="mb-6 space-y-2">
+                        <div className="mb-6 space-y-2 px-1">
                             <NavLink
                                 to="/admin"
                                 end
@@ -189,16 +213,18 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                     isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
                                         ? "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20" 
-                                        : "text-gray-400 hover:text-white"
+                                        : "text-gray-400 hover:text-white hover:bg-white/5"
                                 ))}
                             >
-                                <ShieldAlert className="w-5 h-5" />
-                                <span>Admin Panel</span>
-                                <motion.span 
-                                    animate={{ scale: [1, 1.2, 1] }}
-                                    transition={{ repeat: Infinity, duration: 2 }}
-                                    className="ml-auto w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
-                                />
+                                <ShieldAlert className="w-5 h-5 shrink-0" />
+                                {!isCollapsed && <span>Admin Panel</span>}
+                                {!isCollapsed && (
+                                    <motion.span 
+                                        animate={{ scale: [1, 1.2, 1] }}
+                                        transition={{ repeat: Infinity, duration: 2 }}
+                                        className="ml-auto w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"
+                                    />
+                                )}
                             </NavLink>
                             
                             <NavLink
@@ -208,12 +234,12 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
                                     isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
-                                        ? "bg-red-500/10 text-red-400 border border-red-500/20" 
-                                        : "text-red-400/60 hover:text-red-300 hover:bg-red-500/5 border border-red-500/5"
+                                        ? "bg-rose-500/10 text-rose-400 border border-rose-500/20" 
+                                        : "text-tertiary/60 hover:text-rose-400 hover:bg-rose-500/5"
                                 ))}
                             >
-                                <Activity className="w-5 h-5" />
-                                <span>Security Feed</span>
+                                <Activity className="w-5 h-5 shrink-0" />
+                                {!isCollapsed && <span>Security Feed</span>}
                             </NavLink>
                         </div>
                     )}
@@ -232,81 +258,89 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     </div>
                 </nav>
 
-                {/* Footer Section */}
+                {/* Optimized Footer Hierarchy */}
                 <div className={twMerge(clsx(
-                    "border-t border-white/5 bg-white/[0.01] relative z-10",
-                    isCollapsed ? "p-2" : "p-4"
+                    "mt-auto border-t border-default relative z-10 shrink-0",
+                    isCollapsed ? "p-3" : "p-4"
                 ))}>
-                    <div className="flex flex-col gap-1">
+                    {/* Part 1: Operational Actions */}
+                    <div className="space-y-1 mb-6">
                         {!isAdminSection && (
                             <NavLink
                                 to="/settings"
                                 onClick={onClose}
                                 className={({ isActive }) => twMerge(clsx(
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                    isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                                    isActive ? "bg-white/5 text-white" : "text-gray-400 hover:text-gray-200 hover:bg-white/5"
+                                    isCollapsed ? "justify-center h-11 w-full px-0" : "gap-4 px-4 py-3",
+                                    isActive ? "bg-theme/10 text-theme border border-theme/20" : "text-tertiary hover:text-primary hover:bg-surface-lighter"
                                 ))}
                             >
-                                <Settings className="w-5 h-5" />
-                                <span>Settings</span>
+                                <Settings className="w-5 h-5 shrink-0" />
+                                {!isCollapsed && <span>Settings</span>}
                             </NavLink>
                         )}
 
-                        <div className={twMerge(clsx(
-                            "grid gap-2 mt-2",
-                            isCollapsed ? "grid-cols-1" : "grid-cols-2"
-                        ))}>
-                             <button
-                                onClick={() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK)}
-                                className={twMerge(clsx(
-                                    "flex items-center justify-center rounded-2xl bg-white/5 text-gray-400 hover:text-white hover:bg-white/10 transition-all border border-white/5",
-                                    isCollapsed ? "h-12 w-full p-0" : "gap-2 h-11 px-3"
-                                ))}
-                            >
-                                {mode === MODES.DARK ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
-                                {!isCollapsed && <span className="text-xs font-bold leading-none">{mode === MODES.DARK ? 'Light' : 'Dark'}</span>}
-                            </button>
-                        </div>
+                        <button
+                            onClick={() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK)}
+                            className={twMerge(clsx(
+                                "w-full flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
+                                isCollapsed ? "justify-center h-11 px-0" : "gap-4 px-4 py-3",
+                                "text-tertiary hover:text-primary hover:bg-surface-lighter"
+                            ))}
+                        >
+                            {mode === MODES.DARK ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                            {!isCollapsed && <span>{mode === MODES.DARK ? 'Light Mode' : 'Dark Mode'}</span>}
+                        </button>
                     </div>
 
+                    {/* Part 2: Identity & Session */}
                     <div className={twMerge(clsx(
-                        "mt-auto border-t border-white/5 space-y-6",
-                        isCollapsed ? "px-0 py-4" : "px-6 py-8"
+                        "rounded-[2rem] bg-surface-lighter border border-default transition-all p-1.5",
+                        isCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-3 pr-3"
                     ))}>
-                    <button 
-                        onClick={handleLogout}
-                        className={twMerge(clsx(
-                            "w-full flex items-center rounded-2xl text-gray-500 hover:text-rose-500 hover:bg-rose-500/5 transition-all group",
-                            isCollapsed ? "justify-center h-12 px-0" : "gap-4 px-4 py-3"
-                        ))}
-                    >
-                        <LogOut className={twMerge(clsx("w-5 h-5 transition-transform", !isCollapsed && "group-hover:-translate-x-1"))} />
-                        {!isCollapsed && <span className="font-bold text-sm">Sign Out</span>}
-                    </button>
-                        </div>
-
-                    <div className={twMerge(clsx(
-                        "mt-6 flex items-center bg-white/5 border border-white/5",
-                        isCollapsed ? "justify-center rounded-2xl p-2" : "gap-3 px-3 py-3 rounded-3xl"
-                    ))}>
-                        <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-gray-700 to-gray-800 flex items-center justify-center">
-                            <UserCircle className="w-6 h-6 text-gray-400" />
-                        </div>
+                        <Link 
+                            to="/profile"
+                            onClick={onClose}
+                            className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-theme-muted to-theme/20 border border-theme/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform"
+                        >
+                            {user?.avatar ? (
+                                <img src={user.avatar} alt="" className="w-full h-full object-cover" />
+                            ) : (
+                                <UserCircle className="w-6 h-6 text-theme" />
+                            )}
+                        </Link>
+                        
                         {!isCollapsed && (
-                            <>
-                                <div className="flex flex-col min-w-0">
-                                    <span className="text-sm font-bold text-white truncate">{user?.name}</span>
-                                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-tighter truncate">{user?.role}</span>
-                                </div>
-                                <ChevronRight className="ml-auto w-4 h-4 text-gray-600" />
-                            </>
+                            <Link to="/profile" className="flex flex-col min-w-0 flex-1 group">
+                                <span className="text-sm font-black text-primary truncate group-hover:text-theme transition-colors">{user?.name}</span>
+                                <span className="text-[10px] font-black text-tertiary uppercase tracking-tighter truncate">{user?.role}</span>
+                            </Link>
+                        )}
+
+                        {!isCollapsed && (
+                            <button 
+                                onClick={handleLogout}
+                                className="p-2 text-tertiary hover:text-rose-500 transition-colors"
+                                title="Sign Out"
+                            >
+                                <LogOut className="w-4 h-4" />
+                            </button>
+                        )}
+
+                        {isCollapsed && (
+                             <button 
+                                onClick={handleLogout}
+                                className="w-10 h-10 rounded-2xl flex items-center justify-center text-tertiary hover:text-rose-500 hover:bg-rose-500/5 transition-all"
+                                title="Sign Out"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
                         )}
                     </div>
                 </div>
-            </aside>
+            </motion.aside>
         </>
     );
 };
 
-export default SidebarComponent;
+export default memo(SidebarComponent);

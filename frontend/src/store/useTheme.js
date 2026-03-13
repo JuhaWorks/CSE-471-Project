@@ -5,6 +5,11 @@ export const THEMES = {
   AMBER: 'amber',
   ROSE: 'rose',
   SKY: 'sky',
+  INDIGO: 'indigo',
+  TEAL: 'teal',
+  ORANGE: 'orange',
+  PINK: 'pink',
+  SLATE: 'slate',
 };
 
 export const MODES = {
@@ -14,6 +19,9 @@ export const MODES = {
 
 const applyThemeToDOM = (theme, mode) => {
   const root = document.documentElement;
+
+  // Temporarily disable transitions to prevent lag during large repaints
+  root.classList.add('theme-transitioning');
 
   if (theme === THEMES.EMERALD) {
     root.removeAttribute('data-theme');
@@ -26,6 +34,11 @@ const applyThemeToDOM = (theme, mode) => {
   } else {
     root.classList.remove('dark');
   }
+
+  // Allow a brief moment for DOM updates before re-enabling transitions
+  setTimeout(() => {
+    root.classList.remove('theme-transitioning');
+  }, 300);
 };
 
 export const useTheme = create((set, get) => ({

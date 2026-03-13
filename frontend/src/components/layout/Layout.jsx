@@ -1,17 +1,24 @@
 import React, { useState, useEffect, Suspense, useTransition } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { preload } from 'react-dom';
 import SidebarComponent from './Sidebar';
 import TopBar from './TopBar';
-import GlobalPresence from './GlobalPresence';
+import MobileDock from './MobileDock';
 import { useIdleTimer } from '../../hooks/useIdleTimer';
-import { RefreshCw } from 'lucide-react/dist/esm/lucide-react';
+import { useAuthStore } from '../../store/useAuthStore';
+import { RefreshCw } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 // ── Vanguard 2026: Physics Configuration ──
-const LIQUID_SPRING = { type: "spring", stiffness: 260, damping: 20, mass: 0.5 };
+// Optimized for high-frequency navigation with less layout tension
+const LIQUID_SPRING = { 
+    type: "spring", 
+    stiffness: 300, 
+    damping: 30, 
+    mass: 0.8,
+    restDelta: 0.001
+};
 
 // ── Vanguard 2026: Global Error Boundary ──
 class GlobalErrorBoundary extends React.Component {
@@ -47,12 +54,8 @@ const PageSkeleton = () => (
     </div>
 );
 
-/**
- * 2026 Core Layout Shell: "The Vanguard"
- * Liquid Glass, Agentic MX, Hyper-Performance, Zero-CLS
- */
 const Layout = () => {
-    useIdleTimer(); // Global idle tracking
+    useIdleTimer();
     const location = useLocation();
     const [isSidebarExpanded, setIsSidebarExpanded] = useState(
         localStorage.getItem('klivra-sidebar-visible') === null ? true : localStorage.getItem('klivra-sidebar-visible') === 'true'
@@ -60,87 +63,90 @@ const Layout = () => {
     const [isCollapsed, setIsCollapsed] = useState(localStorage.getItem('klivra-sidebar-collapsed') === 'true');
     const [isPending, startTransition] = useTransition();
 
-    // Toggle Visibility (Full Hide)
     const toggleSidebar = () => {
         const next = !isSidebarExpanded;
         setIsSidebarExpanded(next);
         localStorage.setItem('klivra-sidebar-visible', String(next));
     };
 
-    // Context-Driven Theme Analysis based on routing
-    const isFocusMode = location.pathname.includes('/tasks') || location.pathname.includes('/whiteboard');
-    
-    // Use theme-aware background logic
-    const layoutBg = isFocusMode ? 'bg-[#050508]' : 'bg-[var(--bg-base)]';
+    const toggleCollapse = () => {
+        const newState = !isCollapsed;
+        setIsCollapsed(newState);
+        localStorage.setItem('klivra-sidebar-collapsed', String(newState));
+    };
 
-    useEffect(() => {
-        // Asset loading handled gracefully by CSS
-    }, [location.pathname]);
-
-    // Intent Handshake for routing transitions
     const handleRouteTransition = (newPathFn) => {
         startTransition(() => { newPathFn(); });
     };
 
-    const toggleCollapse = () => {
-        const newState = !isCollapsed;
-        setIsCollapsed(newState);
-        localStorage.setItem('klivra-sidebar-collapsed', newState);
-    };
-
     return (
-        <div className={`flex h-dvh ${layoutBg} text-[var(--text-main)] selection:bg-cyan-500/30 overflow-hidden font-sans relative transition-colors duration-1000 ease-out`}>
-            
-            {/* Global Anti-grid Grain Layer for Tactile Maximalism */}
-            <div className="fixed inset-0 pointer-events-none opacity-[0.04] grayscale bg-[url('https://grainy-gradients.vercel.app/noise.svg')] mix-blend-overlay z-[100]" aria-hidden="true" />
-            
-            {/* Ambient Background Mesh (Context Aware) */}
-            <div className="fixed inset-0 pointer-events-none z-0 transition-opacity duration-1000" style={{ opacity: isFocusMode ? 0.3 : 1 }}>
-                <div className="absolute top-0 right-0 w-[40vw] h-[40vw] bg-cyan-500/5 rounded-full blur-[120px]" />
-                <div className="absolute bottom-0 left-0 w-[30vw] h-[30vw] bg-indigo-600/5 rounded-full blur-[120px]" />
+        <div className="flex min-h-screen bg-base relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
+            {/* Ambient Background Node */}
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full">
+                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-theme/5 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[20%] left-[-5%] w-[30%] h-[30%] bg-theme/5 rounded-full blur-[100px]" />
+                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay pointer-events-none" />
             </div>
 
-            {/* Sidebar (Navigation Node) */}
-            <SidebarComponent 
-                isOpen={isSidebarExpanded} 
-                isCollapsed={isCollapsed}
-                onClose={() => setIsSidebarExpanded(false)} 
-                onToggleCollapse={toggleCollapse}
-            />
+            {/* Desktop Sidebar (Pinned to Window Edge) */}
+            <div className="hidden lg:block">
+                <SidebarComponent
+                    isOpen={isSidebarExpanded}
+                    isCollapsed={isCollapsed}
+                    onClose={() => setIsSidebarExpanded(false)}
+                    onToggleCollapse={toggleCollapse}
+                />
+            </div>
 
-            {/* Main Operational Area */}
-            <main className={twMerge(clsx(
-                "flex-1 flex flex-col min-w-0 overflow-hidden relative z-20 transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)]",
-                isSidebarExpanded ? (isCollapsed ? "lg:pl-[80px]" : "lg:pl-[280px]") : "pl-0"
-            ))} aria-label="Core operational quadrant">
-                {/* Top Command Bar */}
-                <header className="shrink-0 z-20">
+            {/* Mobile Sidebar (Drawer Overlay) */}
+            <div className="lg:hidden">
+                <SidebarComponent
+                    isOpen={isSidebarExpanded}
+                    isCollapsed={isCollapsed}
+                    onClose={() => setIsSidebarExpanded(false)}
+                    onToggleCollapse={toggleCollapse}
+                />
+            </div>
+
+            {/* Main Content Area */}
+            <main 
+                className={twMerge(clsx(
+                    "flex-1 flex flex-col min-w-0 min-h-screen relative z-20 transition-all duration-300 ease-in-out",
+                    isSidebarExpanded ? (isCollapsed ? "lg:pl-20" : "lg:pl-[280px]") : "pl-0"
+                ))} 
+                style={{ transform: 'translateZ(0)' }}
+            >
+                {/* TopBar (Full Width relative to main) */}
+                <header className="shrink-0 z-20 sticky top-0">
                     <TopBar onMenuToggle={toggleSidebar} />
                 </header>
 
-                {/* Vanguard Viewport with Morphing Transitions */}
-                <section className="flex-1 overflow-y-auto relative custom-scrollbar perspective-1000" aria-live="polite">
-                    <GlobalErrorBoundary>
-                        <AnimatePresence mode="wait">
-                            <motion.div
-                                key={location.pathname}
-                                initial={{ opacity: 0, scale: 0.99, rotateX: 2, y: 15 }}
-                                animate={{ opacity: 1, scale: 1, rotateX: 0, y: 0 }}
-                                exit={{ opacity: 0, scale: 0.98, rotateX: -2, y: -15 }}
-                                transition={LIQUID_SPRING}
-                                className={`p-inline-6 lg:p-inline-10 h-full ${isPending ? 'opacity-50 blur-sm pointer-events-none' : ''}`}
-                            >
-                                <Suspense fallback={<PageSkeleton />}>
-                                    <Outlet context={{ handleRouteTransition }} />
-                                </Suspense>
-                            </motion.div>
-                        </AnimatePresence>
-                    </GlobalErrorBoundary>
-                </section>
+                {/* Centered Content Container */}
+                <div className="flex-1 w-full max-w-screen-2xl mx-auto flex flex-col pt-4">
+                    <section className="flex-1 relative perspective-1000 pb-24 lg:pb-8" aria-live="polite">
+                        <GlobalErrorBoundary>
+                            <AnimatePresence mode="wait" initial={false}>
+                                <motion.div
+                                    key={location.pathname}
+                                    initial={{ opacity: 0, scale: 0.99, y: 8 }}
+                                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                                    exit={{ opacity: 0, scale: 0.99, y: -8 }}
+                                    transition={LIQUID_SPRING}
+                                    style={{ willChange: 'transform, opacity' }}
+                                    className={`px-6 lg:px-12 h-full ${isPending ? 'opacity-50 blur-sm pointer-events-none' : ''}`}
+                                >
+                                    <Suspense fallback={<PageSkeleton />}>
+                                        <Outlet context={{ handleRouteTransition }} />
+                                    </Suspense>
+                                </motion.div>
+                            </AnimatePresence>
+                        </GlobalErrorBoundary>
+                    </section>
+                </div>
             </main>
 
-            {/* Global Presence Synchronization */}
-            <GlobalPresence aria-hidden="true" />
+            {/* Mobile Native Navigation */}
+            <MobileDock />
 
             <style>{`
                 .custom-scrollbar::-webkit-scrollbar { width: 8px; }

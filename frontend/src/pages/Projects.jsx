@@ -80,9 +80,9 @@ const Projects = () => {
     };
 
     return (
-        <div className="space-y-12">
+        <div className="max-w-screen-2xl mx-auto w-full space-y-12 pb-20">
             {/* Header Area */}
-            <header className="relative py-8">
+            <header className="relative pt-4 pb-8">
                 <div className="absolute -top-10 left-0 w-64 h-64 bg-cyan-500/5 rounded-full blur-[100px] pointer-events-none" />
                 
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-10">

@@ -56,7 +56,7 @@ const StatusBadge = ({ user: u }) => {
 };
 
 const ROLE_MAP = {
-    Admin: { color: '#00e5a0', bg: 'rgba(0,229,160,0.07)', border: 'rgba(0,229,160,0.18)' },
+    Admin: { color: 'var(--accent-500)', bg: 'var(--accent-bg)', border: 'var(--accent-border)' },
     Manager: { color: '#38bdf8', bg: 'rgba(56,189,248,0.07)', border: 'rgba(56,189,248,0.18)' },
     Developer: { color: '#a78bfa', bg: 'rgba(167,139,250,0.07)', border: 'rgba(167,139,250,0.18)' },
 };
@@ -377,7 +377,7 @@ const AdminDashboard = () => {
                 :root {
                     --sans: 'Bricolage Grotesque', sans-serif;
                     --mono: 'IBM Plex Mono', monospace;
-                    --green: #00e5a0;
+                    --green: var(--accent-500);
                     --red:   #ff4d6d;
                     --blue:  #38bdf8;
                     --purple:#a78bfa;

@@ -3,50 +3,64 @@ import { useAuthStore } from '../store/useAuthStore';
 import { useSocketStore } from '../store/useSocketStore';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../utils/getCroppedImg';
-import { 
-    User, 
-    Mail, 
-    Shield, 
-    Camera, 
-    Trash2, 
-    Check, 
-    X, 
-    Settings, 
-    Activity, 
-    MessageSquare, 
-    Zap,
-    ShieldCheck,
-    LogOut,
-    Eye,
+import {
+    User,
+    Mail,
+    Camera,
+    Trash2,
+    Settings,
+    MessageSquare,
     ChevronRight,
-    Loader2
+    Shield,
+    CheckCircle2,
+    X,
+    ZoomIn,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-
 const STATUSES = ['Online', 'Away', 'Do Not Disturb', 'Offline'];
+
 const STATUS_CONFIG = {
-    Online: { color: 'bg-emerald-500', shadow: 'shadow-emerald-500/40', text: 'text-emerald-400' },
-    Away: { color: 'bg-amber-500', shadow: 'shadow-amber-500/40', text: 'text-amber-400' },
-    'Do Not Disturb': { color: 'bg-rose-500', shadow: 'shadow-rose-500/40', text: 'text-rose-400' },
-    Offline: { color: 'bg-gray-600', shadow: 'shadow-gray-500/40', text: 'text-gray-400' }
+    Online: { dot: 'bg-emerald-500', label: 'text-emerald-600 dark:text-emerald-400', ring: 'ring-emerald-500/20' },
+    Away: { dot: 'bg-amber-500', label: 'text-amber-600   dark:text-amber-400', ring: 'ring-amber-500/20' },
+    'Do Not Disturb': { dot: 'bg-rose-500', label: 'text-rose-600    dark:text-rose-400', ring: 'ring-rose-500/20' },
+    Offline: { dot: 'bg-zinc-400', label: 'text-zinc-500    dark:text-zinc-400', ring: 'ring-zinc-400/20' },
 };
 
-const ROLE_GRADIENT = {
-    Admin: 'from-rose-500 to-orange-500',
-    Manager: 'from-cyan-500 to-blue-600',
-    Developer: 'from-emerald-500 to-cyan-500',
-    Guest: 'from-gray-500 to-gray-700',
+const ROLE_CONFIG = {
+    Admin: { bg: 'bg-rose-50   dark:bg-rose-950/40', text: 'text-rose-700   dark:text-rose-300', border: 'border-rose-200   dark:border-rose-800' },
+    Manager: { bg: 'bg-blue-50   dark:bg-blue-950/40', text: 'text-blue-700   dark:text-blue-300', border: 'border-blue-200   dark:border-blue-800' },
+    Developer: { bg: 'bg-violet-50 dark:bg-violet-950/40', text: 'text-violet-700 dark:text-violet-300', border: 'border-violet-200 dark:border-violet-800' },
+    Guest: { bg: 'bg-zinc-100  dark:bg-zinc-800/60', text: 'text-zinc-600   dark:text-zinc-400', border: 'border-zinc-200   dark:border-zinc-700' },
 };
 
-/**
- * Modern 2026 Profile Page
- * High-fidelity identity management with Glassmorphism 2.0
- */
+function cn(...args) { return twMerge(clsx(args)); }
+
+function SectionLabel({ children }) {
+    return (
+        <p className="text-[11px] font-semibold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest mb-3">
+            {children}
+        </p>
+    );
+}
+
+function FieldWrapper({ icon: Icon, children, disabled }) {
+    return (
+        <div className={cn(
+            "flex items-center gap-3 px-4 py-3.5 rounded-xl border transition-all",
+            disabled
+                ? "bg-zinc-50 dark:bg-zinc-800/40 border-zinc-200 dark:border-zinc-700/50 opacity-60 cursor-not-allowed"
+                : "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700 focus-within:border-zinc-400 dark:focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-700"
+        )}>
+            {Icon && <Icon className="w-4 h-4 shrink-0 text-zinc-400 dark:text-zinc-500" />}
+            {children}
+        </div>
+    );
+}
+
 export default function Profile() {
     const { user, uploadAvatar, updateProfile, removeAvatar } = useAuthStore();
     const fileRef = useRef(null);
@@ -59,9 +73,12 @@ export default function Profile() {
     const [cropping, setCropping] = useState(false);
 
     const [form, setForm] = useState({
-        name: user?.name || '', status: user?.status || 'Online', customMessage: user?.customMessage || '',
+        name: user?.name || '',
+        status: user?.status || 'Online',
+        customMessage: user?.customMessage || '',
     });
     const [profileLoading, setProfileLoading] = useState(false);
+    const [saved, setSaved] = useState(false);
 
     const onFile = (e) => {
         const f = e.target.files[0];
@@ -77,7 +94,8 @@ export default function Profile() {
             setAvatarLoading(true);
             const blob = await getCroppedImg(preview, croppedPx);
             await uploadAvatar(new File([blob], 'avatar.jpg', { type: 'image/jpeg' }));
-            setPreview(null); setCropping(false);
+            setPreview(null);
+            setCropping(false);
         } catch (err) {
             console.error(err);
         } finally {
@@ -86,311 +104,336 @@ export default function Profile() {
         }
     };
 
-    const cancelCrop = () => { setPreview(null); setCropping(false); if (fileRef.current) fileRef.current.value = ''; };
+    const cancelCrop = () => {
+        setPreview(null);
+        setCropping(false);
+        if (fileRef.current) fileRef.current.value = '';
+    };
 
     const setStatus = async (s) => {
         setForm(f => ({ ...f, status: s }));
         const { socket } = useSocketStore.getState();
         if (socket?.connected) socket.emit('setStatus', { status: s });
         useAuthStore.setState(st => ({ user: st.user ? { ...st.user, status: s } : null }));
-        try { await useAuthStore.getState().updateStatus(s); } catch (e) { console.error(e); }
+        try { await useAuthStore.getState().updateStatus(s); }
+        catch (e) { console.error(e); }
     };
 
     const saveProfile = async (e) => {
         e.preventDefault();
         setProfileLoading(true);
-        try { await updateProfile(form); }
-        catch (err) { console.error(err); }
-        finally { setProfileLoading(false); }
+        try {
+            await updateProfile(form);
+            setSaved(true);
+            setTimeout(() => setSaved(false), 2500);
+        } catch (err) {
+            console.error(err);
+        } finally {
+            setProfileLoading(false);
+        }
     };
 
+    const role = user?.role || 'Guest';
+    const roleConfig = ROLE_CONFIG[role] || ROLE_CONFIG.Guest;
+    const statusConfig = STATUS_CONFIG[form.status] || STATUS_CONFIG.Online;
+
     return (
-        <div className="min-h-screen pb-20 pt-8 px-6 lg:px-10 space-y-10 max-w-5xl mx-auto">
-            {/* Cinematic Header */}
-            <header className="flex flex-col md:flex-row md:items-end justify-between gap-8 pb-4">
-                <div className="space-y-4">
-                    <div className="flex items-center gap-3 text-cyan-400 font-black text-[10px] uppercase tracking-[0.4em]">
-                        <User className="w-4 h-4" />
-                        <span>Identity Node</span>
-                    </div>
-                    <div className="space-y-2">
-                        <h1 className="text-6xl font-black text-[var(--text-main)] tracking-tighter leading-none">
-                            Agent <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">Profile.</span>
+        <div className="flex flex-col gap-8 pb-20">
+            <div className="max-w-screen-2xl mx-auto w-full space-y-8">
+
+                {/* Page Header */}
+                <div className="flex items-start justify-between">
+                    <div>
+                        <h1 className="text-2xl font-black text-primary tracking-tighter uppercase">
+                            Profile <span className="text-theme">Identity.</span>
                         </h1>
-                        <p className="text-gray-500 font-medium text-lg max-w-xl">
-                            Configure your platform avatar, neural status identifiers, and operational clearance parameters.
+                        <p className="mt-1 text-[10px] font-black text-tertiary uppercase tracking-[0.3em]">
+                            Manage your account details and preferences.
                         </p>
                     </div>
                 </div>
-            </header>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-                {/* Visual Identity Column */}
-                <div className="space-y-8">
-                    <Card className="overflow-hidden relative group" padding="p-8">
-                        <div className="flex flex-col items-center text-center gap-6">
-                            <div className="relative">
-                                <div className="w-32 h-32 rounded-[2.5rem] bg-[var(--bg-surface)] border-2 border-white/10 p-1 overflow-hidden shadow-2xl group-hover:border-cyan-500/30 transition-all duration-500">
-                                    <img 
-                                        src={user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'} 
+                {/* Divider */}
+                <div className="border-t border-default" />
+
+                <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
+
+                    {/* Left — Avatar & Identity */}
+                    <div className="space-y-4">
+
+                        {/* Avatar Card */}
+                        <div className="bg-surface border border-default rounded-2xl p-6 flex flex-col items-center gap-5">
+
+                            {/* Avatar */}
+                            <div className="relative group">
+                                <div className="w-24 h-24 rounded-2xl overflow-hidden ring-1 ring-zinc-200 dark:ring-zinc-700">
+                                    <img
+                                        src={user?.avatar || 'https://cdn-icons-png.flaticon.com/512/149/149071.png'}
                                         alt={user?.name}
-                                        className="w-full h-full object-cover rounded-[2.25rem]"
+                                        className="w-full h-full object-cover"
                                     />
                                 </div>
-                                <div className={twMerge(clsx(
-                                    "absolute bottom-1 right-1 w-6 h-6 rounded-xl border-4 border-[var(--bg-base)] z-10 shadow-xl",
-                                    STATUS_CONFIG[user?.status]?.color,
-                                    STATUS_CONFIG[user?.status]?.shadow
-                                ))} />
-                                <label className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-[2.5rem] opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer backdrop-blur-sm">
-                                    <Camera className="w-8 h-8 text-white" />
+                                {/* Status dot */}
+                                <div className={cn(
+                                    "absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-surface",
+                                    statusConfig.dot
+                                )} />
+                                {/* Hover overlay */}
+                                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                    <Camera className="w-5 h-5 text-white" />
                                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
                                 </label>
                             </div>
 
-                            <div className="space-y-2">
-                                <h2 className="text-2xl font-black text-[var(--text-main)] tracking-tight">{user?.name}</h2>
-                                <p className="text-xs font-medium text-gray-500 uppercase tracking-[0.2em]">{user?.email}</p>
-                                <div className={twMerge(clsx(
-                                    "inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[10px] font-black text-white bg-gradient-to-r shadow-xl uppercase tracking-widest mt-2",
-                                    ROLE_GRADIENT[user?.role] || ROLE_GRADIENT.Guest
-                                ))}>
-                                    <ShieldCheck className="w-3 h-3" />
-                                    {user?.role} Protocol
-                                </div>
+                            {/* Name & email */}
+                            <div className="text-center space-y-1">
+                                <p className="font-bold text-primary text-base leading-snug">
+                                    {user?.name}
+                                </p>
+                                <p className="text-[11px] font-medium text-tertiary">{user?.email}</p>
                             </div>
 
-                            <div className="w-full pt-4 border-t border-white/5 flex flex-col gap-3">
-                                <Button 
-                                    variant="outline" 
-                                    className="w-full flex items-center justify-between group/btn"
-                                    onClick={() => fileRef.current.click()}
+                            {/* Role badge */}
+                            <div className={cn(
+                                "inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium border",
+                                roleConfig.bg, roleConfig.text, roleConfig.border
+                            )}>
+                                <Shield className="w-3 h-3" />
+                                {role}
+                            </div>
+
+                            {/* Avatar actions */}
+                            <div className="w-full space-y-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+                                <button
+                                    onClick={() => fileRef.current?.click()}
+                                    className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded-lg transition-all"
                                 >
-                                    <span>Uplink Visual Asset</span>
-                                    <Camera className="w-4 h-4 text-gray-700 group-hover/btn:text-cyan-400 transition-colors" />
-                                </Button>
+                                    <Camera className="w-4 h-4" />
+                                    Upload photo
+                                </button>
                                 {user?.avatar && !user.avatar.includes('149071.png') && (
-                                    <button 
+                                    <button
                                         onClick={removeAvatar}
-                                        className="text-[10px] font-black text-red-500/60 uppercase tracking-widest hover:text-red-400 transition-colors"
+                                        className="w-full flex items-center justify-center gap-2 py-2 text-sm font-medium text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 rounded-lg transition-all"
                                     >
-                                        Purge Profile Image
+                                        <Trash2 className="w-4 h-4" />
+                                        Remove photo
                                     </button>
                                 )}
                             </div>
-                        </div>
-                    </Card>
 
-                    <Card className="bg-cyan-500/5 border-cyan-500/10" padding="p-6">
-                        <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-xl bg-cyan-500/10 flex items-center justify-center">
-                                <Zap className="w-5 h-5 text-cyan-400" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Neural Link</span>
-                                <span className="text-xs font-black text-cyan-400">Fully Synchronized</span>
-                            </div>
                         </div>
-                    </Card>
-                </div>
+                    </div>
 
-                {/* Configuration Column */}
-                <div className="lg:col-span-2 space-y-8">
-                    <Card padding="p-0" className="overflow-hidden">
-                        <div className="px-10 py-6 border-b border-white/5 flex items-center gap-3">
-                            <Settings className="w-4 h-4 text-gray-600" />
-                            <h3 className="text-xs font-black text-[var(--text-main)] uppercase tracking-[0.3em]">Core Synchronization</h3>
-                        </div>
-                        <form onSubmit={saveProfile} className="p-10 space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Full Identifier (Name)</label>
-                                    <div className="relative group">
-                                        <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700 group-focus-within:text-cyan-400 transition-colors" />
-                                        <input 
-                                            type="text" 
-                                            value={form.name}
-                                            onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-[var(--text-main)] focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
+                    {/* Right — Settings Form */}
+                    <div className="space-y-6">
+
+                        {/* General Info */}
+                        <div className="bg-surface border border-default rounded-2xl overflow-hidden">
+                            <div className="px-6 py-4 border-b border-default flex items-center gap-2">
+                                <Settings className="w-4 h-4 text-tertiary" />
+                                <span className="text-xs font-black text-tertiary uppercase tracking-widest">General</span>
+                            </div>
+
+                            <form onSubmit={saveProfile} className="p-6 space-y-6">
+
+                                {/* Name & Email row */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <SectionLabel>Display name</SectionLabel>
+                                        <FieldWrapper icon={User}>
+                                            <input
+                                                type="text"
+                                                value={form.name}
+                                                onChange={e => setForm(s => ({ ...s, name: e.target.value }))}
+                                                placeholder="Your name"
+                                                className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none"
+                                            />
+                                        </FieldWrapper>
+                                    </div>
+                                    <div>
+                                        <SectionLabel>Email address</SectionLabel>
+                                        <FieldWrapper icon={Mail} disabled>
+                                            <input
+                                                disabled
+                                                value={user?.email}
+                                                className="w-full bg-transparent text-sm text-zinc-500 dark:text-zinc-500 outline-none cursor-not-allowed"
+                                            />
+                                        </FieldWrapper>
+                                        <p className="mt-1.5 text-[11px] text-zinc-400 ml-1">Email cannot be changed.</p>
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="border-t border-zinc-100 dark:border-zinc-800" />
+
+                                {/* Status */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <SectionLabel>Status</SectionLabel>
+                                        <span className={cn("text-[11px] font-medium flex items-center gap-1.5", statusConfig.label)}>
+                                            <span className={cn("w-1.5 h-1.5 rounded-full inline-block", statusConfig.dot)} />
+                                            {form.status}
+                                        </span>
+                                    </div>
+                                    <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                                        {STATUSES.map(s => {
+                                            const active = form.status === s;
+                                            const cfg = STATUS_CONFIG[s];
+                                            return (
+                                                <button
+                                                    key={s}
+                                                    type="button"
+                                                    onClick={() => setStatus(s)}
+                                                    className={cn(
+                                                        "flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all",
+                                                        active
+                                                            ? "bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 border-zinc-900 dark:border-zinc-100"
+                                                            : "bg-white dark:bg-zinc-800/50 border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:border-zinc-300 dark:hover:border-zinc-600 hover:text-zinc-700 dark:hover:text-zinc-300"
+                                                    )}
+                                                >
+                                                    <span className={cn("w-2 h-2 rounded-full shrink-0", cfg.dot)} />
+                                                    <span className="text-[12px]">{s}</span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+
+                                {/* Divider */}
+                                <div className="border-t border-zinc-100 dark:border-zinc-800" />
+
+                                {/* Status message */}
+                                <div>
+                                    <div className="flex items-center justify-between mb-3">
+                                        <SectionLabel>Status message</SectionLabel>
+                                        <span className="text-[11px] text-zinc-400">{form.customMessage.length} / 150</span>
+                                    </div>
+                                    <div className={cn(
+                                        "flex gap-3 px-4 py-3.5 rounded-xl border transition-all",
+                                        "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700",
+                                        "focus-within:border-zinc-400 dark:focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-700"
+                                    )}>
+                                        <MessageSquare className="w-4 h-4 shrink-0 text-zinc-400 mt-0.5" />
+                                        <textarea
+                                            rows={3}
+                                            maxLength={150}
+                                            value={form.customMessage}
+                                            onChange={e => setForm(s => ({ ...s, customMessage: e.target.value }))}
+                                            placeholder="Let your team know what you're up to…"
+                                            className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none resize-none"
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Universal Access (Email)</label>
-                                    <div className="relative group opacity-50 cursor-not-allowed">
-                                        <Mail className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-700" />
-                                        <input 
-                                            disabled
-                                            value={user?.email}
-                                            className="w-full bg-white/5 border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-[var(--text-main)] cursor-not-allowed font-medium text-sm opacity-60"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className="space-y-4">
-                                <div className="flex items-center justify-between ml-1">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Neural Presence Status</label>
-                                    <span className="text-[9px] font-black text-cyan-400 tracking-widest uppercase flex items-center gap-2">
-                                        <Activity className="w-3 h-3" />
-                                        Real-time Broadcast
-                                    </span>
+                                {/* Save */}
+                                <div className="flex items-center justify-end gap-3 pt-2">
+                                    <AnimatePresence>
+                                        {saved && (
+                                            <motion.span
+                                                initial={{ opacity: 0, x: 8 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                exit={{ opacity: 0 }}
+                                                className="flex items-center gap-1.5 text-sm text-theme font-medium"
+                                            >
+                                                <CheckCircle2 className="w-4 h-4" />
+                                                Saved
+                                            </motion.span>
+                                        )}
+                                    </AnimatePresence>
+                                    <Button
+                                        type="submit"
+                                        isLoading={profileLoading}
+                                        disabled={profileLoading}
+                                        className="px-6 py-2.5 rounded-xl text-sm font-medium bg-theme text-white hover:opacity-90 transition-opacity"
+                                    >
+                                        Save changes
+                                    </Button>
                                 </div>
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                    {STATUSES.map(s => (
-                                        <button
-                                            key={s}
-                                            type="button"
-                                            onClick={() => setStatus(s)}
-                                            className={twMerge(clsx(
-                                                "flex items-center gap-3 px-4 py-4 rounded-2xl border transition-all relative group overflow-hidden",
-                                                form.status === s 
-                                                    ? "bg-white text-black border-white shadow-2xl" 
-                                                    : "bg-white/5 border-white/5 text-gray-500 hover:border-white/10 hover:text-gray-300"
-                                            ))}
-                                        >
-                                            <div className={twMerge(clsx(
-                                                "w-2 h-2 rounded-full shrink-0 shadow-[0_0_8px_rgba(255,255,255,0.4)]",
-                                                STATUS_CONFIG[s].color
-                                            ))} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest relative z-10">{s}</span>
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <div className="flex items-center justify-between ml-1">
-                                    <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Custom Directive (Status Message)</label>
-                                    <span className="text-[9px] font-black text-gray-700 uppercase tracking-widest">
-                                        {form.customMessage.length} / 150
-                                    </span>
-                                </div>
-                                <div className="relative group">
-                                    <MessageSquare className="absolute left-5 top-5 w-4 h-4 text-gray-700 group-focus-within:text-cyan-400 transition-colors" />
-                                    <textarea 
-                                        rows={3}
-                                        value={form.customMessage}
-                                        onChange={e => setForm(s => ({ ...s, customMessage: e.target.value }))}
-                                        placeholder="Broadcast a directive to your team segments..."
-                                        className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-5 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm resize-none"
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="pt-4 flex items-center justify-between">
-                                <p className="text-[9px] text-gray-600 font-bold uppercase tracking-widest max-w-[200px] leading-relaxed">
-                                    Operational parameters are synchronized across all neural links globally.
-                                </p>
-                                <Button
-                                    type="submit"
-                                    isLoading={profileLoading}
-                                    disabled={profileLoading}
-                                    className="px-12 py-5 rounded-2xl"
-                                >
-                                    Synchronize Changes
-                                </Button>
-                            </div>
-                        </form>
-                    </Card>
-
-                    {/* Account Protocols (Mock for UI) */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <Card padding="p-6" className="group cursor-pointer hover:border-white/10 transition-all">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center">
-                                        <Eye className="w-4 h-4 text-gray-500" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-black text-white uppercase tracking-widest">Privacy Controls</span>
-                                        <span className="text-[10px] text-gray-600 font-medium">Neural visibility settings</span>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-gray-800 group-hover:text-white transition-all transform group-hover:translate-x-1" />
-                            </div>
-                        </Card>
-                        <Card padding="p-6" className="group cursor-pointer hover:border-red-500/20 transition-all">
-                            <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-4">
-                                    <div className="w-10 h-10 rounded-xl bg-red-500/5 flex items-center justify-center">
-                                        <LogOut className="w-4 h-4 text-red-500/60" />
-                                    </div>
-                                    <div className="flex flex-col">
-                                        <span className="text-xs font-black text-red-500/80 uppercase tracking-widest">Session Terminate</span>
-                                        <span className="text-[10px] text-gray-600 font-medium">Clear all local neural caches</span>
-                                    </div>
-                                </div>
-                                <ChevronRight className="w-4 h-4 text-gray-800 group-hover:text-red-400 transition-all transform group-hover:translate-x-1" />
-                            </div>
-                        </Card>
+                            </form>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            {/* Crop Protocol Modal */}
+            {/* Crop Modal */}
             <AnimatePresence>
                 {cropping && preview && (
-                    <motion.div 
+                    <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-md p-10"
+                        className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-6"
                     >
-                        <motion.div 
-                            initial={{ scale: 0.9, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            exit={{ scale: 0.9, opacity: 0 }}
-                            className="bg-[#09090b] border border-white/10 rounded-[3rem] w-full max-w-lg overflow-hidden shadow-[0_50px_100px_rgba(0,0,0,0.8)]"
+                        <motion.div
+                            initial={{ scale: 0.96, opacity: 0, y: 8 }}
+                            animate={{ scale: 1, opacity: 1, y: 0 }}
+                            exit={{ scale: 0.96, opacity: 0, y: 8 }}
+                            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+                            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl w-full max-w-md overflow-hidden shadow-xl"
                         >
-                            <div className="px-10 py-8 border-b border-white/5 flex items-center justify-between">
-                                <div className="space-y-1">
-                                    <h3 className="text-2xl font-black text-white tracking-tighter">Visual Crop Protocol.</h3>
-                                    <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em]">Calibrating Identity Node</p>
+                            {/* Modal header */}
+                            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">
+                                <div>
+                                    <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Crop photo</h3>
+                                    <p className="text-xs text-zinc-400 mt-0.5">Adjust and position your profile photo.</p>
                                 </div>
-                                <button onClick={cancelCrop} className="p-3 bg-white/5 rounded-2xl text-gray-500 hover:text-white transition-colors">
-                                    <X className="w-5 h-5" />
+                                <button
+                                    onClick={cancelCrop}
+                                    className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-600 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all"
+                                >
+                                    <X className="w-4 h-4" />
                                 </button>
                             </div>
 
-                            <div className="relative w-full h-80 bg-black">
-                                <Cropper 
-                                    image={preview} 
-                                    crop={crop} 
-                                    zoom={zoom} 
-                                    aspect={1} 
+                            {/* Crop area */}
+                            <div className="relative w-full h-72 bg-zinc-950">
+                                <Cropper
+                                    image={preview}
+                                    crop={crop}
+                                    zoom={zoom}
+                                    aspect={1}
                                     cropShape="round"
-                                    showGrid={false} 
-                                    onCropChange={setCrop} 
-                                    onCropComplete={onCropComplete} 
-                                    onZoomChange={setZoom} 
+                                    showGrid={false}
+                                    onCropChange={setCrop}
+                                    onCropComplete={onCropComplete}
+                                    onZoomChange={setZoom}
                                 />
                             </div>
 
-                            <div className="p-10 space-y-8">
-                                <div className="space-y-3">
-                                    <div className="flex justify-between text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                                        <span>Optical Zoom</span>
-                                        <span className="text-cyan-400">{parseFloat(zoom).toFixed(1)}x</span>
+                            {/* Zoom & actions */}
+                            <div className="p-6 space-y-5">
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-xs font-medium text-zinc-500 flex items-center gap-1.5">
+                                            <ZoomIn className="w-3.5 h-3.5" />
+                                            Zoom
+                                        </span>
+                                        <span className="text-xs text-zinc-400">{parseFloat(zoom).toFixed(1)}×</span>
                                     </div>
-                                    <input 
-                                        type="range" 
-                                        value={zoom} 
-                                        min={1} 
-                                        max={3} 
-                                        step={0.1} 
-                                        className="w-full accent-white h-2 bg-white/5 rounded-full appearance-none [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:bg-white [&::-webkit-slider-thumb]:rounded-full"
-                                        onChange={e => setZoom(e.target.value)} 
+                                    <input
+                                        type="range"
+                                        value={zoom}
+                                        min={1}
+                                        max={3}
+                                        step={0.05}
+                                        className="w-full accent-zinc-900 dark:accent-zinc-100 h-1.5 bg-zinc-100 dark:bg-zinc-800 rounded-full appearance-none"
+                                        onChange={e => setZoom(e.target.value)}
                                     />
                                 </div>
-                                <div className="flex gap-4">
-                                    <Button variant="outline" onClick={cancelCrop} className="flex-1 py-5 rounded-2xl">Abort</Button>
-                                    <Button 
-                                        onClick={saveCrop} 
-                                        isLoading={avatarLoading}
-                                        className="flex-1 py-5 rounded-2xl bg-cyan-600 hover:bg-cyan-500"
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={cancelCrop}
+                                        className="flex-1 py-2.5 rounded-xl text-sm font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all"
                                     >
-                                        Execute Crop
+                                        Cancel
+                                    </button>
+                                    <Button
+                                        onClick={saveCrop}
+                                        isLoading={avatarLoading}
+                                        className="flex-1 py-2.5 rounded-xl text-sm font-medium"
+                                    >
+                                        Apply
                                     </Button>
                                 </div>
                             </div>
