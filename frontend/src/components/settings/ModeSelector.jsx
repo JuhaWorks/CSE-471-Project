@@ -61,7 +61,7 @@ export default function ModeSelector() {
             {/* Header */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 16 }}>
                 <div>
-                    <h3 style={{ fontSize: 15, fontWeight: 500, margin: 0, marginBottom: 3 }}>Appearance</h3>
+                    <h3 style={{ fontSize: 15, fontWeight: 900, margin: 0, marginBottom: 3, color: 'var(--text-primary)' }}>Appearance</h3>
                     <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>
                         Select the interface theme applied across your workspace.
                     </p>
@@ -155,7 +155,7 @@ export default function ModeSelector() {
                                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                                         <Icon style={{ width: 15, height: 15, color: 'var(--text-secondary)' }} />
-                                        <span style={{ fontSize: 13, fontWeight: 500 }}>{t.name}</span>
+                                        <span style={{ fontSize: 13, fontWeight: 900, color: 'var(--text-primary)' }}>{t.name}</span>
                                     </div>
                                     <AnimatePresence>
                                         {isActive && (

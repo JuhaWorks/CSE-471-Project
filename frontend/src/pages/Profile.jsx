@@ -180,7 +180,7 @@ export default function Profile() {
                                 )} />
                                 {/* Hover overlay */}
                                 <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                    <Camera className="w-5 h-5 text-white" />
+                                    <Camera className="w-5 h-5 text-primary" />
                                     <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
                                 </label>
                             </div>
@@ -288,7 +288,7 @@ export default function Profile() {
                                                     className={cn(
                                                         "flex items-center gap-2.5 px-4 py-3 rounded-xl border text-sm font-medium transition-all text-tertiary",
                                                         active
-                                                            ? "bg-theme text-white border-theme"
+                                                            ? "bg-theme text-primary border-theme"
                                                             : "bg-surface border-subtle hover:border-theme hover:text-primary"
                                                     )}
                                                 >
@@ -311,7 +311,7 @@ export default function Profile() {
                                     </div>
                                     <div className={cn(
                                         "flex gap-3 px-4 py-3.5 rounded-xl border transition-all",
-                                        "bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700",
+                                        "bg-elevated dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700",
                                         "focus-within:border-zinc-400 dark:focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-700"
                                     )}>
                                         <MessageSquare className="w-4 h-4 shrink-0 text-zinc-400 mt-0.5" />
@@ -345,7 +345,7 @@ export default function Profile() {
                                         type="submit"
                                         isLoading={profileLoading}
                                         disabled={profileLoading}
-                                        className="px-6 py-2.5 rounded-xl text-sm font-medium bg-theme text-white hover:opacity-90 transition-opacity"
+                                        className="px-6 py-2.5 rounded-xl text-sm font-medium bg-theme text-primary hover:opacity-90 transition-opacity"
                                     >
                                         Save changes
                                     </Button>
@@ -370,7 +370,7 @@ export default function Profile() {
                             animate={{ scale: 1, opacity: 1, y: 0 }}
                             exit={{ scale: 0.96, opacity: 0, y: 8 }}
                             transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-                            className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl w-full max-w-md overflow-hidden shadow-xl"
+                            className="bg-elevated dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded-2xl w-full max-w-md overflow-hidden shadow-xl"
                         >
                             {/* Modal header */}
                             <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100 dark:border-zinc-800">

@@ -1,13 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Search, 
-    Bell, 
-    Menu, 
-    User, 
-    Settings, 
-    LogOut, 
+import {
+    Search,
+    Bell,
+    Menu,
+    User,
+    Settings,
+    LogOut,
     Command,
     ChevronDown,
     Circle
@@ -39,9 +39,9 @@ const TopBar = ({ onMenuToggle }) => {
     const dropdownRef = useRef(null);
 
     useEffect(() => {
-        const handler = (e) => { 
+        const handler = (e) => {
             if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
-                setDropdownOpen(false); 
+                setDropdownOpen(false);
             }
         };
         document.addEventListener('mousedown', handler);
@@ -49,21 +49,21 @@ const TopBar = ({ onMenuToggle }) => {
     }, []);
 
     return (
-        <header className="h-16 glass-2 border-b border-white/5 sticky top-0 z-30 rounded-none rounded-b-3xl transition-all duration-300">
+        <header className="h-16 glass-2 border-b border-default sticky top-0 z-30 rounded-none rounded-b-3xl transition-all duration-300">
             <div className="w-full h-full flex items-center justify-between px-6 lg:px-10">
                 <div className="flex items-center gap-4 flex-1">
-                    <button 
-                        onClick={onMenuToggle} 
+                    <button
+                        onClick={onMenuToggle}
                         className="p-2 text-tertiary hover:text-primary hover:bg-sunken rounded-2xl transition-all active:scale-90"
                     >
                         <Menu className="w-5 h-5" />
                     </button>
-                    
+
                     <div className="relative hidden sm:block max-w-sm w-full group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-theme transition-colors" />
-                        <input 
-                            type="text" 
-                            placeholder="Search workspace..." 
+                        <input
+                            type="text"
+                            placeholder="Search workspace..."
                             className={twMerge(clsx(
                                 "w-full pl-11 pr-4 py-2 bg-sunken border border-default rounded-2xl text-sm text-[var(--text-main)] placeholder-tertiary outline-none",
                                 "focus:border-theme/30 focus:ring-4 focus:ring-theme/5 transition-all"
@@ -81,22 +81,22 @@ const TopBar = ({ onMenuToggle }) => {
                         <Bell className="w-5 h-5" />
                         <span className="absolute top-2 right-2 w-2 h-2 bg-theme rounded-full border-2 border-base shadow-theme" />
                     </button>
-                    
-                    <div className="w-px h-6 bg-white/5 mx-2 hidden sm:block" />
-                    
+
+                    <div className="w-px h-6 bg-default mx-2 hidden sm:block" />
+
                     <div className="relative" ref={dropdownRef}>
-                        <button 
-                            onClick={() => setDropdownOpen(!dropdownOpen)} 
+                        <button
+                            onClick={() => setDropdownOpen(!dropdownOpen)}
                             className={twMerge(clsx(
                                 "flex items-center gap-3 p-1 rounded-2xl transition-all",
                                 dropdownOpen ? "bg-sunken" : "hover:bg-sunken"
                             ))}
                         >
                             <div className="relative">
-                                <img 
-                                    src={getOptimizedAvatar(user?.avatar)} 
-                                    alt={user?.name} 
-                                    className="w-9 h-9 rounded-xl border border-default object-cover" 
+                                <img
+                                    src={getOptimizedAvatar(user?.avatar)}
+                                    alt={user?.name}
+                                    className="w-9 h-9 rounded-xl border border-default object-cover"
                                 />
                                 <div className={twMerge(clsx(
                                     "absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-base bg-current",
@@ -119,31 +119,38 @@ const TopBar = ({ onMenuToggle }) => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="absolute right-0 mt-3 w-64 glass-2 border-white/10 bg-[var(--bg-surface)] shadow-2xl p-2 z-50 overflow-hidden"
+                                    className="absolute right-0 mt-3 w-64 glass-liquid shadow-2xl p-2 z-50 overflow-hidden"
+                                    style={{
+                                        backdropFilter: 'blur(100px) saturate(1.8)',
+                                        WebkitBackdropFilter: 'blur(100px) saturate(1.8)',
+                                        backgroundColor: 'var(--bg-glass)',
+                                        isolation: 'isolate',
+                                        border: '1px solid var(--border-glass)'
+                                    }}
                                 >
-                                    <div className="p-4 border-b border-white/5 mb-2">
-                                        <p className="text-sm font-black text-[var(--text-main)]">{user?.name}</p>
-                                        <p className="text-xs font-medium text-gray-500 truncate">{user?.email}</p>
+                                    <div className="p-4 border-b border-default mb-2">
+                                        <p className="text-sm font-black text-primary">{user?.name}</p>
+                                        <p className="text-xs font-medium text-secondary truncate">{user?.email}</p>
                                     </div>
-                                    
+
                                     <div className="space-y-1">
-                                        <Link 
-                                            to="/profile" 
-                                            onClick={() => setDropdownOpen(false)} 
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setDropdownOpen(false)}
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all"
                                         >
                                             <User className="w-4 h-4" />
                                             <span>My Profile</span>
                                         </Link>
-                                        <Link 
-                                            to="/settings" 
-                                            onClick={() => setDropdownOpen(false)} 
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-gray-400 hover:text-white hover:bg-white/5 transition-all"
+                                        <Link
+                                            to="/settings"
+                                            onClick={() => setDropdownOpen(false)}
+                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all"
                                         >
                                             <Settings className="w-4 h-4" />
                                             <span>Settings</span>
                                         </Link>
-                                        <button 
+                                        <button
                                             onClick={() => { logout(); setDropdownOpen(false); }}
                                             className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-red-400/80 hover:text-red-400 hover:bg-red-500/5 transition-all"
                                         >

@@ -49,7 +49,7 @@ const securitySchema = z
 
 function SectionDivider({ accent = false }) {
     return (
-        <div className="relative h-px bg-white/5">
+        <div className="relative h-px bg-surface">
             {accent && <div className="absolute left-0 top-0 w-10 h-px bg-indigo-500" />}
         </div>
     );
@@ -59,10 +59,10 @@ function SectionHead({ icon: Icon, label, action }) {
     return (
         <div className="flex items-center justify-between px-8 py-5">
             <div className="flex items-center gap-3">
-                <div className="w-7 h-7 rounded-md flex items-center justify-center bg-white/[0.03] border border-white/5">
-                    <Icon size={13} className="text-white/30" />
+                <div className="w-7 h-7 rounded-md flex items-center justify-center bg-surface border border-default">
+                    <Icon size={13} className="text-tertiary" />
                 </div>
-                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/40 font-semibold">
+                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-secondary font-semibold">
                     {label}
                 </span>
             </div>
@@ -73,7 +73,7 @@ function SectionHead({ icon: Icon, label, action }) {
 
 function FieldLabel({ children }) {
     return (
-        <label className="block font-mono text-[9px] tracking-[0.16em] uppercase text-white/30 font-semibold mb-2">
+        <label className="block font-mono text-[9px] tracking-[0.16em] uppercase text-tertiary font-semibold mb-2">
             {children}
         </label>
     );
@@ -105,22 +105,22 @@ function PasswordInput({ error, iconActive = false, ...props }) {
             <Lock
                 size={13}
                 className={`absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none transition-colors
-          ${iconActive ? 'text-emerald-400' : 'text-white/15'}`}
+          ${iconActive ? 'text-emerald-400' : 'text-disabled'}`}
             />
             <input
                 {...props}
                 type={visible ? 'text' : 'password'}
                 placeholder="••••••••"
-                className={`w-full bg-white/[0.03] border rounded-lg pl-9 pr-9 py-2.5 text-white text-sm font-medium
-          placeholder:text-white/15 outline-none transition-all
+                className={`w-full bg-surface border rounded-lg pl-9 pr-9 py-2.5 text-primary text-sm font-medium
+          placeholder:text-disabled outline-none transition-all
           focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/40
-          ${error ? 'border-rose-500/50' : 'border-white/5 hover:border-white/10'}`}
+          ${error ? 'border-rose-500/50' : 'border-default hover:border-strong'}`}
             />
             <button
                 type="button"
                 tabIndex={-1}
                 onClick={() => setVisible(v => !v)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/20 hover:text-white/50 transition-colors"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-tertiary hover:text-secondary transition-colors"
             >
                 {visible ? <EyeOff size={13} /> : <Eye size={13} />}
             </button>
@@ -219,10 +219,10 @@ export default function SecurityTab() {
         >
 
             {/* ── Page header ─────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between pb-7 mb-1 border-b border-white/5">
+            <div className="flex items-center justify-between pb-7 mb-1 border-b border-default">
                 <div>
-                    <h2 className="text-xl font-bold text-white tracking-tight">Security</h2>
-                    <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-white/30 mt-1">
+                    <h2 className="text-xl font-bold text-primary tracking-tight">Security</h2>
+                    <p className="font-mono text-[10px] tracking-[0.14em] uppercase text-tertiary mt-1">
                         Password &amp; Access Management
                     </p>
                 </div>
@@ -238,7 +238,7 @@ export default function SecurityTab() {
             <form onSubmit={handleSubmit(d => securityMutation.mutate(d))} className="flex flex-col gap-2">
 
                 {/* ── Email ───────────────────────────────────────────────────────── */}
-                <div className="bg-white/[0.025] border border-white/5 rounded-xl overflow-hidden">
+                <div className="bg-surface border border-default rounded-xl overflow-hidden">
                     <SectionHead
                         icon={Mail}
                         label="Email Address"
@@ -258,13 +258,13 @@ export default function SecurityTab() {
 
                     <div className="px-8 py-6 space-y-3">
                         <div className="relative">
-                            <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/15 pointer-events-none" />
+                            <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-disabled pointer-events-none" />
                             <input
                                 type="email"
                                 disabled
                                 value={user?.email || ''}
-                                className="w-full bg-white/[0.02] border border-white/5 rounded-lg pl-9 pr-4 py-2.5
-                  text-white/40 text-sm cursor-not-allowed"
+                                className="w-full bg-surface border border-default rounded-lg pl-9 pr-4 py-2.5
+                  text-secondary text-sm cursor-not-allowed"
                             />
                         </div>
 
@@ -281,7 +281,7 @@ export default function SecurityTab() {
                                         <p className="font-mono text-[9px] tracking-[0.14em] uppercase text-amber-400 font-semibold">
                                             Verification pending
                                         </p>
-                                        <p className="text-[11px] text-white/30 mt-0.5">
+                                        <p className="text-[11px] text-tertiary mt-0.5">
                                             Check {user.pendingNewEmail}
                                         </p>
                                     </div>
@@ -292,7 +292,7 @@ export default function SecurityTab() {
                 </div>
 
                 {/* ── Password ────────────────────────────────────────────────────── */}
-                <div className="bg-white/[0.025] border border-white/5 rounded-xl overflow-hidden">
+                <div className="bg-surface border border-default rounded-xl overflow-hidden">
                     <SectionHead icon={Key} label="Change Password" />
                     <SectionDivider accent />
 
@@ -333,10 +333,10 @@ export default function SecurityTab() {
 
                     {/* Footer */}
                     <SectionDivider />
-                    <div className="flex items-center justify-between px-8 py-4 bg-black/10 gap-4">
+                    <div className="flex items-center justify-between px-8 py-4 bg-sunken gap-4">
                         <div className="flex items-center gap-2">
-                            <Info size={12} className="text-white/10 shrink-0" />
-                            <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-white/15">
+                            <Info size={12} className="text-disabled shrink-0" />
+                            <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-disabled">
                                 Current password required to update credentials
                             </span>
                         </div>
@@ -345,7 +345,7 @@ export default function SecurityTab() {
                             type="submit"
                             isLoading={securityMutation.isPending}
                             disabled={securityMutation.isPending}
-                            className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold tracking-wide shrink-0"
+                            className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-primary text-xs font-semibold tracking-wide shrink-0"
                         >
                             Save Changes
                         </Button>
@@ -354,24 +354,24 @@ export default function SecurityTab() {
             </form>
 
             {/* ── MFA row ─────────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between px-6 py-5 bg-white/[0.025] border border-white/5 rounded-xl
-        cursor-pointer hover:border-white/10 transition-colors group">
+            <div className="flex items-center justify-between px-6 py-5 bg-surface border border-default rounded-xl
+        cursor-pointer hover:border-strong transition-colors group">
                 <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-white/5 border border-white/5
-            group-hover:bg-white/[0.07] transition-colors shrink-0">
-                        <ShieldAlert size={15} className="text-white/25 group-hover:text-amber-400/60 transition-colors" />
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-surface border border-default
+            group-hover:bg-surface transition-colors shrink-0">
+                        <ShieldAlert size={15} className="text-tertiary group-hover:text-amber-400/60 transition-colors" />
                     </div>
                     <div>
-                        <p className="text-sm font-semibold text-white">Multi-Factor Authentication</p>
-                        <p className="text-[11px] text-white/30 mt-0.5">Add an extra layer of protection to your account</p>
+                        <p className="text-sm font-semibold text-primary">Multi-Factor Authentication</p>
+                        <p className="text-[11px] text-tertiary mt-0.5">Add an extra layer of protection to your account</p>
                     </div>
                 </div>
 
                 <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-white/25 group-hover:text-white/50 transition-colors">
+                    <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-tertiary group-hover:text-secondary transition-colors">
                         Configure
                     </span>
-                    <ChevronRight size={13} className="text-white/25 group-hover:text-white/50 group-hover:translate-x-0.5 transition-all" />
+                    <ChevronRight size={13} className="text-tertiary group-hover:text-secondary group-hover:translate-x-0.5 transition-all" />
                 </div>
             </div>
 

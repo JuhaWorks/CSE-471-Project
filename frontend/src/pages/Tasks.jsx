@@ -25,7 +25,7 @@ class TaskErrorBoundary extends React.Component {
                         <RefreshCw className="w-8 h-8 text-rose-500" />
                     </div>
                     <div className="space-y-2">
-                        <h2 className="text-xl font-black text-white">Domain Initialization Failed</h2>
+                        <h2 className="text-xl font-black text-primary">Domain Initialization Failed</h2>
                         <p className="text-gray-500 text-sm">{this.state.error?.message || "A neural misfire occurred."}</p>
                     </div>
                     <Button onClick={() => this.setState({ hasError: false })} variant="outline" className="border-rose-500/30 text-rose-400">
@@ -87,7 +87,7 @@ const TasksContent = ({ projectId, searchQuery, viewMode, activeProject }) => {
                         ) : (
                             <div className="bg-[oklch(100%_0_0/0.02)] border border-[oklch(100%_0_0/0.05)] rounded-[3rem] p-10 flex flex-col items-center justify-center text-center py-40 backdrop-blur-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
                                 <List className="w-16 h-16 text-gray-700 mb-6" />
-                                <h3 className="text-xl font-black text-white tracking-tight uppercase">List View In Development</h3>
+                                <h3 className="text-xl font-black text-primary tracking-tight uppercase">List View In Development</h3>
                                 <p className="text-gray-500 text-sm mt-2">Switch back to Kanban for immediate task orchestration.</p>
                             </div>
                         )}
@@ -174,7 +174,7 @@ export default function Tasks() {
                             <button 
                                 key={mode}
                                 onClick={() => handleViewChange(mode)}
-                                className={`relative z-10 p-2.5 rounded-xl transition-colors duration-300 ${optimisticView === mode ? 'text-[var(--bg-base)]' : 'text-gray-500 hover:text-white'}`}
+                                className={`relative z-10 p-2.5 rounded-xl transition-colors duration-300 ${optimisticView === mode ? 'text-[var(--bg-base)]' : 'text-gray-500 hover:text-primary'}`}
                                 aria-label={`${mode} view`}
                             >
                                 {optimisticView === mode && (

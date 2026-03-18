@@ -35,23 +35,23 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
                     initial={{ scale: 0.9, y: 20, opacity: 0 }}
                     animate={{ scale: 1, y: 0, opacity: 1 }}
                     exit={{ scale: 0.9, y: 20, opacity: 0 }}
-                    className="relative w-full max-w-lg bg-[#09090b] border border-white/10 shadow-[0_50px_100px_rgba(0,0,0,0.8)] rounded-[3rem] overflow-hidden"
+                    className="relative w-full max-w-lg bg-[#09090b] border border-strong shadow-[0_50px_100px_rgba(0,0,0,0.8)] rounded-[3rem] overflow-hidden"
                 >
                     {/* High-Risk Header */}
                     <div className={twMerge(clsx(
-                        "px-10 py-8 border-b border-white/5 flex items-center justify-between",
+                        "px-10 py-8 border-b border-default flex items-center justify-between",
                         isDeactivate ? "bg-amber-500/5" : "bg-rose-500/5"
                     ))}>
                         <div className="space-y-1">
                             <div className="flex items-center gap-3">
                                 <AlertTriangle className={twMerge(clsx("w-5 h-5", isDeactivate ? "text-amber-500" : "text-rose-500"))} />
-                                <h3 className="text-2xl font-black text-white tracking-tighter uppercase">
+                                <h3 className="text-2xl font-black text-primary tracking-tighter uppercase">
                                     {isDeactivate ? 'Deactivate Account' : 'Delete Account'}
                                 </h3>
                             </div>
                             <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Critical Action Required</p>
                         </div>
-                        <button onClick={onClose} className="p-3 bg-white/5 rounded-2xl text-gray-500 hover:text-white transition-colors">
+                        <button onClick={onClose} className="p-3 bg-surface rounded-2xl text-gray-500 hover:text-primary transition-colors">
                             <X className="w-5 h-5" />
                         </button>
                     </div>
@@ -59,7 +59,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
                     <div className="p-10 space-y-8">
                         {isDeactivate ? (
                             <div className="space-y-6">
-                                <p className="text-[11px] text-gray-500 font-medium leading-relaxed uppercase tracking-widest bg-white/5 p-4 rounded-2xl">
+                                <p className="text-[11px] text-gray-500 font-medium leading-relaxed uppercase tracking-widest bg-surface p-4 rounded-2xl">
                                     Your account will be temporarily disabled. All your data will remain safe and can be restored upon logging in again.
                                 </p>
                                 <div className="space-y-3">
@@ -68,7 +68,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
                                     </label>
                                     <div className="relative group">
                                         <select
-                                            className="w-full appearance-none px-6 py-4 border border-white/5 rounded-2xl text-sm bg-white/5 text-white focus:outline-none focus:border-amber-500/30 focus:ring-8 focus:ring-amber-500/5 transition-all font-medium cursor-pointer"
+                                            className="w-full appearance-none px-6 py-4 border border-default rounded-2xl text-sm bg-surface text-primary focus:outline-none focus:border-amber-500/30 focus:ring-8 focus:ring-amber-500/5 transition-all font-medium cursor-pointer"
                                             value={deactivationDuration}
                                             onChange={(e) => setDeactivationDuration(e.target.value)}
                                         >
@@ -95,7 +95,7 @@ const ConfirmModal = ({ isOpen, onClose, onConfirm, actionType, isLoading, deact
                                         value={inputValue}
                                         onChange={(e) => setInputValue(e.target.value)}
                                         placeholder="Type CONFIRM to proceed"
-                                        className="w-full bg-white/5 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-rose-500/30 focus:ring-8 focus:ring-rose-500/5 transition-all font-medium text-sm placeholder:text-gray-800"
+                                        className="w-full bg-surface border border-default rounded-2xl px-6 py-4 text-primary focus:outline-none focus:border-rose-500/30 focus:ring-8 focus:ring-rose-500/5 transition-all font-medium text-sm placeholder:text-gray-800"
                                     />
                                 </div>
                             </div>
@@ -197,7 +197,7 @@ export default function AccountStatusTab() {
             {/* Danger Zone Metadata */}
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-rose-500/10">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-rose-500 tracking-tighter uppercase">Danger <span className="text-white">Zone.</span></h2>
+                    <h2 className="text-2xl font-black text-rose-500 tracking-tighter uppercase">Danger <span className="text-primary">Zone.</span></h2>
                     <p className="text-[10px] font-black text-rose-500/40 uppercase tracking-[0.3em]">Irreversible Account Actions</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-2xl shadow-xl">
@@ -215,7 +215,7 @@ export default function AccountStatusTab() {
                                 <LogOut className="w-8 h-8 text-amber-500" />
                             </div>
                             <div className="space-y-2">
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Deactivate Account</h3>
+                                <h3 className="text-sm font-black text-primary uppercase tracking-widest">Deactivate Account</h3>
                                 <p className="text-[11px] text-gray-500 font-medium max-w-lg leading-relaxed">
                                     Temporarily disable your account. Your data will be preserved for when you decide to return.
                                 </p>
@@ -238,7 +238,7 @@ export default function AccountStatusTab() {
                                 <Trash2 className="w-8 h-8 text-rose-500" />
                             </div>
                             <div className="space-y-2">
-                                <h3 className="text-sm font-black text-white uppercase tracking-widest">Delete Account</h3>
+                                <h3 className="text-sm font-black text-primary uppercase tracking-widest">Delete Account</h3>
                                 <p className="text-[11px] text-gray-500 font-medium max-w-lg leading-relaxed">
                                     Permanently delete your account and all associated data. This action is irreversible.
                                 </p>
@@ -255,7 +255,7 @@ export default function AccountStatusTab() {
             </div>
 
             {/* Protocol Warning */}
-            <div className="p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/5 flex items-start gap-6 opacity-30">
+            <div className="p-8 rounded-[2.5rem] bg-surface border border-default flex items-start gap-6 opacity-30">
                 <ShieldAlert className="w-6 h-6 text-gray-600 shrink-0 mt-1" />
                 <div className="space-y-2">
                     <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Important Note</span>

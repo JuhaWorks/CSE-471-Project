@@ -88,7 +88,7 @@ const LockedInput = ({
                     onFocus={handleFocus}
                     onBlur={handleBlur}
                     className={twMerge(clsx(
-                        "w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-gray-700 transition-all font-medium text-sm",
+                        "w-full bg-surface border border-default rounded-2xl px-5 py-4 text-primary placeholder:text-tertiary transition-all font-medium text-sm",
                         "focus:outline-none focus:ring-4 focus:ring-cyan-500/5 focus:border-cyan-500/30",
                         isLockedByOthers && "cursor-not-allowed border-amber-500/20 bg-amber-500/[0.02]",
                         as === 'textarea' && "resize-none leading-relaxed h-32"

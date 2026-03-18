@@ -59,7 +59,7 @@ const VerifyEmailChangePage = () => {
             </div>
 
             <main className="relative z-10 w-full max-w-md">
-                <div className="bg-white/[0.02] backdrop-blur-3xl border border-white/[0.06] rounded-3xl p-10 shadow-2xl overflow-hidden">
+                <div className="bg-surface backdrop-blur-3xl border border-white/[0.06] rounded-3xl p-10 shadow-2xl overflow-hidden">
                     {/* Inner Glow */}
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
 
@@ -69,7 +69,7 @@ const VerifyEmailChangePage = () => {
                             {status === 'loading' && (
                                 <div className="relative">
                                     <div className="absolute inset-0 bg-emerald-500/20 blur-2xl rounded-full animate-pulse" />
-                                    <div className="relative w-20 h-20 rounded-2xl bg-white/[0.03] border border-white/[0.1] flex items-center justify-center">
+                                    <div className="relative w-20 h-20 rounded-2xl bg-surface border border-white/[0.1] flex items-center justify-center">
                                         <Loader2 className="w-10 h-10 text-emerald-500 animate-spin" />
                                     </div>
                                 </div>
@@ -94,7 +94,7 @@ const VerifyEmailChangePage = () => {
 
                         {/* Text Content */}
                         <div className="space-y-4">
-                            <h1 className="text-3xl font-black tracking-tight text-white">
+                            <h1 className="text-3xl font-black tracking-tight text-primary">
                                 {status === 'loading' ? 'Verifying Email' : status === 'success' ? 'Email Confirmed' : 'Verification Failed'}
                             </h1>
                             <p className="text-[#8888aa] text-lg leading-relaxed px-4">
@@ -111,7 +111,7 @@ const VerifyEmailChangePage = () => {
                             {status === 'error' && (
                                 <button
                                     onClick={() => navigate('/settings')}
-                                    className="w-full h-14 bg-white/[0.05] hover:bg-white/[0.08] border border-white/[0.1] rounded-2xl font-bold flex items-center justify-center gap-2 transition-all group"
+                                    className="w-full h-14 bg-surface hover:bg-white/[0.08] border border-white/[0.1] rounded-2xl font-bold flex items-center justify-center gap-2 transition-all group"
                                 >
                                     Return to Settings
                                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

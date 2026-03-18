@@ -70,7 +70,7 @@ const Login = () => {
                         className="lg:hidden flex justify-center mb-6"
                     >
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-lg shadow-accent-500/20">
-                            <span className="text-white font-bold text-2xl">K</span>
+                            <span className="text-primary font-bold text-2xl">K</span>
                         </div>
                     </motion.div>
                     
@@ -176,7 +176,7 @@ const Login = () => {
                                         "border-default bg-sunken peer-checked:bg-theme peer-checked:border-theme",
                                         "group-hover:border-theme/50"
                                     ))} />
-                                    <Check className="absolute inset-0 m-auto w-3 h-3 text-white opacity-0 peer-checked:opacity-100 transition-opacity" />
+                                    <Check className="absolute inset-0 m-auto w-3 h-3 text-primary opacity-0 peer-checked:opacity-100 transition-opacity" />
                                 </div>
                                 <span className="text-sm font-semibold text-tertiary group-hover:text-secondary transition-colors">
                                     Remember me

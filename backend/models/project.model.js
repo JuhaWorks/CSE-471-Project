@@ -62,6 +62,13 @@ const projectSchema = new mongoose.Schema(
         coverImageId: {
             type: String,
             default: null
+        },
+        // Deadline Management
+        deadlineNotified: {
+            approaching: { type: Boolean, default: false },
+            approachingDismissedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+            exceeded: { type: Boolean, default: false },
+            exceededDismissedBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }]
         }
     },
     {

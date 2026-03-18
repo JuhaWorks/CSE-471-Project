@@ -48,7 +48,7 @@ export default function ThemeSelector() {
 
     return (
         <div
-            className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500 relative overflow-hidden rounded-2xl p-7 bg-zinc-950 border border-white/[0.07]"
+            className="space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-500 relative overflow-hidden rounded-2xl p-7 bg-surface border border-default shadow-sm"
             style={{ '--panel-glow': activeGlow }}
         >
             {/* Ambient glow */}
@@ -60,10 +60,10 @@ export default function ThemeSelector() {
             {/* Header */}
             <div className="flex items-center justify-between relative z-10">
                 <div>
-                    <p className="text-[9px] font-medium text-zinc-600 uppercase tracking-[0.2em] font-mono mb-1">
+                    <p className="text-[9px] font-medium text-tertiary uppercase tracking-[0.2em] font-mono mb-1">
                         Workspace · Appearance
                     </p>
-                    <h3 className="text-[18px] font-black leading-none tracking-tight text-zinc-100">
+                    <h3 className="text-[18px] font-black leading-none tracking-tight text-primary">
                         Color{' '}
                         <span
                             className="bg-clip-text text-transparent"
@@ -75,12 +75,12 @@ export default function ThemeSelector() {
                 </div>
 
                 {/* Active pill */}
-                <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-white/[0.07] rounded-full">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-sunken border border-default rounded-full">
                     <div
-                        className="w-4 h-4 rounded-[5px] border border-white/10 flex-shrink-0 overflow-hidden"
+                        className="w-4 h-4 rounded-[5px] border border-strong flex-shrink-0 overflow-hidden"
                         style={{ background: activeGrad, transition: 'background 0.4s' }}
                     />
-                    <span className="text-[10px] font-bold text-zinc-100 uppercase tracking-[0.1em] font-mono">
+                    <span className="text-[10px] font-bold text-primary uppercase tracking-[0.1em] font-mono">
                         {activeTheme.name}
                     </span>
                 </div>
@@ -142,7 +142,7 @@ export default function ThemeSelector() {
                                     <motion.div
                                         initial={{ opacity: 0, scale: 0.5 }}
                                         animate={{ opacity: 1, scale: 1 }}
-                                        className="absolute top-1.5 right-1.5 w-[17px] h-[17px] bg-white/90 rounded-full flex items-center justify-center"
+                                        className="absolute top-1.5 right-1.5 w-[17px] h-[17px] bg-elevated rounded-full flex items-center justify-center shadow-lg"
                                     >
                                         <Check className="w-2.5 h-2.5 text-black" strokeWidth={2.5} />
                                     </motion.div>
@@ -157,13 +157,13 @@ export default function ThemeSelector() {
             <div className="relative z-10" ref={dropdownRef}>
                 <button
                     onClick={() => setIsOpen(!isOpen)}
-                    className={`w-full h-[46px] flex items-center justify-between px-3.5 bg-zinc-900 border rounded-[13px] transition-all ${isOpen ? 'border-white/13' : 'border-white/[0.07]'} hover:border-white/13 hover:bg-[#1c1c25]`}
+                    className={`w-full h-[46px] flex items-center justify-between px-3.5 bg-sunken border rounded-[13px] transition-all ${isOpen ? 'border-accent/30' : 'border-default'} hover:border-accent/40 hover:bg-surface`}
                 >
                     <div className="flex items-center gap-2.5">
-                        <div className="w-6 h-6 rounded-[7px] overflow-hidden border border-white/10 flex-shrink-0 relative">
+                        <div className="w-6 h-6 rounded-[7px] overflow-hidden border border-strong flex-shrink-0 relative">
                             <div className="absolute inset-0" style={{ background: activeGrad }} />
                         </div>
-                        <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-zinc-100">
+                        <span className="text-[12px] font-bold uppercase tracking-[0.05em] text-primary">
                             {activeTheme.name}
                         </span>
                     </div>
@@ -179,8 +179,8 @@ export default function ThemeSelector() {
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 6, scale: 0.98 }}
                             transition={{ duration: 0.18, ease: 'easeOut' }}
-                            className="absolute top-[calc(100%+6px)] left-0 right-0 bg-[#13131a] border border-white/10 rounded-[14px] p-1.5 shadow-2xl overflow-hidden max-h-[310px] overflow-y-auto"
-                            style={{ zIndex: 100 }}
+                            className="absolute top-[calc(100%+6px)] left-0 right-0 bg-glass/90 border border-default rounded-[14px] p-1.5 shadow-2xl overflow-hidden max-h-[310px] overflow-y-auto backdrop-blur-2xl"
+                            style={{ zIndex: 100, backgroundColor: 'var(--bg-glass)', borderColor: 'var(--border-glass)' }}
                         >
                             {THEME_OPTIONS.map(t => {
                                 const active = theme === t.id;
@@ -189,14 +189,14 @@ export default function ThemeSelector() {
                                     <button
                                         key={t.id}
                                         onClick={() => { setTheme(t.id); setIsOpen(false); }}
-                                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] transition-colors ${active ? 'bg-white/[0.07]' : 'hover:bg-white/[0.04]'}`}
+                                        className={`w-full flex items-center gap-2.5 px-2.5 py-2 rounded-[9px] transition-colors ${active ? 'bg-surface' : 'hover:bg-white/[0.04]'}`}
                                     >
-                                        <div className="w-[30px] h-[30px] rounded-[8px] overflow-hidden border border-white/[0.07] flex-shrink-0 relative">
+                                        <div className="w-[30px] h-[30px] rounded-[8px] overflow-hidden border border-default flex-shrink-0 relative">
                                             <div className="absolute inset-0" style={{ background: grad }} />
                                             <div className="absolute top-0 left-0 right-0 h-1/2"
                                                 style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.18), transparent)' }} />
                                         </div>
-                                        <span className="flex-1 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-zinc-100">
+                                        <span className="flex-1 text-left text-[11px] font-bold uppercase tracking-[0.06em] text-primary">
                                             {t.name}
                                         </span>
                                         {active && (
@@ -216,7 +216,7 @@ export default function ThemeSelector() {
             </div>
 
             {/* Status bar */}
-            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-white/[0.025] border border-white/[0.05] rounded-[9px] relative z-10">
+            <div className="flex items-center gap-2.5 px-3.5 py-2.5 bg-surface border border-white/[0.05] rounded-[9px] relative z-10">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0" />
                 <span className="text-[9px] font-medium font-mono text-zinc-600 uppercase tracking-[0.12em]">
                     Theme · <em className="not-italic text-zinc-500">{activeTheme.name}</em> · Applied

@@ -73,9 +73,9 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
             {!showOnlyAppearance && (
                 <>
                     {/* Component Metadata Section */}
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-default">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Profile <span className="text-cyan-400">Info.</span></h2>
+                            <h2 className="text-2xl font-black text-primary tracking-tighter uppercase">Profile <span className="text-cyan-400">Info.</span></h2>
                             <p className="text-[10px] font-black text-secondary uppercase tracking-[0.3em]">Manage your public profile</p>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
@@ -85,11 +85,11 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                     </div>
 
                     {/* Core Synchronization Form */}
-                    <Card padding="p-0" className="overflow-hidden border-white/5">
-                        <div className="px-10 py-6 border-b border-white/5 bg-white/[0.02]">
+                    <Card padding="p-0" className="overflow-hidden border-default">
+                        <div className="px-10 py-6 border-b border-default bg-surface">
                             <div className="flex items-center gap-3">
                                 <User className="w-4 h-4 text-secondary" />
-                                <span className="text-[10px] font-black text-white uppercase tracking-widest">Account Details</span>
+                                <span className="text-[10px] font-black text-primary uppercase tracking-widest">Account Details</span>
                             </div>
                         </div>
                         <form onSubmit={handleSubmit(onSubmit)} className="p-10 space-y-10">
@@ -104,7 +104,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                             type="text"
                                             placeholder="Enter your name"
                                             {...register('name')}
-                                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
+                                            className="w-full bg-surface border border-default rounded-2xl pl-14 pr-6 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
                                         />
                                     </div>
                                     {errors.name && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">{errors.name.message}</p>}
@@ -128,13 +128,13 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                             rows={1}
                                             placeholder="Tell us about yourself..."
                                             {...register('customMessage')}
-                                            className="w-full bg-white/5 border border-white/5 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm resize-none h-[54px] align-middle pt-4"
+                                            className="w-full bg-surface border border-default rounded-2xl pl-14 pr-6 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm resize-none h-[54px] align-middle pt-4"
                                         />
                                     </div>
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex items-center justify-between border-t border-white/5">
+                            <div className="pt-4 flex items-center justify-between border-t border-default">
                                 <div className="flex items-center gap-3">
                                     <Info className="w-4 h-4 text-gray-700" />
                                     <p className="text-[9px] font-black text-secondary uppercase tracking-widest max-w-[300px] leading-relaxed">
@@ -162,7 +162,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                         <Zap className="w-6 h-6 text-cyan-400" />
                     </div>
                     <div className="flex flex-col">
-                        <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Profile Synced</span>
+                        <span className="text-xs font-black text-primary uppercase tracking-[0.2em]">Profile Synced</span>
                         <span className="text-[10px] text-secondary font-medium tracking-wide">All profile updates has been successfully and updated globally.</span>
                     </div>
                 </div>

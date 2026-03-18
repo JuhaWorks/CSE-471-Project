@@ -15,6 +15,7 @@ const session = require('express-session');
 const passport = require('./config/passport');
 const seedAdminUser = require('./config/seed');
 const startGarbageCollection = require('./cron/gc');
+const startDeadlineChecker = require('./cron/deadlineCheck');
 
 // 1. Optimize DNS resolution for faster external APIs/MongoDB
 try {
@@ -141,6 +142,7 @@ mongoose.connect(process.env.MONGO_URI, {
   logger.info("✅ MongoDB Connected Successfully!");
   await seedAdminUser();
   startGarbageCollection();
+  startDeadlineChecker();
 
   // Verify Brevo email service at startup
   if (process.env.BREVO_API_KEY) {

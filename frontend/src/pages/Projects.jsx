@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import ProjectCreationModal from '../components/projects/ProjectCreationModal';
 import ProjectImage from '../components/projects/ProjectImage';
+import DeadlinePopup from '../components/projects/DeadlinePopup';
 import { toast } from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
@@ -71,7 +72,7 @@ const Projects = () => {
 
     const getStatusStyles = (status) => {
         switch (status) {
-            case 'Active': return 'text-theme bg-accent-muted border-accent';
+            case 'Active': return 'text-accent bg-accent/10 border-accent';
             case 'Paused': return 'text-warning bg-warning/10 border-warning/20';
             case 'Completed': return 'text-success bg-success/10 border-success/20';
             case 'Archived': return 'text-tertiary bg-sunken border-default';
@@ -81,6 +82,7 @@ const Projects = () => {
 
     return (
         <div className="w-full space-y-12 pb-20">
+            <DeadlinePopup projects={activeProjects} user={user} />
             {/* Header Area */}
             <header className="relative pt-4 pb-8">
                 <div className="absolute -top-10 left-0 w-64 h-64 bg-theme/5 rounded-full blur-[100px] pointer-events-none" />
@@ -278,7 +280,7 @@ const Projects = () => {
                     <div className="w-24 h-24 rounded-[2.5rem] bg-sunken border border-subtle flex items-center justify-center mb-8">
                         <SearchX className="w-10 h-10 text-tertiary" />
                     </div>
-                    <h2 className="text-4xl font-black text-white tracking-tighter mb-3">No Projects Found</h2>
+                    <h2 className="text-4xl font-black text-primary tracking-tighter mb-3">No Projects Found</h2>
                     <p className="text-gray-500 font-medium max-w-sm mb-12 leading-relaxed">
                         This view is currently empty. Create a new project to get started.
                     </p>

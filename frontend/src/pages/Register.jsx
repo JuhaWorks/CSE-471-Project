@@ -116,7 +116,7 @@ const Register = () => {
                         className="lg:hidden flex justify-center mb-6"
                     >
                         <div className="w-12 h-12 rounded-2xl bg-theme flex items-center justify-center">
-                            <span className="text-white font-black text-2xl">K</span>
+                            <span className="text-primary font-black text-2xl">K</span>
                         </div>
                     </motion.div>
                     

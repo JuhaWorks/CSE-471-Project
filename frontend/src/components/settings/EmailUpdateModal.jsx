@@ -20,7 +20,7 @@ function StepBar({ current }) {
                         <div className="flex items-center gap-1.5 shrink-0">
                             <div className={[
                                 'w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all duration-300',
-                                done ? 'bg-emerald-500 text-white' :
+                                done ? 'bg-emerald-500 text-primary' :
                                     active ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 ring-1 ring-emerald-300 dark:ring-emerald-700' :
                                         'bg-zinc-100 dark:bg-zinc-800 text-zinc-400'
                             ].join(' ')}>
@@ -194,7 +194,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                         leaveFrom="opacity-100 scale-100"
                         leaveTo="opacity-0 scale-95"
                     >
-                        <Dialog.Panel className="relative w-full max-w-md bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden">
+                        <Dialog.Panel className="relative w-full max-w-md bg-elevated dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl shadow-xl overflow-hidden">
 
                             {/* Emerald top bar */}
                             <div className="h-0.5 bg-emerald-400 dark:bg-emerald-500 w-full" />
@@ -261,7 +261,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                                 <button
                                                     onClick={handleOtpSubmit}
                                                     disabled={otp.join('').length !== 6}
-                                                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+                                                    className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-emerald-600 text-primary hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
                                                 >
                                                     Continue
                                                     <ArrowRight className="w-4 h-4" />
@@ -288,7 +288,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                                     </label>
                                                     <div className={[
                                                         'flex items-center gap-3 px-4 py-3 rounded-xl border transition-all',
-                                                        'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700',
+                                                        'bg-elevated dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700',
                                                         'focus-within:border-emerald-400 dark:focus-within:border-emerald-600',
                                                         'focus-within:ring-2 focus-within:ring-emerald-100 dark:focus-within:ring-emerald-900/40',
                                                     ].join(' ')}>
@@ -320,7 +320,7 @@ export default function EmailUpdateModal({ isOpen, onClose }) {
                                                     <button
                                                         type="submit"
                                                         disabled={submitting || !newEmail}
-                                                        className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
+                                                        className="flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-emerald-600 text-primary hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed active:scale-[0.98] transition-all"
                                                     >
                                                         {submitting
                                                             ? <><Loader2 className="w-4 h-4 animate-spin" /> Updating…</>

@@ -84,20 +84,19 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
 
     return (
         <Card className="overflow-hidden" padding="p-0">
-            <header className="px-10 py-8 border-b border-white/5 flex items-center justify-between bg-white/[0.01]">
+            <header className="px-10 py-8 border-b border-default flex items-center justify-between bg-surface">
                 <div className="flex items-center gap-4">
                     <div className="w-10 h-10 rounded-2xl bg-emerald-500/5 border border-emerald-500/20 flex items-center justify-center">
                         <Layout className="w-5 h-5 text-emerald-400" />
                     </div>
                     <div>
-                        <h2 className="text-xl font-black text-white tracking-tighter">Core Configuration</h2>
-                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Master Metadata Node</p>
+                        <h2 className="text-xl font-black text-primary tracking-tighter">Configure Project Details</h2>
                     </div>
                 </div>
                 {!isAuthorized && (
-                    <div className="flex items-center gap-2 px-4 py-1.5 glass-2 bg-white/5 border-white/10 rounded-xl">
+                    <div className="flex items-center gap-2 px-4 py-1.5 glass-2 bg-sunken border-default rounded-xl">
                         <div className="w-1.5 h-1.5 rounded-full bg-gray-600" />
-                        <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Isolated Environment</span>
+                        <span className="text-[9px] font-black text-tertiary uppercase tracking-widest">Isolated Environment</span>
                     </div>
                 )}
             </header>
@@ -131,22 +130,22 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
 
                         {/* Visual Asset Section */}
                         <div className="space-y-6">
-                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Hero Asset Uplink</label>
+                            <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Upload</label>
 
-                            <div className="flex flex-col lg:flex-row gap-8">
-                                <div className="relative group w-full lg:w-[320px] aspect-video rounded-3xl overflow-hidden border border-white/5 bg-[#09090b] flex items-center justify-center shadow-2xl">
+                            <div className="flex flex-col lg:flex-row gap-8 items-start">
+                                <div className="relative group w-32 h-32 lg:w-40 lg:h-40 rounded-3xl overflow-hidden border border-default bg-elevated flex-shrink-0 flex items-center justify-center shadow-2xl">
                                     <AnimatePresence mode="wait">
                                         {previewUrl || coverImageUrl ? (
-                                            <motion.img 
+                                            <motion.img
                                                 key="preview"
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
-                                                src={previewUrl || coverImageUrl} 
-                                                className="w-full h-full object-cover" 
-                                                alt="Asset Preview" 
+                                                src={previewUrl || coverImageUrl}
+                                                className="w-full h-full object-cover"
+                                                alt="Asset Preview"
                                             />
                                         ) : (
-                                            <motion.div 
+                                            <motion.div
                                                 key="empty"
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
@@ -191,11 +190,11 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                     {/* Shimmer overlay for loading */}
                                     <AnimatePresence>
                                         {uploadMutation.isPending && (
-                                            <motion.div 
+                                            <motion.div
                                                 initial={{ opacity: 0 }}
                                                 animate={{ opacity: 1 }}
                                                 exit={{ opacity: 0 }}
-                                                className="absolute inset-0 bg-white/5 animate-pulse" 
+                                                className="absolute inset-0 bg-white/5 animate-pulse"
                                             />
                                         )}
                                     </AnimatePresence>
@@ -208,7 +207,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                             {...register('coverImageUrl')}
                                             disabled={!isAuthorized || updateMutation.isPending}
                                             placeholder="https://images.unsplash.com/..."
-                                            className="w-full bg-white/5 border border-white/5 rounded-2xl px-5 py-4 text-white placeholder:text-gray-800 focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-medium text-sm"
+                                            className="w-full bg-surface border border-default rounded-2xl px-5 py-4 text-primary placeholder:text-tertiary focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-medium text-sm"
                                         />
                                         {errors.coverImageUrl && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.coverImageUrl.message}</p>}
                                     </div>
@@ -230,7 +229,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                     <select
                                         {...register('category')}
                                         disabled={!isAuthorized || updateMutation.isPending}
-                                        className="w-full bg-[#09090b] border border-white/5 rounded-2xl px-5 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all appearance-none cursor-pointer font-black text-xs uppercase tracking-widest"
+                                        className="w-full bg-surface border border-default rounded-2xl px-5 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all appearance-none cursor-pointer font-black text-xs uppercase tracking-widest"
                                     >
                                         <option value="" disabled>Select Domain</option>
                                         {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map(cat => (
@@ -245,28 +244,28 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Temporal Start</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Start Date </label>
                                 <div className="relative">
                                     <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
                                     <input
                                         type="date"
                                         {...register('startDate')}
                                         disabled={!isAuthorized || updateMutation.isPending}
-                                        className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:dark]"
+                                        className="w-full bg-surface border border-default rounded-2xl pl-12 pr-5 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:dark]"
                                     />
                                 </div>
                                 {errors.startDate && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.startDate.message}</p>}
                             </div>
 
                             <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">Temporal Horizon</label>
+                                <label className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500 ml-1">End Date</label>
                                 <div className="relative">
                                     <Target className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-600" />
                                     <input
                                         type="date"
                                         {...register('endDate')}
                                         disabled={!isAuthorized || updateMutation.isPending}
-                                        className="w-full bg-white/5 border border-white/5 rounded-2xl pl-12 pr-5 py-4 text-white focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:dark]"
+                                        className="w-full bg-surface border border-default rounded-2xl pl-12 pr-5 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:light]"
                                     />
                                 </div>
                                 {errors.endDate && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.endDate.message}</p>}

@@ -19,8 +19,7 @@ import {
 import { useAuthStore, api } from '../../store/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme, MODES } from '../../store/useTheme';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
+import { cn } from '../../utils/cn';
 
 const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -38,25 +37,25 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
             end={item.path === '/'}
             onClick={onClose}
             onMouseEnter={() => onPrefetch(item.path)}
-            className={({ isActive: linkActive }) => twMerge(clsx(
+            className={({ isActive: linkActive }) => cn(
                 "group relative flex items-center rounded-2xl transition-all duration-200",
                 isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                "hover:bg-sunken active:scale-[0.98]",
+                "hover:bg-white/5 active:scale-[0.98]",
                 linkActive ? "text-theme" : "text-tertiary hover:text-primary"
-            ))}
+            )}
         >
             {isActive && (
                 <motion.div
                     layoutId="sidebar-active"
-                    className="absolute inset-0 bg-theme/5 rounded-2xl border border-theme/20 shadow-[0_0_20px_rgba(var(--theme-rgb),0.05)] backdrop-blur-sm"
+                    className="absolute inset-0 rounded-2xl bg-theme/10 border border-theme/20 shadow-[0_0_20px_rgba(var(--theme-rgb),0.05)]"
                     transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                 />
             )}
             
-            <Icon className={twMerge(clsx(
+            <Icon className={cn(
                 "w-5 h-5 transition-colors z-10 shrink-0",
                 isActive ? "text-theme" : "group-hover:text-theme-lt"
-            ))} />
+            )} />
             
             <AnimatePresence mode="wait">
                 {!isCollapsed && (
@@ -76,10 +75,10 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
                 <motion.div
                     initial={{ opacity: 0, scale: 0 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className={twMerge(clsx(
+                    className={cn(
                         "w-1.5 h-1.5 rounded-full bg-theme shadow-theme z-10",
                         isCollapsed ? "absolute bottom-1 left-1/2 -translate-x-1/2" : "ml-auto"
-                    ))}
+                    )}
                 />
             )}
         </NavLink>
@@ -131,7 +130,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 )}
             </AnimatePresence>
 
-            <motion.aside 
+            <motion.aside
                 initial={false}
                 animate={{ 
                     width: isOpen ? (isCollapsed ? 80 : 280) : 0,
@@ -143,21 +142,22 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     damping: 35,
                     mass: 0.8
                 }}
-                style={{ willChange: 'width, transform' }}
-                className={twMerge(clsx(
-                "fixed inset-y-0 left-0 z-50 glass-2 border-r border-default bg-surface/95 backdrop-blur-xl",
-                "flex flex-col rounded-none shadow-2xl shadow-black/50 overflow-hidden"
-            ))}>
+                className={cn(
+                    "fixed inset-y-0 left-0 z-50 border-r border-default shadow-2xl backdrop-blur-3xl",
+                    "flex flex-col rounded-none overflow-hidden"
+                )}
+                style={{ backgroundColor: 'var(--bg-glass)', borderRightColor: 'var(--border-glass)' }}
+            >
                 {/* Theme Ambient Effect */}
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-accent-bg to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-accent-500/5 to-transparent pointer-events-none" />
 
                 {/* Brand */}
-                <div className={twMerge(clsx(
+                <div className={cn(
                     "h-20 flex items-center relative z-10 shrink-0",
                     isCollapsed ? "justify-center px-0" : "gap-4 px-6"
-                ))}>
-                    <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform">
-                        <span className="text-white font-black text-xl">K</span>
+                )}>
+                    <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform overflow-hidden">
+                        <img src="/logo.png?v=2" alt="klvira logo" className="w-full h-full object-cover" />
                     </div>
                     {!isCollapsed && (
                         <motion.div 
@@ -165,16 +165,16 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                             animate={{ opacity: 1 }}
                             className="flex flex-col min-w-0"
                         >
-                            <span className="text-lg font-black tracking-tighter text-primary truncate">Klivra</span>
+                            <span className="text-lg font-black tracking-tighter text-primary truncate">klvira</span>
                             <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest truncate">{isAdminSection ? 'Administration' : 'Workspace'}</span>
                         </motion.div>
                     )}
                     <button 
                         onClick={onToggleCollapse} 
-                        className="hidden lg:flex ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-sunken"
+                        className="hidden lg:flex ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-white/5"
                         title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
-                        <ChevronRight className={twMerge(clsx("w-5 h-5 transition-transform duration-300", !isCollapsed && "rotate-180"))} />
+                        <ChevronRight className={cn("w-5 h-5 transition-transform duration-300", !isCollapsed && "rotate-180")} />
                     </button>
                     {!isCollapsed && (
                         <button 
@@ -188,10 +188,10 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 </div>
 
                 {/* Nav */}
-                <nav className={twMerge(clsx(
+                <nav className={cn(
                     "flex-1 py-6 space-y-2 overflow-y-auto overflow-x-hidden relative z-10 scrollbar-hide",
                     isCollapsed ? "px-2" : "px-4"
-                ))}>
+                )}>
                     {!isCollapsed && (
                         <motion.p 
                             initial={{ opacity: 0 }}
@@ -208,13 +208,13 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                                 to="/admin"
                                 end
                                 onClick={onClose}
-                                className={({ isActive }) => twMerge(clsx(
+                                className={({ isActive }) => cn(
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
                                     isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
                                         ? "bg-theme/10 text-theme border border-theme/20" 
-                                        : "text-tertiary hover:text-primary hover:bg-sunken"
-                                ))}
+                                        : "text-tertiary hover:text-primary hover:bg-white/5"
+                                )}
                             >
                                 <ShieldAlert className="w-5 h-5 shrink-0" />
                                 {!isCollapsed && <span>Admin Panel</span>}
@@ -230,13 +230,13 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                             <NavLink
                                 to="/admin/security"
                                 onClick={onClose}
-                                className={({ isActive }) => twMerge(clsx(
+                                className={({ isActive }) => cn(
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
                                     isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive 
                                         ? "bg-danger/10 text-danger border border-danger/20" 
                                         : "text-tertiary hover:text-danger hover:bg-danger/5"
-                                ))}
+                                )}
                             >
                                 <Activity className="w-5 h-5 shrink-0" />
                                 {!isCollapsed && <span>Security Feed</span>}
@@ -259,21 +259,21 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 </nav>
 
                 {/* Optimized Footer Hierarchy */}
-                <div className={twMerge(clsx(
-                    "mt-auto border-t border-default relative z-10 shrink-0",
+                <div className={cn(
+                    "mt-auto border-t border-white/5 relative z-10 shrink-0",
                     isCollapsed ? "p-3" : "p-4"
-                ))}>
+                )}>
                     {/* Part 1: Operational Actions */}
                     <div className="space-y-1 mb-6">
                         {!isAdminSection && (
                             <NavLink
                                 to="/settings"
                                 onClick={onClose}
-                                className={({ isActive }) => twMerge(clsx(
+                                className={({ isActive }) => cn(
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
                                     isCollapsed ? "justify-center h-11 w-full px-0" : "gap-4 px-4 py-3",
-                                    isActive ? "bg-theme/10 text-theme border border-theme/20" : "text-tertiary hover:text-primary hover:bg-surface-lighter"
-                                ))}
+                                    isActive ? "bg-theme/10 text-theme border border-theme/20" : "text-tertiary hover:text-primary hover:bg-white/5"
+                                )}
                             >
                                 <Settings className="w-5 h-5 shrink-0" />
                                 {!isCollapsed && <span>Settings</span>}
@@ -282,11 +282,11 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
 
                         <button
                             onClick={() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK)}
-                            className={twMerge(clsx(
+                            className={cn(
                                 "w-full flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
                                 isCollapsed ? "justify-center h-11 px-0" : "gap-4 px-4 py-3",
-                                "text-tertiary hover:text-primary hover:bg-surface-lighter"
-                            ))}
+                                "text-tertiary hover:text-primary hover:bg-white/5"
+                            )}
                         >
                             {mode === MODES.DARK ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
                             {!isCollapsed && <span>{mode === MODES.DARK ? 'Light Mode' : 'Dark Mode'}</span>}
@@ -294,14 +294,14 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     </div>
 
                     {/* Part 2: Identity & Session */}
-                    <div className={twMerge(clsx(
-                        "rounded-[2rem] bg-surface-lighter border border-default transition-all p-1.5",
+                    <div className={cn(
+                        "rounded-[2rem] bg-white/5 border border-white/5 transition-all p-1.5",
                         isCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-3 pr-3"
-                    ))}>
+                    )}>
                         <Link 
                             to="/profile"
                             onClick={onClose}
-                            className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-theme-muted to-theme/20 border border-theme/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform"
+                            className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-accent-500/10 to-accent-500/20 border border-white/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform"
                         >
                             {user?.avatar ? (
                                 <img src={user.avatar} alt="" className="w-full h-full object-cover" />

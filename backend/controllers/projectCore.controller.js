@@ -111,6 +111,19 @@ const updateProject = async (req, res, next) => {
         // Update fields
         Object.keys(req.body).forEach(key => {
             if (['name', 'description', 'category', 'startDate', 'endDate', 'status', 'coverImageUrl', 'coverImageId'].includes(key)) {
+                // If endDate changes, reset deadline tracking
+                if (key === 'endDate') {
+                    const oldDate = project.endDate ? new Date(project.endDate).getTime() : 0;
+                    const newDate = new Date(req.body[key]).getTime();
+                    if (oldDate !== newDate) {
+                        project.deadlineNotified = {
+                            approaching: false,
+                            approachingDismissedBy: [],
+                            exceeded: false,
+                            exceededDismissedBy: []
+                        };
+                    }
+                }
                 project[key] = req.body[key];
             }
         });
@@ -241,6 +254,37 @@ const uploadProjectImage = async (req, res, next) => {
     }
 };
 
+// @desc    Dismiss deadline alert popup
+// @route   POST /api/projects/:id/dismiss-alert
+const dismissDeadlineAlert = async (req, res, next) => {
+    try {
+        const { type } = req.body; // 'approaching' or 'exceeded'
+        if (!['approaching', 'exceeded'].includes(type)) {
+            res.status(400);
+            throw new Error('Invalid alert type');
+        }
+
+        const updateField = type === 'approaching' 
+            ? 'deadlineNotified.approachingDismissedBy' 
+            : 'deadlineNotified.exceededDismissedBy';
+
+        const project = await Project.findOneAndUpdate(
+            { _id: req.params.id },
+            { $addToSet: { [updateField]: req.user._id } },
+            { new: true }
+        );
+
+        if (!project) {
+            res.status(404);
+            throw new Error('Project not found');
+        }
+
+        res.status(200).json({ status: 'success', message: 'Alert dismissed' });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getProjects,
     getProject,
@@ -248,5 +292,6 @@ module.exports = {
     updateProject,
     deleteProject,
     restoreProject,
-    uploadProjectImage
+    uploadProjectImage,
+    dismissDeadlineAlert
 };

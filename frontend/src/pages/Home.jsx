@@ -3,7 +3,7 @@ import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
     FolderKanban, CheckSquare, Users, Plus, ChevronRight,
     Activity, Lock, RefreshCw, ArrowUpRight, Shield, TrendingUp
@@ -12,6 +12,7 @@ import ApodWidget from '../components/tools/ApodWidget';
 import { useSocketStore } from '../store/useSocketStore';
 import Button from '../components/ui/Button';
 import DecryptedText from '../components/ui/DecryptedText';
+import DeadlinePopup from '../components/projects/DeadlinePopup';
 
 const EASE = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
 
@@ -109,6 +110,13 @@ const Home = () => {
         staleTime: 1000 * 60 * 5,
     });
 
+    const { data: projRes } = useQuery({
+        queryKey: ['projects'],
+        queryFn: async ({ signal }) => (await api.get('/projects', { signal })).data,
+        staleTime: 1000 * 60 * 5,
+    });
+    const projects = projRes?.data || [];
+
     const { data: platformStatsRes } = useQuery({
         queryKey: ['platformStats'],
         queryFn: async ({ signal }) => (await api.get('/admin/stats', { signal })).data,
@@ -187,6 +195,7 @@ const Home = () => {
 
     return (
         <>
+            <DeadlinePopup projects={projects} user={user} />
             <style>{`
                 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
 

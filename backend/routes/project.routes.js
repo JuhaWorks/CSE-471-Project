@@ -32,6 +32,7 @@ router.route('/:id')
 
 router.post('/:id/image', isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), uploadProjectImage, core.uploadProjectImage);
 router.post('/:id/restore', authorizeProjectAccess(['Manager']), core.restoreProject);
+router.post('/:id/dismiss-alert', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), core.dismissDeadlineAlert);
 
 // ── MEMBERS DOMAIN (RBAC & Teams) ───────────────────────────────────────────
 router.route('/:id/members')

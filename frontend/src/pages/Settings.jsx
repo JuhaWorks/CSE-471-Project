@@ -29,24 +29,24 @@ const TabButton = ({ tab, active, onClick }) => {
             onClick={() => onClick(tab.id)}
             className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
                 active 
-                ? 'bg-white dark:bg-white/10 shadow-sm border border-zinc-200 dark:border-white/10' 
-                : 'hover:bg-zinc-100 dark:hover:bg-white/5 border border-transparent'
+                ? 'bg-elevated dark:bg-elevated shadow-sm border border-zinc-200 dark:border-strong' 
+                : 'hover:bg-zinc-100 dark:hover:bg-surface border border-transparent'
             }`}
         >
             <div className={`p-1.5 rounded-lg transition-colors ${
-                active ? 'bg-zinc-900 dark:bg-white text-white dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-white'
+                active ? 'bg-zinc-900 dark:bg-elevated text-primary dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-primary'
             }`}>
                 <Icon className="w-3.5 h-3.5" />
             </div>
             <span className={`text-xs font-semibold uppercase tracking-widest ${
-                active ? 'text-zinc-900 dark:text-white' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200'
+                active ? 'text-zinc-900 dark:text-primary' : 'text-zinc-500 dark:text-zinc-400 group-hover:text-zinc-900 dark:group-hover:text-zinc-200'
             }`}>
                 {tab.label}
             </span>
             {active && (
                 <motion.div 
                     layoutId="active-pill"
-                    className="ml-auto w-1 h-1 rounded-full bg-zinc-900 dark:bg-white"
+                    className="ml-auto w-1 h-1 rounded-full bg-zinc-900 dark:bg-elevated"
                 />
             )}
         </button>
@@ -64,7 +64,7 @@ export default function Settings() {
                 <div className="max-w-screen-2xl mx-auto py-8 flex items-center justify-between">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-2xl bg-theme flex items-center justify-center shadow-lg shadow-theme/10">
-                            <SettingsIcon className="w-5 h-5 text-white" />
+                            <SettingsIcon className="w-5 h-5 text-primary" />
                         </div>
                         <div>
                             <h1 className="text-lg font-bold text-primary tracking-tight leading-none uppercase tracking-[0.2em]">Settings</h1>
@@ -92,7 +92,7 @@ export default function Settings() {
                         </div>
 
                         {/* Additional Info */}
-                        <div className="px-4 py-6 rounded-3xl bg-zinc-100 dark:bg-white/5 border border-zinc-200 dark:border-white/5">
+                        <div className="px-4 py-6 rounded-3xl bg-zinc-100 dark:bg-surface border border-zinc-200 dark:border-default">
                             <div className="flex items-center gap-2 mb-3">
                                 <Globe className="w-3.5 h-3.5 text-zinc-400" />
                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Platform Status</span>
@@ -119,7 +119,7 @@ export default function Settings() {
                                 {activeTab === 'notifications' && <NotificationsTab />}
                                 {activeTab === 'appearance' && (
                                     <div className="space-y-12">
-                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
+                                        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-default">
                                             <div className="space-y-1">
                                                 <h2 className="text-2xl font-black text-primary tracking-tighter uppercase">Appearance <span className="text-theme">Design.</span></h2>
                                                 <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em]">Personalize your workspace aesthetics</p>

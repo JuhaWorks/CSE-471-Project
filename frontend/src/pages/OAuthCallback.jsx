@@ -42,7 +42,7 @@ const OAuthCallback = () => {
     // Error State
     if (error) {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-[#05050a] text-white">
+            <div className="min-h-screen flex items-center justify-center bg-[#05050a] text-primary">
                 <div className="text-center max-w-sm px-6">
                     <div className="mb-6 w-16 h-16 mx-auto bg-red-500/10 rounded-2xl flex items-center justify-center border border-red-500/20">
                         <svg className="w-8 h-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -74,14 +74,14 @@ const OAuthCallback = () => {
                         className="absolute inset-0 bg-emerald-500 rounded-full"
                     />
                     {/* Inner glowing core */}
-                    <div className="relative w-16 h-16 bg-white/[0.03] backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl flex items-center justify-center shadow-emerald-500/20 box-border pointer-events-none">
+                    <div className="relative w-16 h-16 bg-surface backdrop-blur-xl border border-strong rounded-2xl shadow-2xl flex items-center justify-center shadow-emerald-500/20 box-border pointer-events-none">
                         <svg className="w-6 h-6 text-emerald-400 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </div>
                 </div>
 
-                <h2 className="mt-8 text-white font-semibold tracking-tight">Securing your session</h2>
+                <h2 className="mt-8 text-primary font-semibold tracking-tight">Securing your session</h2>
                 <div className="mt-3 flex gap-1">
                     <motion.div className="w-1 h-1 rounded-full bg-emerald-500" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0 }} />
                     <motion.div className="w-1 h-1 rounded-full bg-emerald-400" animate={{ y: [0, -4, 0] }} transition={{ duration: 0.6, repeat: Infinity, delay: 0.15 }} />

@@ -136,7 +136,7 @@ export default function VerifyEmail() {
                 className="flex items-center gap-2.5"
             >
                 <div className="w-8 h-8 rounded-xl bg-zinc-900 dark:bg-zinc-100 flex items-center justify-center">
-                    <Mail className="w-4 h-4 text-white dark:text-zinc-900" />
+                    <Mail className="w-4 h-4 text-primary dark:text-zinc-900" />
                 </div>
                 <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200 tracking-tight">
                     Email verification
@@ -151,7 +151,7 @@ export default function VerifyEmail() {
                     initial="initial"
                     animate="animate"
                     exit="exit"
-                    className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-sm"
+                    className="bg-elevated dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden shadow-sm"
                 >
                     {/* Status bar */}
                     <div className={`h-0.5 w-full transition-colors duration-700 ${accentBar[status]}`} />
@@ -221,7 +221,7 @@ export default function VerifyEmail() {
                                     </div>
                                     <button
                                         onClick={() => navigate('/')}
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 active:scale-[0.98] transition-all"
+                                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-primary dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 active:scale-[0.98] transition-all"
                                     >
                                         Go to dashboard
                                         <ArrowRight className="w-4 h-4" />
@@ -238,7 +238,7 @@ export default function VerifyEmail() {
                                 >
                                     <Link
                                         to="/resend-verification"
-                                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 active:scale-[0.98] transition-all"
+                                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-sm font-medium bg-zinc-900 dark:bg-zinc-100 text-primary dark:text-zinc-900 hover:bg-zinc-700 dark:hover:bg-zinc-300 active:scale-[0.98] transition-all"
                                     >
                                         <RotateCcw className="w-3.5 h-3.5" />
                                         Resend verification email

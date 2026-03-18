@@ -68,14 +68,14 @@ const SecurityFeed = () => {
                 return (
                     <>
                         <span className="text-emerald-400 font-bold">{actor}</span> deleted project
-                        <span className="text-white font-bold ml-1.5 px-2 py-0.5 bg-white/5 rounded-lg border border-white/5">{details.name || 'Unknown'}</span>
+                        <span className="text-primary font-bold ml-1.5 px-2 py-0.5 bg-surface rounded-lg border border-default">{details.name || 'Unknown'}</span>
                     </>
                 );
             case 'ROLE_UPDATED':
                 return (
                     <>
                         <span className="text-emerald-400 font-bold">{actor}</span> changed role of
-                        <span className="text-white font-bold mx-1.5">{details.targetUserName || 'User'}</span> to
+                        <span className="text-primary font-bold mx-1.5">{details.targetUserName || 'User'}</span> to
                         <span className="text-amber-400 font-bold ml-1.5 px-2 py-0.5 bg-amber-400/10 rounded-lg border border-amber-400/20">{details.newRole}</span>
                     </>
                 );
@@ -97,17 +97,17 @@ const SecurityFeed = () => {
                 return (
                     <>
                         <span className="text-emerald-400 font-bold">{actor}</span> added
-                        <span className="text-white font-bold mx-1.5">{details.memberName || 'Member'}</span> as
+                        <span className="text-primary font-bold mx-1.5">{details.memberName || 'Member'}</span> as
                         <span className="text-emerald-400 font-bold mx-1.5">{details.role}</span> to
-                        <span className="text-white font-bold ml-1.5 px-2 py-0.5 bg-white/5 rounded-lg border border-white/5">{details.projectName || 'Project'}</span>
+                        <span className="text-primary font-bold ml-1.5 px-2 py-0.5 bg-surface rounded-lg border border-default">{details.projectName || 'Project'}</span>
                     </>
                 );
             case 'MEMBER_REMOVED':
                 return (
                     <>
                         <span className="text-emerald-400 font-bold">{actor}</span> removed
-                        <span className="text-white font-bold mx-1.5">{details.targetUserName || 'Member'}</span> from
-                        <span className="text-white font-bold ml-1.5 px-2 py-0.5 bg-white/5 rounded-lg border border-white/5">{details.projectName || 'Project'}</span>
+                        <span className="text-primary font-bold mx-1.5">{details.targetUserName || 'Member'}</span> from
+                        <span className="text-primary font-bold ml-1.5 px-2 py-0.5 bg-surface rounded-lg border border-default">{details.projectName || 'Project'}</span>
                     </>
                 );
             case 'FAILED_LOGIN':
@@ -122,7 +122,7 @@ const SecurityFeed = () => {
                 return (
                     <>
                         <span className="text-emerald-400 font-bold">{actor}</span> performed
-                        <span className="text-white font-bold mx-1.5">{action.replace(/_/g, ' ')}</span>
+                        <span className="text-primary font-bold mx-1.5">{action.replace(/_/g, ' ')}</span>
                     </>
                 );
         }
@@ -158,11 +158,11 @@ const SecurityFeed = () => {
             <div className="space-y-6">
                 {isLoading ? (
                     Array.from({ length: 5 }).map((_, i) => (
-                        <div key={i} className="h-28 bg-white/[0.02] border border-white/[0.05] rounded-[2rem] animate-pulse" />
+                        <div key={i} className="h-28 bg-surface border border-white/[0.05] rounded-[2rem] animate-pulse" />
                     ))
                 ) : logs.length === 0 ? (
-                    <div className="py-24 text-center space-y-6 bg-white/[0.01] border border-dashed border-white/10 rounded-[3rem] glass">
-                        <div className="inline-flex p-5 bg-white/5 rounded-full text-gray-700">
+                    <div className="py-24 text-center space-y-6 bg-white/[0.01] border border-dashed border-strong rounded-[3rem] glass">
+                        <div className="inline-flex p-5 bg-surface rounded-full text-gray-700">
                             <svg className="w-12 h-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
                         </div>
                         <div>

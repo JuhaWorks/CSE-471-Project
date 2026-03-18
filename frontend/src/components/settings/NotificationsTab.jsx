@@ -28,9 +28,9 @@ export default function NotificationsTab() {
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
             {/* Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/5">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-default">
                 <div className="space-y-1">
-                    <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Notifications <span className="text-amber-400">Hub.</span></h2>
+                    <h2 className="text-2xl font-black text-primary tracking-tighter uppercase">Notifications <span className="text-amber-400">Hub.</span></h2>
                     <p className="text-[10px] font-black text-gray-600 uppercase tracking-[0.3em]">Configure how you receive updates</p>
                 </div>
                 <div className="flex items-center gap-2 px-4 py-2 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
@@ -43,7 +43,7 @@ export default function NotificationsTab() {
                 {/* Activity Section */}
                 <div className="space-y-4">
                     <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] ml-1">Activity Tracking</h4>
-                    <Card padding="p-0" className="overflow-hidden border-white/5">
+                    <Card padding="p-0" className="overflow-hidden border-default">
                         <div className="divide-y divide-white/5">
                             <NotificationItem 
                                 title="Mentions & Replies" 
@@ -70,7 +70,7 @@ export default function NotificationsTab() {
                 {/* System Section */}
                 <div className="space-y-4">
                     <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] ml-1">System Security</h4>
-                    <Card padding="p-0" className="overflow-hidden border-white/5">
+                    <Card padding="p-0" className="overflow-hidden border-default">
                         <div className="divide-y divide-white/5">
                             <NotificationItem 
                                 title="Security Alerts" 
@@ -90,7 +90,7 @@ export default function NotificationsTab() {
             </div>
 
             {/* Footer / Save */}
-            <div className="pt-8 flex items-center justify-between border-t border-white/5">
+            <div className="pt-8 flex items-center justify-between border-t border-default">
                 <div className="flex items-center gap-3">
                     <Info className="w-4 h-4 text-gray-700" />
                     <p className="text-[9px] font-black text-secondary uppercase tracking-widest max-w-[300px] leading-relaxed">
@@ -107,16 +107,16 @@ export default function NotificationsTab() {
 
 function NotificationItem({ title, desc, active, onToggle }) {
     return (
-        <div className="flex items-center justify-between p-8 hover:bg-white/[0.02] transition-colors group">
+        <div className="flex items-center justify-between p-8 hover:bg-surface transition-colors group">
             <div className="space-y-1">
-                <h5 className="text-sm font-black text-white uppercase tracking-widest">{title}</h5>
+                <h5 className="text-sm font-black text-primary uppercase tracking-widest">{title}</h5>
                 <p className="text-[11px] text-gray-500 font-medium leading-relaxed">{desc}</p>
             </div>
             <button 
                 onClick={onToggle}
-                className={`relative w-12 h-6 rounded-full transition-all duration-300 ${active ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-white/10'}`}
+                className={`relative w-12 h-6 rounded-full transition-all duration-300 ${active ? 'bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-elevated'}`}
             >
-                <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow-sm transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
+                <div className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-elevated shadow-sm transition-transform duration-300 ${active ? 'translate-x-6' : 'translate-x-0'}`} />
             </button>
         </div>
     );
