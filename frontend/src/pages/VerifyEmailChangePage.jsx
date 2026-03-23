@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Loader2, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import BorderGlow from '../components/ui/BorderGlow';
+import GlassSurface from '../components/ui/GlassSurface';
 
 const VerifyEmailChangePage = () => {
     const { token } = useParams();
@@ -59,7 +61,34 @@ const VerifyEmailChangePage = () => {
             </div>
 
             <main className="relative z-10 w-full max-w-md">
-                <div className="bg-surface backdrop-blur-3xl border border-white/[0.06] rounded-3xl p-10 shadow-2xl overflow-hidden">
+                <BorderGlow
+                    edgeSensitivity={30}
+                    glowColor="140 70 65"
+                    backgroundColor="rgba(6, 6, 18, 0.9)"
+                    borderRadius={24}
+                    glowRadius={35}
+                    glowIntensity={1}
+                    coneSpread={25}
+                    animated={false}
+                    colors={['#34d399', '#6ee7b7', '#a7f3d0']}
+                    fillOpacity={0}
+                    className="w-full"
+                >
+                    <div className="absolute inset-0 z-0">
+                        <GlassSurface 
+                            width="100%" 
+                            height="100%" 
+                            borderRadius={24} 
+                            className="w-full h-full"
+                            displace={0.5} 
+                            distortionScale={-60} 
+                            backgroundOpacity={0.06}
+                            opacity={0.93} 
+                            mixBlendMode="screen"
+                        />
+                    </div>
+                    
+                    <div className="p-10 relative z-10 overflow-hidden">
                     {/* Inner Glow */}
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent pointer-events-none" />
 
@@ -133,6 +162,7 @@ const VerifyEmailChangePage = () => {
                         </div>
                     </div>
                 </div>
+                </BorderGlow>
 
                 <p className="mt-8 text-center text-[#44445a] text-sm">
                     Antigravity Secure Infrastructure &copy; 2026

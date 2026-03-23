@@ -191,18 +191,20 @@ export default function DecryptedText({
     }
   };
 
+  const activeText = isAnimating ? displayText : text;
+
   return (
     <motion.span
       ref={containerRef}
-      className={`inline-block whitespace-pre-wrap ${parentClassName}`}
+      className={`inline-block whitespace-pre-wrap font-mono tracking-normal ${parentClassName}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
       {...props}
     >
       <span className="sr-only">{text}</span>
-      <span aria-hidden="true">
-        {displayText.split('').map((char, i) => (
+      <span aria-hidden="true" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {activeText.split('').map((char, i) => (
           <span
             key={i}
             className={revealedIndices.has(i) || isDecrypted ? className : encryptedClassName}

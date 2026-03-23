@@ -4,6 +4,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { motion } from 'framer-motion';
+import GlassSurface from '../ui/GlassSurface';
 
 /**
  * NotificationsTab
@@ -43,8 +44,11 @@ export default function NotificationsTab() {
                 {/* Activity Section */}
                 <div className="space-y-4">
                     <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] ml-1">Activity Tracking</h4>
-                    <Card padding="p-0" className="overflow-hidden border-default">
-                        <div className="divide-y divide-white/5">
+                    <Card padding="p-0" className="relative overflow-hidden border-default group">
+                        <div className="absolute inset-0 z-0">
+                            <GlassSurface width="100%" height="100%" borderRadius={16} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
+                        </div>
+                        <div className="relative z-10 divide-y divide-white/5">
                             <NotificationItem 
                                 title="Mentions & Replies" 
                                 desc="Direct alerts when someone mentions or replies to you."
@@ -70,8 +74,11 @@ export default function NotificationsTab() {
                 {/* System Section */}
                 <div className="space-y-4">
                     <h4 className="text-[10px] font-black text-secondary uppercase tracking-[0.2em] ml-1">System Security</h4>
-                    <Card padding="p-0" className="overflow-hidden border-default">
-                        <div className="divide-y divide-white/5">
+                    <Card padding="p-0" className="relative overflow-hidden border-default group">
+                        <div className="absolute inset-0 z-0">
+                            <GlassSurface width="100%" height="100%" borderRadius={16} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
+                        </div>
+                        <div className="relative z-10 divide-y divide-white/5">
                             <NotificationItem 
                                 title="Security Alerts" 
                                 desc="Sign-ins from new devices or suspicious locations."

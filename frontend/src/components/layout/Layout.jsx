@@ -81,14 +81,35 @@ const Layout = () => {
     return (
         <div className="flex min-h-screen bg-base relative overflow-x-hidden font-sans selection:bg-theme/20 selection:text-theme">
             {/* Ambient Background Node */}
-            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full">
-                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-theme/5 rounded-full blur-[120px] animate-pulse" />
+            <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden h-full bg-[#030008]">
+                {/* Premium Abstract BG */}
+                <div className="absolute inset-0 z-0 opacity-[0.4] mix-blend-screen">
+                    <img 
+                      src="/bg-premium.png" 
+                      alt="" 
+                      className="w-full h-full object-cover scale-105"
+                      loading="eager"
+                    />
+                </div>
+                
+                <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-theme/10 rounded-full blur-[120px] animate-pulse" />
                 <div className="absolute bottom-[20%] left-[-5%] w-[30%] h-[30%] bg-theme/5 rounded-full blur-[100px]" />
-                <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-[0.02] mix-blend-overlay pointer-events-none" />
+                <div className="absolute inset-0 bg-repeat bg-center opacity-[0.03] mix-blend-overlay pointer-events-none" style={{ backgroundImage: 'url("/noise.svg")' }} />
+                
+                {/* Surface Gradient for Depth */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-black/60 via-transparent to-black/40 pointer-events-none" />
             </div>
 
-            {/* Desktop Sidebar (Pinned to Window Edge) */}
-            <div className="hidden lg:block">
+            {/* TopBar - Z Layout (Spans Full Width, Top Priority) */}
+            <div className={twMerge(clsx(
+                "fixed top-0 right-0 z-50 transition-all duration-300",
+                isSidebarExpanded ? (isCollapsed ? "left-20" : "left-[280px]") : "left-0"
+            ))}>
+                <TopBar onMenuToggle={toggleSidebar} />
+            </div>
+
+            {/* Desktop Sidebar */}
+            <div className="hidden lg:block fixed top-0 bottom-0 left-0 z-40">
                 <SidebarComponent
                     isOpen={isSidebarExpanded}
                     isCollapsed={isCollapsed}
@@ -97,8 +118,8 @@ const Layout = () => {
                 />
             </div>
 
-            {/* Mobile Sidebar (Drawer Overlay) */}
-            <div className="lg:hidden">
+            {/* Mobile Sidebar */}
+            <div className="lg:hidden fixed top-0 bottom-0 left-0 z-40">
                 <SidebarComponent
                     isOpen={isSidebarExpanded}
                     isCollapsed={isCollapsed}
@@ -110,19 +131,14 @@ const Layout = () => {
             {/* Main Content Area */}
             <main 
                 className={twMerge(clsx(
-                    "flex-1 flex flex-col min-w-0 min-h-screen relative z-20 transition-all duration-300 ease-in-out",
+                    "flex-1 flex flex-col min-w-0 min-h-screen relative z-20 transition-all duration-300 ease-in-out pt-16",
                     isSidebarExpanded ? (isCollapsed ? "lg:pl-20" : "lg:pl-[280px]") : "pl-0"
                 ))} 
                 style={{ transform: 'translateZ(0)' }}
             >
-                {/* TopBar (Full Width relative to main) */}
-                <header className="shrink-0 z-20 sticky top-0">
-                    <TopBar onMenuToggle={toggleSidebar} />
-                </header>
-
                 {/* Content Container (Full Width) */}
                 <div className="flex-1 w-full flex flex-col pt-4">
-                    <section className="flex-1 relative perspective-1000 pb-10" aria-live="polite">
+                    <section className="flex-1 relative perspective-1000 pb-4" aria-live="polite">
                         <GlobalErrorBoundary>
                             <AnimatePresence mode="wait" initial={false}>
                                 <motion.div

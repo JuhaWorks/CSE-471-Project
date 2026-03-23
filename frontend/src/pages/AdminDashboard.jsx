@@ -9,6 +9,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer, Tooltip as ReTooltip } from 'recharts';
 import toast from 'react-hot-toast';
+import GlassSurface from '../components/ui/GlassSurface';
 
 /* ─────────────────────────────── helpers ─── */
 const fmtDTLocal = (date) => {
@@ -77,36 +78,41 @@ const StatCard = ({ label, value, sub, color, spark, icon, delay = 0 }) => {
         <motion.div
             initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5, delay, ease: [.22, 1, .36, 1] }}
             whileHover={{ y: -3, transition: { duration: .2 } }}
-            style={{ position: 'relative', border: '1px solid rgba(255,255,255,0.05)', borderRadius: 20, padding: '24px 28px', background: 'rgba(255,255,255,0.015)', overflow: 'hidden', cursor: 'default' }}
+            style={{ position: 'relative', borderRadius: 32, overflow: 'hidden', cursor: 'default' }}
         >
-            {/* sparkline bg */}
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 64, opacity: .35 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
-                        <defs>
-                            <linearGradient id={`sg-${label}`} x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor={color} stopOpacity={.4} />
-                                <stop offset="100%" stopColor={color} stopOpacity={0} />
-                            </linearGradient>
-                        </defs>
-                        <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.5} fill={`url(#sg-${label})`} dot={false} />
-                    </AreaChart>
-                </ResponsiveContainer>
+            <div className="absolute inset-0 z-0">
+                <GlassSurface width="100%" height="100%" borderRadius={32} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
             </div>
-            {/* corner glow */}
-            <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: 120, background: `radial-gradient(circle at top right, ${color}12, transparent 70%)`, pointerEvents: 'none' }} />
-            {/* icon */}
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: `${color}14`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, color }}>
-                {icon}
-            </div>
-            <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: '#4a5568', fontFamily: 'var(--mono)', marginBottom: 8 }}>{label}</div>
-            <div style={{ fontSize: 44, fontWeight: 800, lineHeight: 1, letterSpacing: '-2px', color }}>
-                <AnimatedNumber value={value || 0} />
-            </div>
-            <div style={{ marginTop: 10, fontSize: 10, fontFamily: 'var(--mono)', color: `${color}80`, display: 'flex', alignItems: 'center', gap: 5 }}>
-                <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 7l3-3 2 2 3-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
-                {sub}
-            </div>
+            <div style={{ padding: '24px 28px', width: '100%', height: '100%', position: 'relative', zIndex: 10 }}>
+                    {/* sparkline bg */}
+                    <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 64, opacity: .35 }}>
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={data} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
+                                <defs>
+                                    <linearGradient id={`sg-${label}`} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="0%" stopColor={color} stopOpacity={.4} />
+                                        <stop offset="100%" stopColor={color} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <Area type="monotone" dataKey="v" stroke={color} strokeWidth={1.5} fill={`url(#sg-${label})`} dot={false} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
+                    {/* corner glow */}
+                    <div style={{ position: 'absolute', top: 0, right: 0, width: 120, height: 120, background: `radial-gradient(circle at top right, ${color}12, transparent 70%)`, pointerEvents: 'none' }} />
+                    {/* icon */}
+                    <div style={{ width: 32, height: 32, borderRadius: 10, background: `${color}14`, border: `1px solid ${color}25`, display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 14, color }}>
+                        {icon}
+                    </div>
+                    <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '.18em', textTransform: 'uppercase', color: '#4a5568', fontFamily: 'var(--mono)', marginBottom: 8 }}>{label}</div>
+                    <div style={{ fontSize: 44, fontWeight: 800, lineHeight: 1, letterSpacing: '-2px', color }}>
+                        <AnimatedNumber value={value || 0} />
+                    </div>
+                    <div style={{ marginTop: 10, fontSize: 10, fontFamily: 'var(--mono)', color: `${color}80`, display: 'flex', alignItems: 'center', gap: 5 }}>
+                        <svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1 7l3-3 2 2 3-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                        {sub}
+                    </div>
+                </div>
         </motion.div>
     );
 };
@@ -583,208 +589,211 @@ const AdminDashboard = () => {
                     </div>
 
                     {/* ── TABLE PANEL ── */}
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .5, delay: .25 }}
-                        style={{ border: '1px solid rgba(255,255,255,0.05)', borderRadius: 22, overflow: 'hidden', background: 'rgba(255,255,255,0.01)' }}
-                    >
-                        {/* toolbar */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', flexWrap: 'wrap' }}>
-                            {/* search */}
-                            <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 320 }}>
-                                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#374151" strokeWidth="2" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
-                                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                                </svg>
-                                <input type="text" placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)}
-                                    style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '9px 14px 9px 36px', fontFamily: 'var(--mono)', fontSize: 12, color: '#e2e8f0', outline: 'none', transition: 'border-color .2s' }}
-                                    onFocus={e => e.target.style.borderColor = 'rgba(0,229,160,.25)'}
-                                    onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'}
-                                />
-                                {search && (
-                                    <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#374151', cursor: 'pointer', padding: 2, display: 'flex' }}>
-                                        <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-                                    </button>
-                                )}
-                            </div>
-
-                            {/* role filters */}
-                            <div style={{ display: 'flex', gap: 5 }}>
-                                {['All', 'Admin', 'Manager', 'Developer'].map(r => (
-                                    <button key={r} className={`filter-pill${roleFilter === r ? ' active' : ''}`} onClick={() => { setRoleFilter(r); setPage(1); }}>
-                                        {r}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* bulk actions (when rows selected) */}
-                            <AnimatePresence>
-                                {selectedRows.size > 0 && (
-                                    <motion.div initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
-                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', background: 'rgba(0,229,160,.06)', border: '1px solid rgba(0,229,160,.15)', borderRadius: 10 }}>
-                                        <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--green)', fontWeight: 600 }}>{selectedRows.size} selected</span>
-                                        <button onClick={() => setSelectedRows(new Set())}
-                                            style={{ fontSize: 9, fontFamily: 'var(--mono)', color: '#374151', background: 'none', border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.1em' }}>clear</button>
-                                    </motion.div>
-                                )}
-                            </AnimatePresence>
-
-                            <div style={{ marginLeft: 'auto', fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>
-                                {meta.total} total
-                            </div>
+                    <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden' }}>
+                        <div className="absolute inset-0 z-0">
+                            <GlassSurface width="100%" height="100%" borderRadius={22} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                         </div>
-
-                        {/* table */}
-                        <div style={{ overflowX: 'auto' }}>
-                            <table className="adm-table">
-                                <thead>
-                                    <tr>
-                                        <th style={{ width: 40, paddingLeft: 24 }}>
-                                            <input type="checkbox" className="adm-checkbox" checked={allSelected} onChange={toggleAll} />
-                                        </th>
-                                        <th>User</th>
-                                        <th>Role</th>
-                                        <th>Status</th>
-                                        <th>Joined</th>
-                                        <th style={{ textAlign: 'right' }}>Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {isLoading ? (
-                                        Array.from({ length: 8 }).map((_, i) => (
-                                            <motion.tr key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * .05 }}>
-                                                <td style={{ padding: '14px 24px' }}><div style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(255,255,255,0.04)' }} /></td>
-                                                <td style={{ padding: '14px 24px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                        <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.04)', flexShrink: 0, backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-                                                        <div>
-                                                            <div style={{ width: 110, height: 11, borderRadius: 5, background: 'rgba(255,255,255,0.04)', marginBottom: 6, backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-                                                            <div style={{ width: 75, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.03)', backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                {[55, 65, 90, 32].map((w, j) => (
-                                                    <td key={j} style={{ padding: '14px 24px' }}>
-                                                        <div style={{ width: w, height: 20, borderRadius: 5, background: 'rgba(255,255,255,0.03)', backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
-                                                    </td>
-                                                ))}
-                                            </motion.tr>
-                                        ))
-                                    ) : filteredUsers.length === 0 ? (
-                                        <tr>
-                                            <td colSpan={6} style={{ padding: '70px 24px', textAlign: 'center' }}>
-                                                <motion.div initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }}>
-                                                    <div style={{ fontSize: 32, marginBottom: 12 }}>⚠</div>
-                                                    <div style={{ fontSize: 13, color: '#2d3748', fontFamily: 'var(--mono)' }}>No users found for "{search}"</div>
-                                                </motion.div>
-                                            </td>
-                                        </tr>
-                                    ) : (
-                                        filteredUsers.map((u, i) => (
-                                            <motion.tr key={u._id}
-                                                initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
-                                                transition={{ duration: .3, delay: i * 0.04, ease: [.22, 1, .36, 1] }}
-                                                style={{ borderBottom: '1px solid rgba(255,255,255,0.025)' }}
-                                            >
-                                                <td style={{ padding: '14px 24px' }}>
-                                                    <input type="checkbox" className="adm-checkbox"
-                                                        checked={selectedRows.has(u._id)}
-                                                        onChange={() => setSelectedRows(prev => { const s = new Set(prev); s.has(u._id) ? s.delete(u._id) : s.add(u._id); return s; })}
-                                                    />
-                                                </td>
-                                                <td style={{ padding: '14px 24px' }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                        <div style={{ position: 'relative', flexShrink: 0 }}>
-                                                            <img src={u.avatar} alt={u.name} style={{ width: 38, height: 38, borderRadius: 11, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.07)' }} />
-                                                            <div style={{ position: 'absolute', bottom: -1, right: -1, width: 9, height: 9, borderRadius: '50%', border: '2px solid #080812', background: u.isActive && !u.isBanned ? 'var(--green)' : '#374151' }} />
-                                                        </div>
-                                                        <div>
-                                                            <div className="user-name-text" style={{ fontSize: 13, fontWeight: 700, color: '#d1d5db', transition: 'color .15s' }}>{u.name}</div>
-                                                            <div style={{ fontSize: 11, color: '#374151', fontFamily: 'var(--mono)', marginTop: 1 }}>{u.email}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td style={{ padding: '14px 24px' }}><RoleBadge role={u.role} /></td>
-                                                <td style={{ padding: '14px 24px' }}><StatusBadge user={u} /></td>
-                                                <td style={{ padding: '14px 24px', fontSize: 11, color: '#374151', fontFamily: 'var(--mono)' }}>
-                                                    {new Date(u.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
-                                                </td>
-                                                <td style={{ padding: '14px 24px' }}>
-                                                    <DropdownMenu.Root>
-                                                        <DropdownMenu.Trigger asChild>
-                                                            <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: .92 }}
-                                                                style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(255,255,255,0.07)', background: 'transparent', color: '#374151', cursor: 'pointer', marginLeft: 'auto' }}>
-                                                                <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01" />
-                                                                </svg>
-                                                            </motion.button>
-                                                        </DropdownMenu.Trigger>
-                                                        <DropdownMenu.Portal>
-                                                            <DropdownMenu.Content
-                                                                style={{ width: 196, background: '#0b0b17', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 6, boxShadow: '0 24px 60px rgba(0,0,0,.85)', zIndex: 999 }}
-                                                                sideOffset={6} align="end"
-                                                            >
-                                                                <div style={{ padding: '5px 10px 3px', fontSize: 9, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: '#2d3748', fontFamily: 'var(--mono)' }}>Assign Role</div>
-                                                                {['Admin', 'Manager', 'Developer'].map(r => (
-                                                                    <DropdownMenu.Item key={r} disabled={u.role === r} onSelect={() => updateRoleMutation.mutate({ id: u._id, newRole: r })}
-                                                                        style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: u.role === r ? '#2d3748' : '#94a3b8', cursor: u.role === r ? 'not-allowed' : 'pointer', outline: 'none' }}
-                                                                        onMouseEnter={e => { if (u.role !== r) { e.currentTarget.style.background = 'rgba(0,229,160,0.07)'; e.currentTarget.style.color = 'var(--green)'; } }}
-                                                                        onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = u.role === r ? '#2d3748' : '#94a3b8'; }}
-                                                                    >
-                                                                        <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', opacity: .4, flexShrink: 0 }} />
-                                                                        Set as {r}
-                                                                    </DropdownMenu.Item>
-                                                                ))}
-                                                                <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '4px 0' }} />
-                                                                <DropdownMenu.Item disabled={u._id === user._id}
-                                                                    onSelect={() => { if (window.confirm(`${u.isBanned ? 'Unban' : 'Ban'} ${u.name}?`)) toggleBanMutation.mutate(u._id); }}
-                                                                    style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: u._id === user._id ? '#2d3748' : 'var(--red)', cursor: u._id === user._id ? 'not-allowed' : 'pointer', outline: 'none' }}
-                                                                    onMouseEnter={e => { if (u._id !== user._id) e.currentTarget.style.background = 'rgba(255,77,109,0.07)'; }}
-                                                                    onMouseLeave={e => { e.currentTarget.style.background = ''; }}
-                                                                >
-                                                                    {u.isBanned ? '↑ Unban User' : '⊘ Ban User'}
-                                                                </DropdownMenu.Item>
-                                                            </DropdownMenu.Content>
-                                                        </DropdownMenu.Portal>
-                                                    </DropdownMenu.Root>
-                                                </td>
-                                            </motion.tr>
-                                        ))
-                                    )}
-                                </tbody>
-                            </table>
-                        </div>
-
-                        {/* pagination */}
-                        <AnimatePresence>
-                            {!isLoading && meta.pages > 1 && (
-                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                                    style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
-                                    <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>
-                                        {(page - 1) * 10 + 1}–{Math.min(page * 10, meta.total)} <span style={{ color: '#1e293b' }}>of</span> <span style={{ color: 'var(--green)' }}>{meta.total}</span>
-                                    </span>
-                                    <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                                        {/* page nums */}
-                                        {Array.from({ length: Math.min(meta.pages, 5) }, (_, i) => {
-                                            const p = i + 1;
-                                            return (
-                                                <motion.button key={p} whileHover={{ scale: 1.05 }} whileTap={{ scale: .95 }}
-                                                    onClick={() => setPage(p)}
-                                                    style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${page === p ? 'rgba(0,229,160,.3)' : 'rgba(255,255,255,0.06)'}`, background: page === p ? 'rgba(0,229,160,.08)' : 'transparent', color: page === p ? 'var(--green)' : '#374151', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600, transition: 'all .15s' }}>
-                                                    {p}
-                                                </motion.button>
-                                            );
-                                        })}
-                                        {meta.pages > 5 && <span style={{ color: '#2d3748', fontSize: 11, fontFamily: 'var(--mono)', padding: '0 4px' }}>…</span>}
-                                        {meta.pages > 5 && (
-                                            <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: .95 }}
-                                                onClick={() => setPage(meta.pages)}
-                                                style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${page === meta.pages ? 'rgba(0,229,160,.3)' : 'rgba(255,255,255,0.06)'}`, background: page === meta.pages ? 'rgba(0,229,160,.08)' : 'transparent', color: page === meta.pages ? 'var(--green)' : '#374151', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600 }}>
-                                                {meta.pages}
-                                            </motion.button>
+                        <div style={{ position: 'relative', zIndex: 10, width: '100%' }}>
+                                {/* toolbar */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 20px', borderBottom: '1px solid rgba(255,255,255,0.04)', flexWrap: 'wrap' }}>
+                                    {/* search */}
+                                    <div style={{ position: 'relative', flex: 1, minWidth: 200, maxWidth: 320 }}>
+                                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="#374151" strokeWidth="2" style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                        </svg>
+                                        <input type="text" placeholder="Search users…" value={search} onChange={e => setSearch(e.target.value)}
+                                            style={{ width: '100%', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: 10, padding: '9px 14px 9px 36px', fontFamily: 'var(--mono)', fontSize: 12, color: '#e2e8f0', outline: 'none', transition: 'border-color .2s' }}
+                                            onFocus={e => e.target.style.borderColor = 'rgba(0,229,160,.25)'}
+                                            onBlur={e => e.target.style.borderColor = 'rgba(255,255,255,0.06)'}
+                                        />
+                                        {search && (
+                                            <button onClick={() => setSearch('')} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', color: '#374151', cursor: 'pointer', padding: 2, display: 'flex' }}>
+                                                <svg width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                                            </button>
                                         )}
                                     </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
-                    </motion.div>
+
+                                    {/* role filters */}
+                                    <div style={{ display: 'flex', gap: 5 }}>
+                                        {['All', 'Admin', 'Manager', 'Developer'].map(r => (
+                                            <button key={r} className={`filter-pill${roleFilter === r ? ' active' : ''}`} onClick={() => { setRoleFilter(r); setPage(1); }}>
+                                                {r}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {/* bulk actions (when rows selected) */}
+                                    <AnimatePresence>
+                                        {selectedRows.size > 0 && (
+                                            <motion.div initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }}
+                                                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '5px 12px', background: 'rgba(0,229,160,.06)', border: '1px solid rgba(0,229,160,.15)', borderRadius: 10 }}>
+                                                <span style={{ fontSize: 11, fontFamily: 'var(--mono)', color: 'var(--green)', fontWeight: 600 }}>{selectedRows.size} selected</span>
+                                                <button onClick={() => setSelectedRows(new Set())}
+                                                    style={{ fontSize: 9, fontFamily: 'var(--mono)', color: '#374151', background: 'none', border: 'none', cursor: 'pointer', textTransform: 'uppercase', letterSpacing: '.1em' }}>clear</button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+
+                                    <div style={{ marginLeft: 'auto', fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>
+                                        {meta.total} total
+                                    </div>
+                                </div>
+
+                                {/* table */}
+                                <div style={{ overflowX: 'auto' }}>
+                                    <table className="adm-table">
+                                        <thead>
+                                            <tr>
+                                                <th style={{ width: 40, paddingLeft: 24 }}>
+                                                    <input type="checkbox" className="adm-checkbox" checked={allSelected} onChange={toggleAll} />
+                                                </th>
+                                                <th>User</th>
+                                                <th>Role</th>
+                                                <th>Status</th>
+                                                <th>Joined</th>
+                                                <th style={{ textAlign: 'right' }}>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {isLoading ? (
+                                                Array.from({ length: 8 }).map((_, i) => (
+                                                    <motion.tr key={i} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * .05 }}>
+                                                        <td style={{ padding: '14px 24px' }}><div style={{ width: 14, height: 14, borderRadius: 4, background: 'rgba(255,255,255,0.04)' }} /></td>
+                                                        <td style={{ padding: '14px 24px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                <div style={{ width: 38, height: 38, borderRadius: 11, background: 'rgba(255,255,255,0.04)', flexShrink: 0, backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                                                <div>
+                                                                    <div style={{ width: 110, height: 11, borderRadius: 5, background: 'rgba(255,255,255,0.04)', marginBottom: 6, backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                                                    <div style={{ width: 75, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.03)', backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        {[55, 65, 90, 32].map((w, j) => (
+                                                            <td key={j} style={{ padding: '14px 24px' }}>
+                                                                <div style={{ width: w, height: 20, borderRadius: 5, background: 'rgba(255,255,255,0.03)', backgroundImage: 'linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.07) 50%,rgba(255,255,255,.02) 75%)', backgroundSize: '200% 100%', animation: 'shimmer 1.5s infinite' }} />
+                                                            </td>
+                                                        ))}
+                                                    </motion.tr>
+                                                ))
+                                            ) : filteredUsers.length === 0 ? (
+                                                <tr>
+                                                    <td colSpan={6} style={{ padding: '70px 24px', textAlign: 'center' }}>
+                                                        <motion.div initial={{ opacity: 0, scale: .9 }} animate={{ opacity: 1, scale: 1 }}>
+                                                            <div style={{ fontSize: 32, marginBottom: 12 }}>⚠</div>
+                                                            <div style={{ fontSize: 13, color: '#2d3748', fontFamily: 'var(--mono)' }}>No users found for "{search}"</div>
+                                                        </motion.div>
+                                                    </td>
+                                                </tr>
+                                            ) : (
+                                                filteredUsers.map((u, i) => (
+                                                    <motion.tr key={u._id}
+                                                        initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }}
+                                                        transition={{ duration: .3, delay: i * 0.04, ease: [.22, 1, .36, 1] }}
+                                                        style={{ borderBottom: '1px solid rgba(255,255,255,0.025)' }}
+                                                    >
+                                                        <td style={{ padding: '14px 24px' }}>
+                                                            <input type="checkbox" className="adm-checkbox"
+                                                                checked={selectedRows.has(u._id)}
+                                                                onChange={() => setSelectedRows(prev => { const s = new Set(prev); s.has(u._id) ? s.delete(u._id) : s.add(u._id); return s; })}
+                                                            />
+                                                        </td>
+                                                        <td style={{ padding: '14px 24px' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                <div style={{ position: 'relative', flexShrink: 0 }}>
+                                                                    <img src={u.avatar} alt={u.name} style={{ width: 38, height: 38, borderRadius: 11, objectFit: 'cover', border: '1px solid rgba(255,255,255,0.07)' }} />
+                                                                    <div style={{ position: 'absolute', bottom: -1, right: -1, width: 9, height: 9, borderRadius: '50%', border: '2px solid #080812', background: u.isActive && !u.isBanned ? 'var(--green)' : '#374151' }} />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="user-name-text" style={{ fontSize: 13, fontWeight: 700, color: '#d1d5db', transition: 'color .15s' }}>{u.name}</div>
+                                                                    <div style={{ fontSize: 11, color: '#374151', fontFamily: 'var(--mono)', marginTop: 1 }}>{u.email}</div>
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                        <td style={{ padding: '14px 24px' }}><RoleBadge role={u.role} /></td>
+                                                        <td style={{ padding: '14px 24px' }}><StatusBadge user={u} /></td>
+                                                        <td style={{ padding: '14px 24px', fontSize: 11, color: '#374151', fontFamily: 'var(--mono)' }}>
+                                                            {new Date(u.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })}
+                                                        </td>
+                                                        <td style={{ padding: '14px 24px' }}>
+                                                            <DropdownMenu.Root>
+                                                                <DropdownMenu.Trigger asChild>
+                                                                    <motion.button whileHover={{ scale: 1.08 }} whileTap={{ scale: .92 }}
+                                                                        style={{ width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 8, border: '1px solid rgba(255,255,255,0.07)', background: 'transparent', color: '#374151', cursor: 'pointer', marginLeft: 'auto' }}>
+                                                                        <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v.01M12 12v.01M12 19v.01" />
+                                                                        </svg>
+                                                                    </motion.button>
+                                                                </DropdownMenu.Trigger>
+                                                                <DropdownMenu.Portal>
+                                                                    <DropdownMenu.Content
+                                                                        style={{ width: 196, background: '#0b0b17', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 14, padding: 6, boxShadow: '0 24px 60px rgba(0,0,0,.85)', zIndex: 999 }}
+                                                                        sideOffset={6} align="end"
+                                                                    >
+                                                                        <div style={{ padding: '5px 10px 3px', fontSize: 9, fontWeight: 700, letterSpacing: '.15em', textTransform: 'uppercase', color: '#2d3748', fontFamily: 'var(--mono)' }}>Assign Role</div>
+                                                                        {['Admin', 'Manager', 'Developer'].map(r => (
+                                                                            <DropdownMenu.Item key={r} disabled={u.role === r} onSelect={() => updateRoleMutation.mutate({ id: u._id, newRole: r })}
+                                                                                style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: u.role === r ? '#2d3748' : '#94a3b8', cursor: u.role === r ? 'not-allowed' : 'pointer', outline: 'none' }}
+                                                                                onMouseEnter={e => { if (u.role !== r) { e.currentTarget.style.background = 'rgba(0,229,160,0.07)'; e.currentTarget.style.color = 'var(--green)'; } }}
+                                                                                onMouseLeave={e => { e.currentTarget.style.background = ''; e.currentTarget.style.color = u.role === r ? '#2d3748' : '#94a3b8'; }}
+                                                                            >
+                                                                                <span style={{ width: 5, height: 5, borderRadius: '50%', background: 'currentColor', opacity: .4, flexShrink: 0 }} />
+                                                                                Set as {r}
+                                                                            </DropdownMenu.Item>
+                                                                        ))}
+                                                                        <div style={{ height: 1, background: 'rgba(255,255,255,0.05)', margin: '4px 0' }} />
+                                                                        <DropdownMenu.Item disabled={u._id === user._id}
+                                                                            onSelect={() => { if (window.confirm(`${u.isBanned ? 'Unban' : 'Ban'} ${u.name}?`)) toggleBanMutation.mutate(u._id); }}
+                                                                            style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 9, fontSize: 12, fontWeight: 600, color: u._id === user._id ? '#2d3748' : 'var(--red)', cursor: u._id === user._id ? 'not-allowed' : 'pointer', outline: 'none' }}
+                                                                            onMouseEnter={e => { if (u._id !== user._id) e.currentTarget.style.background = 'rgba(255,77,109,0.07)'; }}
+                                                                            onMouseLeave={e => { e.currentTarget.style.background = ''; }}
+                                                                        >
+                                                                            {u.isBanned ? '↑ Unban User' : '⊘ Ban User'}
+                                                                        </DropdownMenu.Item>
+                                                                    </DropdownMenu.Content>
+                                                                </DropdownMenu.Portal>
+                                                            </DropdownMenu.Root>
+                                                        </td>
+                                                    </motion.tr>
+                                                ))
+                                            )}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* pagination */}
+                                <AnimatePresence>
+                                    {!isLoading && meta.pages > 1 && (
+                                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 20px', borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: '#2d3748' }}>
+                                                {(page - 1) * 10 + 1}–{Math.min(page * 10, meta.total)} <span style={{ color: '#1e293b' }}>of</span> <span style={{ color: 'var(--green)' }}>{meta.total}</span>
+                                            </span>
+                                            <div style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
+                                                {/* page nums */}
+                                                {Array.from({ length: Math.min(meta.pages, 5) }, (_, i) => {
+                                                    const p = i + 1;
+                                                    return (
+                                                        <motion.button key={p} whileHover={{ scale: 1.05 }} whileTap={{ scale: .95 }}
+                                                            onClick={() => setPage(p)}
+                                                            style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${page === p ? 'rgba(0,229,160,.3)' : 'rgba(255,255,255,0.06)'}`, background: page === p ? 'rgba(0,229,160,.08)' : 'transparent', color: page === p ? 'var(--green)' : '#374151', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600, transition: 'all .15s' }}>
+                                                            {p}
+                                                        </motion.button>
+                                                    );
+                                                })}
+                                                {meta.pages > 5 && <span style={{ color: '#2d3748', fontSize: 11, fontFamily: 'var(--mono)', padding: '0 4px' }}>…</span>}
+                                                {meta.pages > 5 && (
+                                                    <motion.button whileHover={{ scale: 1.05 }} whileTap={{ scale: .95 }}
+                                                        onClick={() => setPage(meta.pages)}
+                                                        style={{ width: 30, height: 30, borderRadius: 8, border: `1px solid ${page === meta.pages ? 'rgba(0,229,160,.3)' : 'rgba(255,255,255,0.06)'}`, background: page === meta.pages ? 'rgba(0,229,160,.08)' : 'transparent', color: page === meta.pages ? 'var(--green)' : '#374151', cursor: 'pointer', fontSize: 11, fontFamily: 'var(--mono)', fontWeight: 600 }}>
+                                                        {meta.pages}
+                                                    </motion.button>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    )}
+                                </AnimatePresence>
+                            </div>
+                        </div>
 
                     {/* bottom status bar */}
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .6 }}

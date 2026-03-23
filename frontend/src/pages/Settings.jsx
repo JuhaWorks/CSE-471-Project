@@ -13,6 +13,7 @@ import GeneralTab from '../components/settings/GeneralTab';
 import SecurityTab from '../components/settings/SecurityTab';
 import NotificationsTab from '../components/settings/NotificationsTab';
 import DangerZoneTab from '../components/settings/DangerZoneTab';
+import GlassSurface from '../components/ui/GlassSurface';
 
 const TABS = [
     { id: 'general', label: 'General', icon: User, color: '#10b981' },
@@ -27,12 +28,17 @@ const TabButton = ({ tab, active, onClick }) => {
     return (
         <button
             onClick={() => onClick(tab.id)}
-            className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group ${
+            className={`w-full relative flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 group overflow-hidden ${
                 active 
-                ? 'bg-elevated dark:bg-elevated shadow-sm border border-zinc-200 dark:border-strong' 
-                : 'hover:bg-zinc-100 dark:hover:bg-surface border border-transparent'
+                ? 'shadow-sm border border-zinc-200 dark:border-strong' 
+                : 'hover:border-default border border-transparent'
             }`}
         >
+            <div className={`absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${active ? 'opacity-100' : ''}`}>
+                <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-40} backgroundOpacity={active ? 0.12 : 0.04} opacity={0.9} />
+            </div>
+
+            <div className="relative z-10 flex items-center gap-3 w-full">
             <div className={`p-1.5 rounded-lg transition-colors ${
                 active ? 'bg-zinc-900 dark:bg-elevated text-primary dark:text-zinc-900' : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 group-hover:text-zinc-900 dark:group-hover:text-primary'
             }`}>
@@ -49,6 +55,7 @@ const TabButton = ({ tab, active, onClick }) => {
                     className="ml-auto w-1 h-1 rounded-full bg-zinc-900 dark:bg-elevated"
                 />
             )}
+            </div>
         </button>
     );
 };
@@ -60,8 +67,12 @@ export default function Settings() {
     return (
         <div className="flex flex-col gap-8 pb-20">
             {/* Header / Breadcrumb area */}
-            <div className="border-b border-default bg-surface/50 backdrop-blur-xl -mx-6 lg:-mx-12 px-6 lg:px-12">
-                <div className="max-w-screen-2xl mx-auto py-8 flex items-center justify-between">
+            <div className="border-b border-default -mx-6 lg:-mx-12 px-6 lg:px-12 relative overflow-hidden">
+                <div className="absolute inset-0 z-0">
+                    <GlassSurface width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
+                </div>
+                
+                <div className="max-w-screen-2xl mx-auto py-8 flex items-center justify-between relative z-10">
                     <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-2xl bg-theme flex items-center justify-center shadow-lg shadow-theme/10">
                             <SettingsIcon className="w-5 h-5 text-primary" />
@@ -92,8 +103,12 @@ export default function Settings() {
                         </div>
 
                         {/* Additional Info */}
-                        <div className="px-4 py-6 rounded-3xl bg-zinc-100 dark:bg-surface border border-zinc-200 dark:border-default">
-                            <div className="flex items-center gap-2 mb-3">
+                        <div className="px-4 py-6 rounded-3xl border border-zinc-200 dark:border-default relative overflow-hidden lg:mb-0 mb-8">
+                            <div className="absolute inset-0 z-0">
+                                <GlassSurface width="100%" height="100%" borderRadius={24} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
+                            </div>
+                            
+                            <div className="flex items-center gap-2 mb-3 relative z-10">
                                 <Globe className="w-3.5 h-3.5 text-zinc-400" />
                                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Platform Status</span>
                             </div>

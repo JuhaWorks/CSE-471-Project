@@ -9,6 +9,7 @@ import Button from '../ui/Button';
 import Card from '../ui/Card';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import GlassSurface from '../ui/GlassSurface';
 
 
 /**
@@ -208,8 +209,11 @@ export default function AccountStatusTab() {
 
             <div className="grid grid-cols-1 gap-8">
                 {/* Deactivate Option */}
-                <Card padding="p-8" className="border-amber-500/5 bg-amber-500/[0.02] hover:border-amber-500/20 transition-all group">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <Card padding="p-8" className="relative overflow-hidden border-amber-500/5 transition-all group">
+                    <div className="absolute inset-0 z-0">
+                        <GlassSurface width="100%" height="100%" borderRadius={24} displace={0.5} distortionScale={-60} backgroundOpacity={0.08} opacity={0.95} />
+                    </div>
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                         <div className="flex items-center gap-6">
                             <div className="w-16 h-16 rounded-[1.5rem] bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:scale-110 transition-transform">
                                 <LogOut className="w-8 h-8 text-amber-500" />
@@ -231,8 +235,11 @@ export default function AccountStatusTab() {
                 </Card>
 
                 {/* Delete Option */}
-                <Card padding="p-8" className="border-rose-500/5 bg-rose-500/[0.02] hover:border-rose-500/20 transition-all group">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-8">
+                <Card padding="p-8" className="relative overflow-hidden border-rose-500/5 transition-all group">
+                    <div className="absolute inset-0 z-0">
+                        <GlassSurface width="100%" height="100%" borderRadius={24} displace={0.5} distortionScale={-60} backgroundOpacity={0.08} opacity={0.95} />
+                    </div>
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                         <div className="flex items-center gap-6">
                             <div className="w-16 h-16 rounded-[1.5rem] bg-rose-500/10 flex items-center justify-center border border-rose-500/10 group-hover:scale-110 transition-transform">
                                 <Trash2 className="w-8 h-8 text-rose-500" />
@@ -255,13 +262,18 @@ export default function AccountStatusTab() {
             </div>
 
             {/* Protocol Warning */}
-            <div className="p-8 rounded-[2.5rem] bg-surface border border-default flex items-start gap-6 opacity-30">
-                <ShieldAlert className="w-6 h-6 text-gray-600 shrink-0 mt-1" />
-                <div className="space-y-2">
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Important Note</span>
-                    <p className="text-[10px] text-gray-700 font-medium leading-relaxed uppercase tracking-widest">
-                        Account actions primarily affect your personal profile. Some data in collaborative projects may remain visible to teammates.
-                    </p>
+            <div className="relative p-8 overflow-hidden rounded-[2.5rem] border border-default flex items-start gap-6 group opacity-50">
+                <div className="absolute inset-0 z-0">
+                    <GlassSurface width="100%" height="100%" borderRadius={40} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
+                </div>
+                <div className="relative z-10 flex items-start gap-6 w-full">
+                    <ShieldAlert className="w-6 h-6 text-gray-600 shrink-0 mt-1" />
+                    <div className="space-y-2">
+                        <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Important Note</span>
+                        <p className="text-[10px] text-gray-700 font-medium leading-relaxed uppercase tracking-widest">
+                            Account actions primarily affect your personal profile. Some data in collaborative projects may remain visible to teammates.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>

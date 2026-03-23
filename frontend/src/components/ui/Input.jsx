@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -40,20 +40,27 @@ const Input = forwardRef(({
                     ref={ref}
                     className={twMerge(clsx(
                         'w-full h-11 px-4 text-sm bg-surface border border-default rounded-2xl outline-none text-primary',
-                        'backdrop-blur-xl transition-all duration-300',
+                        'backdrop-blur-xl transition-all duration-300 antialiased',
                         'placeholder:text-tertiary',
                         'focus:border-cyan-500/50 focus:ring-4 focus:ring-cyan-500/5',
                         'hover:bg-white/[0.08] dark:hover:bg-white/[0.03] hover:border-accent-border',
                         LeftIcon && 'pl-11',
                         RightIcon && 'pr-11',
                         error && 'border-red-500/30 focus:border-red-500/50 focus:ring-red-500/5',
-                        overlay && 'text-transparent [-webkit-text-fill-color:transparent] selection:text-transparent caret-cyan-500 font-mono',
+                        overlay && 'text-transparent [-webkit-text-fill-color:transparent] selection:text-transparent caret-cyan-500 font-mono tracking-normal',
                         className
                     ))}
                     {...props}
                 />
                 {overlay && (
-                    <div className="absolute left-0 top-0 w-full h-full flex items-center pointer-events-none px-4 text-primary" style={{ paddingLeft: LeftIcon ? '2.75rem' : '1rem' }}>
+                    <div 
+                        className="absolute inset-px flex items-center pointer-events-none text-primary font-mono tracking-normal antialiased" 
+                        style={{ 
+                            paddingLeft: LeftIcon ? 'calc(2.75rem - 1px)' : 'calc(1rem - 1px)',
+                            paddingRight: RightIcon ? 'calc(2.75rem - 1px)' : 'calc(1rem - 1px)',
+                            fontFeatureSettings: '"tnum"',
+                        }}
+                    >
                         <div className="text-sm truncate w-full">
                             {overlay}
                         </div>
@@ -85,4 +92,4 @@ const Input = forwardRef(({
 });
 
 Input.displayName = 'Input';
-export default Input;
+export default memo(Input);

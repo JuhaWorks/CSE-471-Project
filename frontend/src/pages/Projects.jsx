@@ -26,6 +26,7 @@ import { toast } from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
+import GlassSurface from '../components/ui/GlassSurface';
 import { Skeleton } from '../components/ui/Loading';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -84,7 +85,11 @@ const Projects = () => {
         <div className="w-full space-y-12 pb-20">
             <DeadlinePopup projects={activeProjects} user={user} />
             {/* Header Area */}
-            <header className="relative pt-4 pb-8">
+            <header className="relative -mx-6 lg:-mx-12 px-6 lg:px-12 pt-4 pb-12 overflow-hidden border-b border-default mb-10">
+                <div className="absolute inset-0 z-0">
+                    <GlassSurface width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
+                </div>
+                
                 <div className="absolute -top-10 left-0 w-64 h-64 bg-theme/5 rounded-full blur-[100px] pointer-events-none" />
                 
                 <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-10">

@@ -139,8 +139,15 @@ export const AuthLayout = ({ children, reverse = false }) => {
         <div className="min-h-screen bg-base text-primary selection:bg-accent-glow overflow-hidden font-sans relative">
             {/* Technical Interactive Grid Background */}
             <div className="fixed inset-0 z-0">
+                <div className="absolute inset-0 z-0 opacity-[0.15] mix-blend-lighten">
+                    <img 
+                      src="/bg-premium.png" 
+                      alt="" 
+                      className="w-full h-full object-cover"
+                    />
+                </div>
                 <InteractiveGridBackground 
-                    className="w-full h-full"
+                    className="w-full h-full opacity-[0.3]"
                     gridSize={70}
                 />
             </div>

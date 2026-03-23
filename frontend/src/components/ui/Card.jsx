@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '../../utils/cn';
+import GlassSurface from './GlassSurface';
 
 /**
- * Standard Vanguard Card v2.1
- * Premium Glassmorphism without Liquid Distortions
+ * Standard Vanguard Card v4
+ * Premium Liquid Glass with valid SVGs and explicit CSS backdrop
  */
 const Card = ({
     children,
@@ -13,39 +14,79 @@ const Card = ({
     padding = 'p-6',
     variant = 'glass', // 'glass' | 'solid' | 'outline'
     interactive = true,
+    hideBorder = false,
     ...props
 }) => {
     const variants = {
-        glass: 'bg-white/5 border-white/10 backdrop-blur-xl shadow-2xl',
+        glass: 'glass-card border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.36)]',
         solid: 'bg-[var(--bg-surface)] border-default shadow-card',
         outline: 'bg-transparent border-default'
     };
 
+    if (variant === 'glass') {
+        const { 
+            initial, animate, whileInView, whileHover, viewport, transition, 
+            performance = 'high',
+            ...rest 
+        } = props;
+        return (
+            <motion.div
+                initial={initial || { opacity: 0, y: 20 }}
+                whileInView={whileInView || { opacity: 1, y: 0 }}
+                viewport={viewport || { once: true }}
+                animate={animate}
+                transition={transition}
+                whileHover={hoverable ? (whileHover || { y: -5, transition: { type: 'spring', stiffness: 400, damping: 25 } }) : {}}
+                className={cn('relative w-full h-full rounded-[2rem] overflow-hidden', className)}
+                {...rest}
+            >
+                <div className="absolute inset-0 z-0">
+                    <GlassSurface
+                        width="100%"
+                        height="100%"
+                        borderRadius={32}
+                        displace={0.5}
+                        distortionScale={-60}
+                        redOffset={0}
+                        greenOffset={10}
+                        blueOffset={20}
+                        brightness={50}
+                        opacity={0.93}
+                        backgroundOpacity={0.06}
+                        performance={performance}
+                        hideBorder={hideBorder}
+                        className="transition-all duration-500"
+                    />
+                </div>
+                
+                <div className={cn("relative z-10 flex flex-col h-full w-full", padding)}>
+                    {children}
+                </div>
+            </motion.div>
+        );
+    }
+
+    const { 
+        initial, animate, whileInView, whileHover, viewport, transition, 
+        performance,
+        ...rest 
+    } = props;
     return (
         <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            whileHover={hoverable ? {
-                y: -5,
-                transition: { type: 'spring', stiffness: 400, damping: 25 }
-            } : {}}
-            className={cn(
-                'relative flex flex-col overflow-hidden rounded-[2rem] transition-all duration-500',
-                variants[variant],
-                padding,
-                className
-            )}
-            {...props}
+            initial={initial || { opacity: 0, y: 20 }}
+            whileInView={whileInView || { opacity: 1, y: 0 }}
+            viewport={viewport || { once: true }}
+            animate={animate}
+            transition={transition}
+            whileHover={hoverable ? (whileHover || { y: -5, transition: { type: 'spring', stiffness: 400, damping: 25 } }) : {}}
+            className={cn('relative flex flex-col overflow-hidden rounded-[2rem] transition-all duration-500', variants[variant], className)}
+            {...rest}
         >
-            {/* Inner Glow/Highlight */}
-            <span className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none" aria-hidden />
-            
-            <div className="relative z-10 flex flex-col h-full">
+            <div className={cn("relative z-10 flex flex-col h-full w-full", padding)}>
                 {children}
             </div>
         </motion.div>
     );
 };
 
-export default Card;
+export default memo(Card);

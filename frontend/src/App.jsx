@@ -7,7 +7,6 @@ import MaintenanceNotice from './components/layout/MaintenanceNotice';
 import CommandPalette from './components/ui/CommandPalette';
 import ErrorBoundary from './components/common/ErrorBoundary';
 import Login from './pages/Login';
-import Home from './pages/Home';
 import RequireVerification from './components/auth/RequireVerification';
 
 // Code-split only secondary pages — entry pages must load instantly
@@ -24,6 +23,7 @@ const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
 const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
+const Home = lazy(() => import('./pages/Home'));
 
 import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
 

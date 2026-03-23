@@ -20,6 +20,7 @@ import { useAuthStore, api } from '../../store/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme, MODES } from '../../store/useTheme';
 import { cn } from '../../utils/cn';
+import GlassSurface from '../ui/GlassSurface';
 
 const navItems = [
     { label: 'Dashboard', path: '/', icon: LayoutDashboard },
@@ -40,8 +41,8 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
             className={({ isActive: linkActive }) => cn(
                 "group relative flex items-center rounded-2xl transition-all duration-200",
                 isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                "hover:bg-white/5 active:scale-[0.98]",
-                linkActive ? "text-theme" : "text-tertiary hover:text-primary"
+                "hover:bg-theme/5 active:scale-[0.98]",
+                linkActive ? "text-theme" : "text-secondary hover:text-primary"
             )}
         >
             {isActive && (
@@ -112,7 +113,7 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
         navigate('/login');
     };
 
-    const visibleNavItems = isAdminSection 
+    const visibleNavItems = (user?.role === 'Admin' || isAdminSection)
         ? navItems.filter(item => item.path === '/')
         : navItems;
 
@@ -143,13 +144,26 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     mass: 0.8
                 }}
                 className={cn(
-                    "fixed inset-y-0 left-0 z-50 border-r border-default shadow-2xl backdrop-blur-3xl",
-                    "flex flex-col rounded-none overflow-hidden"
+                    "fixed inset-y-0 left-0 z-40 border-r border-default shadow-2xl",
+                    "flex flex-col rounded-none rounded-br-[2rem] overflow-hidden"
                 )}
-                style={{ backgroundColor: 'var(--bg-glass)', borderRightColor: 'var(--border-glass)' }}
+                style={{ borderRightColor: 'var(--border-glass)' }}
             >
+                {/* GLASS BACKGROUND */}
+                <div className="absolute inset-0 z-0">
+                    <GlassSurface 
+                        width="100%" 
+                        height="100%" 
+                        borderRadius={0} 
+                        displace={0.5} 
+                        distortionScale={-40} 
+                        backgroundOpacity={mode === MODES.DARK ? 0.06 : 0.15} 
+                        opacity={0.93} 
+                    />
+                </div>
+
                 {/* Theme Ambient Effect */}
-                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-accent-500/5 to-transparent pointer-events-none" />
+                <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-accent-500/5 to-transparent pointer-events-none z-[-1]" />
 
                 {/* Brand */}
                 <div className={cn(

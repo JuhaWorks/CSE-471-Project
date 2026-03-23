@@ -13,20 +13,15 @@ import Card from '../ui/Card';
 import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-
+import GlassSurface from '../ui/GlassSurface';
 
 const generalSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
     customMessage: z.string().max(250, 'Bio cannot exceed 250 characters').optional(),
 });
 
-/**
- * Modern 2026 GeneralTab
- * Platform identity orchestration with Glassmorphism 2.0
- */
 export default function GeneralTab({ showOnlyAppearance = false }) {
-    const { user, updateProfile } = useAuthStore();
-
+    const { user } = useAuthStore();
     const {
         register,
         handleSubmit,
@@ -44,7 +39,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
 
     const updateMutation = useMutation({
         mutationFn: async (data) => {
-            const response = await api.put('/settings/profile', data);
+            const response = await api.put('/auth/profile', data);
             return response.data;
         },
         onSuccess: (data) => {
@@ -52,7 +47,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
             toast.success('Profile updated successfully.');
         },
         onError: (error) => {
-            toast.error(error.response?.data?.message || 'Synchronization failed.');
+            toast.error(error.response?.data?.message || 'Update failed.');
         }
     });
 
@@ -62,7 +57,6 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
 
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
-            {/* Show Appearance Selectors at the top if requested */}
             {showOnlyAppearance && (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-2">
                     <ModeSelector />
@@ -72,11 +66,11 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
 
             {!showOnlyAppearance && (
                 <>
-                    {/* Component Metadata Section */}
-                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-default">
+                    {/* Header with improved contrast */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-white/10">
                         <div className="space-y-1">
-                            <h2 className="text-2xl font-black text-primary tracking-tighter uppercase">Profile <span className="text-cyan-400">Info.</span></h2>
-                            <p className="text-[10px] font-black text-secondary uppercase tracking-[0.3em]">Manage your public profile</p>
+                            <h2 className="text-2xl font-black text-white tracking-tighter uppercase">Profile <span className="text-cyan-400">Info.</span></h2>
+                            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em]">Manage your public profile</p>
                         </div>
                         <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl">
                             <BadgeCheck className="w-4 h-4 text-emerald-400" />
@@ -84,90 +78,113 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                         </div>
                     </div>
 
-                    {/* Core Synchronization Form */}
-                    <Card padding="p-0" className="overflow-hidden border-default">
-                        <div className="px-10 py-6 border-b border-default bg-surface">
-                            <div className="flex items-center gap-3">
-                                <User className="w-4 h-4 text-secondary" />
-                                <span className="text-[10px] font-black text-primary uppercase tracking-widest">Account Details</span>
+                    {/* Form Card with reduced frosting */}
+                    <Card padding="p-0" className="relative overflow-hidden border-white/10 group shadow-2xl">
+                        <div className="absolute inset-0 z-0">
+                            <GlassSurface 
+                                width="100%" 
+                                height="100%" 
+                                borderRadius={24} 
+                                displace={0.3} 
+                                distortionScale={-40} 
+                                backgroundOpacity={0.04} 
+                                opacity={0.85} 
+                            />
+                        </div>
+                        
+                        <div className="relative z-10">
+                            <div className="px-10 py-6 border-b border-white/10 bg-black/20 backdrop-blur-md">
+                                <div className="flex items-center gap-3">
+                                    <User className="w-4 h-4 text-zinc-400" />
+                                    <span className="text-[10px] font-black text-white uppercase tracking-widest">Account Details</span>
+                                </div>
+                            </div>
+
+                            <form onSubmit={handleSubmit(onSubmit)} className="p-10 space-y-10">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                                    {/* Name Field */}
+                                    <div className="space-y-3">
+                                        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest ml-1">Full Name</label>
+                                        <div className="relative group">
+                                            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500 group-focus-within:text-cyan-400 transition-colors" />
+                                            <input
+                                                type="text"
+                                                placeholder="Enter your name"
+                                                {...register('name')}
+                                                className="w-full bg-black/30 border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 transition-all font-medium text-sm placeholder:text-zinc-600"
+                                            />
+                                        </div>
+                                        {errors.name && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">{errors.name.message}</p>}
+                                    </div>
+
+                                    {/* Bio Field */}
+                                    <div className="space-y-3">
+                                        <div className="flex justify-between items-center px-1">
+                                            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">Bio</label>
+                                            <span className={twMerge(clsx(
+                                                "text-[9px] font-black uppercase tracking-widest",
+                                                bioValue.length >= 250 ? 'text-rose-500' : 'text-zinc-500'
+                                            ))}>
+                                                {bioValue.length} / 250
+                                            </span>
+                                        </div>
+                                        <div className="relative group">
+                                            <FileText className="absolute top-5 left-5 w-4 h-4 text-zinc-500 group-focus-within:text-cyan-400 transition-colors" />
+                                            <textarea
+                                                rows={1}
+                                                placeholder="Tell us about yourself..."
+                                                {...register('customMessage')}
+                                                className="w-full bg-black/30 border border-white/10 rounded-2xl pl-14 pr-6 py-4 text-white focus:outline-none focus:border-cyan-500/30 transition-all font-medium text-sm resize-none h-[54px] pt-4 placeholder:text-zinc-600"
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="pt-4 flex items-center justify-between border-t border-white/10">
+                                    <div className="flex items-center gap-3">
+                                        <Info className="w-4 h-4 text-zinc-500" />
+                                        <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest max-w-[300px] leading-relaxed">
+                                            Updates will be reflected globally across the platform.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        type="submit"
+                                        isLoading={updateMutation.isPending}
+                                        disabled={updateMutation.isPending}
+                                        className="px-12 py-5 rounded-2xl bg-white text-black font-black uppercase tracking-widest hover:bg-cyan-400 hover:text-white transition-all shadow-xl shadow-white/5"
+                                    >
+                                        Save Changes
+                                    </Button>
+                                </div>
+                            </form>
+                        </div>
+                    </Card>
+
+                    {/* Feedback Loops with better visibility */}
+                    <div className="relative flex items-center gap-4 p-8 overflow-hidden rounded-[2.5rem] mt-20 border border-cyan-500/20">
+                        <div className="absolute inset-0 z-0">
+                            <GlassSurface 
+                                width="100%" 
+                                height="100%" 
+                                borderRadius={40} 
+                                displace={0.3} 
+                                distortionScale={-40} 
+                                backgroundOpacity={0.08} 
+                                opacity={0.85} 
+                            />
+                        </div>
+                        <div className="relative z-10 flex items-center gap-4 w-full">
+                            <div className="w-12 h-12 rounded-2xl bg-cyan-400/20 flex items-center justify-center border border-cyan-400/30">
+                                <Zap className="w-6 h-6 text-cyan-400" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-xs font-black text-white uppercase tracking-[0.2em]">Profile Synced</span>
+                                <span className="text-[10px] text-zinc-300 font-medium tracking-wide">All profile updates are globally broadcasted and active.</span>
                             </div>
                         </div>
-                        <form onSubmit={handleSubmit(onSubmit)} className="p-10 space-y-10">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                {/* Name Field */}
-                                <div className="space-y-3">
-                                    <label className="text-[10px] font-black text-secondary uppercase tracking-widest ml-1">Full Name</label>
-                                    <div className="relative group">
-                                        <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-cyan-400 transition-colors" />
-                                        <input
-                                            id="name"
-                                            type="text"
-                                            placeholder="Enter your name"
-                                            {...register('name')}
-                                            className="w-full bg-surface border border-default rounded-2xl pl-14 pr-6 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm"
-                                        />
-                                    </div>
-                                    {errors.name && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">{errors.name.message}</p>}
-                                </div>
-
-                                {/* Status Message Field */}
-                                <div className="space-y-3">
-                                    <div className="flex justify-between items-center px-1">
-                                        <label className="text-[10px] font-black text-secondary uppercase tracking-widest">Bio</label>
-                                        <span className={twMerge(clsx(
-                                            "text-[9px] font-black uppercase tracking-widest",
-                                            bioValue.length >= 250 ? 'text-rose-500' : 'text-gray-700'
-                                        ))}>
-                                            {bioValue.length} / 250
-                                        </span>
-                                    </div>
-                                    <div className="relative group">
-                                        <FileText className="absolute top-5 left-5 w-4 h-4 text-tertiary group-focus-within:text-cyan-400 transition-colors" />
-                                        <textarea
-                                            id="customMessage"
-                                            rows={1}
-                                            placeholder="Tell us about yourself..."
-                                            {...register('customMessage')}
-                                            className="w-full bg-surface border border-default rounded-2xl pl-14 pr-6 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-8 focus:ring-cyan-500/5 transition-all font-medium text-sm resize-none h-[54px] align-middle pt-4"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="pt-4 flex items-center justify-between border-t border-default">
-                                <div className="flex items-center gap-3">
-                                    <Info className="w-4 h-4 text-gray-700" />
-                                    <p className="text-[9px] font-black text-secondary uppercase tracking-widest max-w-[300px] leading-relaxed">
-                                        Updates to your profile will be reflected across the platform immediately.
-                                    </p>
-                                </div>
-                                <Button
-                                    type="submit"
-                                    isLoading={updateMutation.isPending}
-                                    disabled={updateMutation.isPending}
-                                    className="px-12 py-5 rounded-2xl"
-                                >
-                                    Save Changes
-                                </Button>
-                            </div>
-                        </form>
-                    </Card>
+                    </div>
                 </>
-            )}
-
-            {/* Feedback Loops */}
-            {!showOnlyAppearance && (
-                <div className="flex items-center gap-4 p-8 glass-2 bg-cyan-500/5 border border-cyan-500/10 rounded-[2.5rem] mt-20">
-                    <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 flex items-center justify-center">
-                        <Zap className="w-6 h-6 text-cyan-400" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-xs font-black text-primary uppercase tracking-[0.2em]">Profile Synced</span>
-                        <span className="text-[10px] text-secondary font-medium tracking-wide">All profile updates has been successfully and updated globally.</span>
-                    </div>
-                </div>
             )}
         </div>
     );
 }
-

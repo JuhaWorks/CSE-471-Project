@@ -13,6 +13,7 @@ import { useAuthStore, api } from '../../store/useAuthStore';
 import EmailUpdateModal from './EmailUpdateModal';
 import Button from '../ui/Button';
 import Card from '../ui/Card';
+import GlassSurface from '../ui/GlassSurface';
 
 // ---------------------------------------------------------------------------
 // Schema
@@ -235,143 +236,157 @@ export default function SecurityTab() {
                 </div>
             </div>
 
-            <form onSubmit={handleSubmit(d => securityMutation.mutate(d))} className="flex flex-col gap-2">
+            <form onSubmit={handleSubmit(d => securityMutation.mutate(d))} className="flex flex-col gap-3">
 
                 {/* ── Email ───────────────────────────────────────────────────────── */}
-                <div className="bg-surface border border-default rounded-xl overflow-hidden">
-                    <SectionHead
-                        icon={Mail}
-                        label="Email Address"
-                        action={
-                            <button
-                                type="button"
-                                onClick={() => setIsEmailModalOpen(true)}
-                                className="font-mono text-[9px] tracking-[0.14em] uppercase font-semibold text-indigo-400
-                  bg-indigo-500/10 border border-indigo-500/20 rounded-md px-2.5 py-1.5
-                  hover:bg-indigo-500/20 transition-colors cursor-pointer"
-                            >
-                                Change
-                            </button>
-                        }
-                    />
-                    <SectionDivider />
-
-                    <div className="px-8 py-6 space-y-3">
-                        <div className="relative">
-                            <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-disabled pointer-events-none" />
-                            <input
-                                type="email"
-                                disabled
-                                value={user?.email || ''}
-                                className="w-full bg-surface border border-default rounded-lg pl-9 pr-4 py-2.5
-                  text-secondary text-sm cursor-not-allowed"
-                            />
-                        </div>
-
-                        <AnimatePresence>
-                            {user?.pendingNewEmail && (
-                                <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    className="flex items-center gap-3 px-3.5 py-3 bg-amber-500/[0.06] border border-amber-500/15 rounded-lg"
+                <div className="relative overflow-hidden border border-default rounded-xl group">
+                    <div className="absolute inset-0 z-0">
+                        <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
+                    </div>
+                    <div className="relative z-10">
+                        <SectionHead
+                            icon={Mail}
+                            label="Email Address"
+                            action={
+                                <button
+                                    type="button"
+                                    onClick={() => setIsEmailModalOpen(true)}
+                                    className="font-mono text-[9px] tracking-[0.14em] uppercase font-semibold text-indigo-400
+                      bg-indigo-500/10 border border-indigo-500/20 rounded-md px-2.5 py-1.5
+                      hover:bg-indigo-500/20 transition-colors cursor-pointer"
                                 >
-                                    <Zap size={13} className="text-amber-400 shrink-0" />
-                                    <div>
-                                        <p className="font-mono text-[9px] tracking-[0.14em] uppercase text-amber-400 font-semibold">
-                                            Verification pending
-                                        </p>
-                                        <p className="text-[11px] text-tertiary mt-0.5">
-                                            Check {user.pendingNewEmail}
-                                        </p>
-                                    </div>
-                                </motion.div>
-                            )}
-                        </AnimatePresence>
+                                    Change
+                                </button>
+                            }
+                        />
+                        <SectionDivider />
+
+                        <div className="px-8 py-6 space-y-3">
+                            <div className="relative">
+                                <Mail size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-disabled pointer-events-none" />
+                                <input
+                                    type="email"
+                                    disabled
+                                    value={user?.email || ''}
+                                    className="w-full bg-surface/30 border border-default rounded-lg pl-9 pr-4 py-2.5
+                      text-secondary text-sm cursor-not-allowed"
+                                />
+                            </div>
+
+                            <AnimatePresence>
+                                {user?.pendingNewEmail && (
+                                    <motion.div
+                                        initial={{ opacity: 0, height: 0 }}
+                                        animate={{ opacity: 1, height: 'auto' }}
+                                        exit={{ opacity: 0, height: 0 }}
+                                        className="flex items-center gap-3 px-3.5 py-3 bg-amber-500/[0.06] border border-amber-500/15 rounded-lg"
+                                    >
+                                        <Zap size={13} className="text-amber-400 shrink-0" />
+                                        <div>
+                                            <p className="font-mono text-[9px] tracking-[0.14em] uppercase text-amber-400 font-semibold">
+                                                Verification pending
+                                            </p>
+                                            <p className="text-[11px] text-tertiary mt-0.5">
+                                                Check {user.pendingNewEmail}
+                                            </p>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
                     </div>
                 </div>
 
                 {/* ── Password ────────────────────────────────────────────────────── */}
-                <div className="bg-surface border border-default rounded-xl overflow-hidden">
-                    <SectionHead icon={Key} label="Change Password" />
-                    <SectionDivider accent />
-
-                    <div className="px-8 py-6 space-y-5">
-
-                        {/* Current */}
-                        <div>
-                            <FieldLabel>Current Password</FieldLabel>
-                            <PasswordInput {...register('currentPassword')} error={errors.currentPassword?.message} />
-                            <FieldError message={errors.currentPassword?.message} />
-                        </div>
-
-                        {/* New + Confirm grid */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                            <div>
-                                <FieldLabel>New Password</FieldLabel>
-                                <PasswordInput
-                                    {...register('newPassword')}
-                                    error={errors.newPassword?.message}
-                                    iconActive={!!newPasswordValue}
-                                />
-                                <AnimatePresence>
-                                    {newPasswordValue && <StrengthBar password={newPasswordValue} />}
-                                </AnimatePresence>
-                                <FieldError message={errors.newPassword?.message} />
-                            </div>
-
-                            <div>
-                                <FieldLabel>Confirm Password</FieldLabel>
-                                <PasswordInput
-                                    {...register('confirmNewPassword')}
-                                    error={errors.confirmNewPassword?.message}
-                                />
-                                <FieldError message={errors.confirmNewPassword?.message} />
-                            </div>
-                        </div>
+                <div className="relative overflow-hidden border border-default rounded-xl group">
+                    <div className="absolute inset-0 z-0">
+                        <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                     </div>
+                    <div className="relative z-10">
+                        <SectionHead icon={Key} label="Change Password" />
+                        <SectionDivider accent />
 
-                    {/* Footer */}
-                    <SectionDivider />
-                    <div className="flex items-center justify-between px-8 py-4 bg-sunken gap-4">
-                        <div className="flex items-center gap-2">
-                            <Info size={12} className="text-disabled shrink-0" />
-                            <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-disabled">
-                                Current password required to update credentials
-                            </span>
+                        <div className="px-8 py-6 space-y-5">
+                            {/* Current */}
+                            <div>
+                                <FieldLabel>Current Password</FieldLabel>
+                                <PasswordInput {...register('currentPassword')} error={errors.currentPassword?.message} />
+                                <FieldError message={errors.currentPassword?.message} />
+                            </div>
+
+                            {/* New + Confirm grid */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                <div>
+                                    <FieldLabel>New Password</FieldLabel>
+                                    <PasswordInput
+                                        {...register('newPassword')}
+                                        error={errors.newPassword?.message}
+                                        iconActive={!!newPasswordValue}
+                                    />
+                                    <AnimatePresence>
+                                        {newPasswordValue && <StrengthBar password={newPasswordValue} />}
+                                    </AnimatePresence>
+                                    <FieldError message={errors.newPassword?.message} />
+                                </div>
+
+                                <div>
+                                    <FieldLabel>Confirm Password</FieldLabel>
+                                    <PasswordInput
+                                        {...register('confirmNewPassword')}
+                                        error={errors.confirmNewPassword?.message}
+                                    />
+                                    <FieldError message={errors.confirmNewPassword?.message} />
+                                </div>
+                            </div>
                         </div>
 
-                        <Button
-                            type="submit"
-                            isLoading={securityMutation.isPending}
-                            disabled={securityMutation.isPending}
-                            className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-primary text-xs font-semibold tracking-wide shrink-0"
-                        >
-                            Save Changes
-                        </Button>
+                        {/* Footer */}
+                        <SectionDivider />
+                        <div className="flex items-center justify-between px-8 py-4 bg-sunken/30 backdrop-blur-sm gap-4">
+                            <div className="flex items-center gap-2">
+                                <Info size={12} className="text-disabled shrink-0" />
+                                <span className="font-mono text-[9px] tracking-[0.12em] uppercase text-disabled">
+                                    Current password required to update credentials
+                                </span>
+                            </div>
+
+                            <Button
+                                type="submit"
+                                isLoading={securityMutation.isPending}
+                                disabled={securityMutation.isPending}
+                                className="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-primary text-xs font-semibold tracking-wide shrink-0"
+                            >
+                                Save Changes
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </form>
 
             {/* ── MFA row ─────────────────────────────────────────────────────── */}
-            <div className="flex items-center justify-between px-6 py-5 bg-surface border border-default rounded-xl
-        cursor-pointer hover:border-strong transition-colors group">
-                <div className="flex items-center gap-4">
-                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-surface border border-default
-            group-hover:bg-surface transition-colors shrink-0">
-                        <ShieldAlert size={15} className="text-tertiary group-hover:text-amber-400/60 transition-colors" />
-                    </div>
-                    <div>
-                        <p className="text-sm font-semibold text-primary">Multi-Factor Authentication</p>
-                        <p className="text-[11px] text-tertiary mt-0.5">Add an extra layer of protection to your account</p>
-                    </div>
+            <div className="relative flex items-center justify-between px-6 py-5 overflow-hidden border border-default rounded-xl
+        cursor-pointer hover:border-strong transition-colors group mt-2">
+                <div className="absolute inset-0 z-0">
+                    <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                 </div>
+                <div className="relative z-10 flex items-center justify-between w-full">
+                    <div className="flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-surface border border-default
+                group-hover:bg-surface transition-colors shrink-0">
+                            <ShieldAlert size={15} className="text-tertiary group-hover:text-amber-400/60 transition-colors" />
+                        </div>
+                        <div>
+                            <p className="text-sm font-semibold text-primary">Multi-Factor Authentication</p>
+                            <p className="text-[11px] text-tertiary mt-0.5">Add an extra layer of protection to your account</p>
+                        </div>
+                    </div>
 
-                <div className="flex items-center gap-1.5 shrink-0">
-                    <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-tertiary group-hover:text-secondary transition-colors">
-                        Configure
-                    </span>
-                    <ChevronRight size={13} className="text-tertiary group-hover:text-secondary group-hover:translate-x-0.5 transition-all" />
+                    <div className="flex items-center gap-1.5 shrink-0">
+                        <span className="font-mono text-[9px] tracking-[0.14em] uppercase text-tertiary group-hover:text-secondary transition-colors">
+                            Configure
+                        </span>
+                        <ChevronRight size={13} className="text-tertiary group-hover:text-secondary group-hover:translate-x-0.5 transition-all" />
+                    </div>
                 </div>
             </div>
 

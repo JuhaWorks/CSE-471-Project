@@ -13,6 +13,8 @@ import { useSocketStore } from '../store/useSocketStore';
 import Button from '../components/ui/Button';
 import DecryptedText from '../components/ui/DecryptedText';
 import DeadlinePopup from '../components/projects/DeadlinePopup';
+import Card from '../components/ui/Card';
+import GlassSurface from '../components/ui/GlassSurface';
 
 const EASE = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
 
@@ -205,8 +207,8 @@ const Home = () => {
                 .h-scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
 
                 .stat-card {
-                    border: 1px solid var(--border-subtle);
-                    border-radius: 16px;
+                    border: none;
+                    border-radius: 2rem;
                     padding: 24px;
                     background: var(--bg-surface);
                     transition: border-color 0.2s, transform 0.2s;
@@ -222,7 +224,7 @@ const Home = () => {
                     align-items: center;
                     gap: 12px;
                     padding: 10px 8px;
-                    border-radius: 10px;
+                    border-radius: 1rem;
                     transition: background 0.12s;
                     cursor: default;
                 }
@@ -233,7 +235,7 @@ const Home = () => {
                     align-items: center;
                     gap: 10px;
                     padding: 9px 10px;
-                    border-radius: 10px;
+                    border-radius: 1rem;
                     text-decoration: none;
                     transition: background 0.12s, color 0.12s;
                     color: var(--text-secondary);
@@ -244,13 +246,12 @@ const Home = () => {
                 }
             `}</style>
 
-            <article className="h-root min-h-full pb-16" style={{
-                backgroundImage: 'linear-gradient(var(--border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--border-subtle) 1px, transparent 1px)',
-                backgroundSize: '44px 44px',
-            }}>
-                <div className="fixed top-[-180px] left-1/2 -translate-x-1/2 w-[700px] h-[380px] pointer-events-none z-0"
-                    style={{ background: 'radial-gradient(ellipse, var(--accent-glow) 0%, transparent 70%)' }}
-                />
+            <article className="h-root min-h-[calc(100vh-120px)] flex flex-col pb-6 relative">
+                {/* Subtle ambient glow — no GlassSurface overlay */}
+                <div className="fixed top-0 left-0 right-0 h-[220px] pointer-events-none z-0 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-base/20 pointer-events-none" />
+                    <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-theme/10 rounded-full blur-[120px] opacity-40" />
+                </div>
 
                 <div className="px-1 relative z-10">
                     <DashboardErrorBoundary>
@@ -269,7 +270,7 @@ const Home = () => {
                                         </span>
                                     </div>
                                     <h1 className="text-3xl md:text-4xl font-semibold text-primary tracking-tight leading-tight m-0">
-                                        {greeting}, <DecryptedText 
+                                        {greeting}, <DecryptedText
                                             text={firstName}
                                             animateOn="inViewHover"
                                             revealDirection="center"
@@ -295,9 +296,13 @@ const Home = () => {
 
                         <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
                             {STATS.map((s, i) => (
-                                <motion.div
+                                <Card
                                     key={s.label}
-                                    className="stat-card"
+                                    variant="glass"
+                                    performance="premium"
+                                    hideBorder={true}
+                                    padding="p-6"
+                                    className="cursor-default"
                                     initial={{ opacity: 0, y: 12 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: i * 0.06 }}
@@ -326,20 +331,20 @@ const Home = () => {
                                         />
                                     </div>
                                     <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>{s.sub}</div>
-                                </motion.div>
+                                </Card>
                             ))}
                         </section>
 
                         <section className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
-                            <motion.div
+                            <Card
+                                variant="glass"
+                                performance="premium"
+                                padding="p-0"
+                                hideBorder={true}
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ ...EASE, delay: 0.2 }}
                                 style={{
-                                    border: '1px solid var(--border-subtle)',
-                                    borderRadius: 16,
-                                    background: 'var(--bg-surface)',
-                                    overflow: 'hidden',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     height: isAuditExpanded ? 700 : 380,
@@ -437,17 +442,18 @@ const Home = () => {
                                         </div>
                                     )}
                                 </div>
-                            </motion.div>
+                            </Card>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ ...EASE, delay: 0.28 }}>
                                     <ApodWidget />
                                 </motion.div>
 
-                                <motion.div
+                                <Card
+                                    variant="glass"
+                                    padding="p-5"
                                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: 0.34 }}
-                                    style={{ border: '1px solid var(--accent-border)', borderRadius: 16, background: 'var(--accent-bg)', padding: '20px' }}
                                 >
                                     <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 14 }}>Milestones</p>
                                     <div style={{ marginBottom: 8 }}>
@@ -487,12 +493,13 @@ const Home = () => {
                                             </div>
                                         ))}
                                     </div>
-                                </motion.div>
+                                </Card>
 
-                                <motion.div
+                                <Card
+                                    variant="glass"
+                                    padding="p-4"
                                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: 0.42 }}
-                                    style={{ border: '1px solid var(--border-subtle)', borderRadius: 16, background: 'var(--bg-surface)', padding: '16px 18px' }}
                                 >
                                     <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 10 }}>Quick Links</p>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -508,13 +515,13 @@ const Home = () => {
                                             </Link>
                                         ))}
                                     </div>
-                                </motion.div>
+                                </Card>
                             </div>
                         </section>
 
                         <motion.footer
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
-                            className="mt-8 flex flex-wrap items-center gap-3 pb-2"
+                            className="mt-auto pt-12 flex flex-wrap items-center gap-3 pb-2"
                         >
                             <div className="flex items-center gap-1.5">
                                 <StatusDot active />

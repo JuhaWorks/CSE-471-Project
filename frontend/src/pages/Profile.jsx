@@ -311,17 +311,17 @@ export default function Profile() {
                                     </div>
                                     <div className={cn(
                                         "flex gap-3 px-4 py-3.5 rounded-xl border transition-all",
-                                        "bg-elevated dark:bg-zinc-900 border-zinc-200 dark:border-zinc-700",
-                                        "focus-within:border-zinc-400 dark:focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-200 dark:focus-within:ring-zinc-700"
+                                        "bg-sunken border-subtle",
+                                        "focus-within:border-theme focus-within:ring-2 focus-within:ring-theme/20"
                                     )}>
-                                        <MessageSquare className="w-4 h-4 shrink-0 text-zinc-400 mt-0.5" />
+                                        <MessageSquare className="w-4 h-4 shrink-0 text-tertiary mt-0.5" />
                                         <textarea
                                             rows={3}
                                             maxLength={150}
                                             value={form.customMessage}
                                             onChange={e => setForm(s => ({ ...s, customMessage: e.target.value }))}
                                             placeholder="Let your team know what you're up to…"
-                                            className="w-full bg-transparent text-sm text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 outline-none resize-none"
+                                            className="w-full bg-transparent text-sm text-primary placeholder-tertiary outline-none resize-none"
                                         />
                                     </div>
                                 </div>

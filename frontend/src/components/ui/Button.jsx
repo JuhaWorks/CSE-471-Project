@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, memo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Check, X } from 'lucide-react';
 import { cn } from '../../utils/cn';

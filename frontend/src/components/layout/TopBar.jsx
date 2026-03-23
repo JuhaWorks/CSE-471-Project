@@ -15,6 +15,7 @@ import {
 import { useAuthStore } from '../../store/useAuthStore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import GlassSurface from '../ui/GlassSurface';
 
 
 const STATUS_COLOR = {
@@ -49,8 +50,12 @@ const TopBar = ({ onMenuToggle }) => {
     }, []);
 
     return (
-        <header className="h-16 glass-2 border-b border-default sticky top-0 z-30 rounded-none rounded-b-3xl transition-all duration-300">
-            <div className="w-full h-full flex items-center justify-between px-6 lg:px-10">
+        <header className="h-16 transition-all duration-300 relative overflow-hidden rounded-b-[2rem]">
+            <div className="absolute inset-0 z-0">
+                <GlassSurface width="100%" height="100%" borderRadius="0 0 2rem 2rem" displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
+            </div>
+            
+            <div className="w-full h-full flex items-center justify-between px-6 lg:px-10 relative z-10">
                 <div className="flex items-center gap-4 flex-1">
                     <button
                         onClick={onMenuToggle}
@@ -65,7 +70,7 @@ const TopBar = ({ onMenuToggle }) => {
                             type="text"
                             placeholder="Search workspace..."
                             className={twMerge(clsx(
-                                "w-full pl-11 pr-4 py-2 bg-sunken border border-default rounded-2xl text-sm text-[var(--text-main)] placeholder-tertiary outline-none",
+                                "w-full pl-11 pr-4 py-2 bg-sunken border border-default rounded-2xl text-sm text-primary placeholder-tertiary outline-none font-bold",
                                 "focus:border-theme/30 focus:ring-4 focus:ring-theme/5 transition-all"
                             ))}
                         />
@@ -119,44 +124,64 @@ const TopBar = ({ onMenuToggle }) => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="absolute right-0 mt-3 w-64 glass-liquid shadow-2xl p-2 z-50 overflow-hidden"
-                                    style={{
-                                        backdropFilter: 'blur(100px) saturate(1.8)',
-                                        WebkitBackdropFilter: 'blur(100px) saturate(1.8)',
-                                        backgroundColor: 'var(--bg-glass)',
-                                        isolation: 'isolate',
-                                        border: '1px solid var(--border-glass)'
-                                    }}
+                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[60] overflow-hidden rounded-[2rem] border border-white/10"
+                                    style={{ isolation: 'isolate' }}
                                 >
-                                    <div className="p-4 border-b border-default mb-2">
-                                        <p className="text-sm font-black text-primary">{user?.name}</p>
-                                        <p className="text-xs font-medium text-secondary truncate">{user?.email}</p>
+                                    {/* Glass Backing */}
+                                    <div className="absolute inset-0 z-0 pointer-events-none">
+                                        <GlassSurface 
+                                            width="100%" 
+                                            height="100%" 
+                                            borderRadius={32} 
+                                            displace={0.4} 
+                                            distortionScale={-40} 
+                                            backgroundOpacity={0.15} 
+                                            opacity={0.88} 
+                                            blur={24}
+                                        />
                                     </div>
 
-                                    <div className="space-y-1">
-                                        <Link
-                                            to="/profile"
-                                            onClick={() => setDropdownOpen(false)}
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all"
-                                        >
-                                            <User className="w-4 h-4" />
-                                            <span>My Profile</span>
-                                        </Link>
-                                        <Link
-                                            to="/settings"
-                                            onClick={() => setDropdownOpen(false)}
-                                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-all"
-                                        >
-                                            <Settings className="w-4 h-4" />
-                                            <span>Settings</span>
-                                        </Link>
-                                        <button
-                                            onClick={() => { logout(); setDropdownOpen(false); }}
-                                            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-bold text-red-400/80 hover:text-red-400 hover:bg-red-500/5 transition-all"
-                                        >
-                                            <LogOut className="w-4 h-4" />
-                                            <span>Sign Out</span>
-                                        </button>
+                                    {/* Dropdown Content */}
+                                    <div className="relative z-10">
+                                        <div className="p-5 border-b border-white/10 mb-2">
+                                            <p className="text-sm font-black text-white tracking-tight">{user?.name}</p>
+                                            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest truncate mt-0.5">{user?.email}</p>
+                                        </div>
+
+                                        <div className="space-y-1 p-1">
+                                            <Link
+                                                to="/profile"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-all group"
+                                            >
+                                                <div className="w-8 h-8 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
+                                                    <User className="w-4 h-4 group-hover:text-cyan-400 transition-colors" />
+                                                </div>
+                                                <span>My Profile</span>
+                                            </Link>
+                                            <Link
+                                                to="/settings"
+                                                onClick={() => setDropdownOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-zinc-400 hover:text-white hover:bg-white/5 transition-all group"
+                                            >
+                                                <div className="w-8 h-8 rounded-xl bg-zinc-800 flex items-center justify-center group-hover:bg-theme/20 transition-colors">
+                                                    <Settings className="w-4 h-4 group-hover:text-theme transition-colors" />
+                                                </div>
+                                                <span>Settings</span>
+                                            </Link>
+                                            
+                                            <div className="h-px bg-white/5 my-2 mx-3" />
+
+                                            <button
+                                                onClick={() => { logout(); setDropdownOpen(false); }}
+                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-all group"
+                                            >
+                                                <div className="w-8 h-8 rounded-xl bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
+                                                    <LogOut className="w-4 h-4" />
+                                                </div>
+                                                <span>Sign Out</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </motion.div>
                             )}

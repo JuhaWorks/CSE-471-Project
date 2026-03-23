@@ -11,6 +11,8 @@ import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import DecryptedText from '../components/ui/DecryptedText';
+import BorderGlow from '../components/ui/BorderGlow';
+import GlassSurface from '../components/ui/GlassSurface';
 
 const schema = z.object({
     name: z.string().min(2, 'At least 2 characters'),
@@ -140,12 +142,34 @@ const Register = () => {
                     </motion.p>
                 </header>
 
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: 0.2 }}
-                    className="glass-2 p-8 border-default bg-surface"
+                <BorderGlow
+                    edgeSensitivity={30}
+                    glowColor="40 80 80"
+                    backgroundColor="rgba(6, 0, 16, 0.85)"
+                    borderRadius={28}
+                    glowRadius={40}
+                    glowIntensity={1}
+                    coneSpread={25}
+                    animated={false}
+                    colors={['#c084fc', '#f472b6', '#38bdf8']}
+                    fillOpacity={0}
+                    className="w-full"
                 >
+                    <div className="absolute inset-0 z-0">
+                        <GlassSurface 
+                            width="100%" 
+                            height="100%" 
+                            borderRadius={28} 
+                            className="w-full h-full"
+                            displace={0.5} 
+                            distortionScale={-60} 
+                            backgroundOpacity={0.06}
+                            opacity={0.93} 
+                            mixBlendMode="screen"
+                        />
+                    </div>
+                    
+                    <div className="p-8 md:p-10 relative z-10 w-full">
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                         <AnimatePresence>
                             {error && (
@@ -199,6 +223,7 @@ const Register = () => {
                                         sequential={true}
                                         useOriginalCharsOnly={false}
                                         className="font-mono"
+                                        parentClassName="font-mono"
                                         encryptedClassName="font-mono opacity-70"
                                     />
                                 ) : null}
@@ -236,6 +261,7 @@ const Register = () => {
                                         sequential={true}
                                         useOriginalCharsOnly={false}
                                         className="font-mono"
+                                        parentClassName="font-mono"
                                         encryptedClassName="font-mono opacity-70"
                                     />
                                 ) : null}
@@ -299,7 +325,8 @@ const Register = () => {
                             </Button>
                         </div>
                     </div>
-                </motion.div>
+                </div>
+                </BorderGlow>
 
                 <footer className="mt-8 text-center px-4">
                     <p className="text-xs font-medium text-tertiary">
