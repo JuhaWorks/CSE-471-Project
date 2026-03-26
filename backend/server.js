@@ -45,7 +45,9 @@ const allowedOrigins = new Set([
   'http://localhost:5174',
   'http://localhost:5175',
   'http://localhost:3000',
+  'http://localhost:5500', // VS Code Live Server
   'http://127.0.0.1:5173',
+  'http://127.0.0.1:5500', // VS Code Live Server (IP)
   'https://klivra.vercel.app',
   ...(process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : []),
   process.env.FRONTEND_URL?.replace(/\/$/, '')
@@ -65,7 +67,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'"],
       styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://api.fontshare.com"],
       imgSrc: ["'self'", "data:", "https://res.cloudinary.com", "https://cdn-icons-png.flaticon.com"],
-      connectSrc: ["'self'", "http://localhost:5000", "ws://localhost:5000", "https://syncforge-io.onrender.com"],
+      connectSrc: ["'self'", "http://localhost:5000", "ws://localhost:5000", "https://syncforge-io.onrender.com", "*.vercel.app"],
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://api.fontshare.com"],
       objectSrc: ["'none'"],
       mediaSrc: ["'self'"],
@@ -79,10 +81,18 @@ app.use(compression({ threshold: 1024 }));
 
 app.use(cors({
   origin: (origin, cb) => {
-    // In production, force strict matching
-    if (!origin && process.env.NODE_ENV === 'production') return cb(new Error('Not allowed by CORS'));
-    if (!origin || allowedOrigins.has(origin)) cb(null, true);
-    else cb(new Error('Not allowed by CORS'));
+    // 1. Allow requests with no origin (like mobile apps, curl, or direct browser hits)
+    if (!origin) return cb(null, true);
+
+    // 2. Check if origin is in the allowed list
+    if (allowedOrigins.has(origin)) return cb(null, true);
+
+    // 3. Allow Vercel preview deployments (regex match)
+    if (origin.endsWith('.vercel.app')) return cb(null, true);
+
+    // 4. Otherwise, block
+    logger.warn(`🚫 CORS blocked origin: ${origin}`);
+    cb(new Error('Not allowed by CORS'));
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
