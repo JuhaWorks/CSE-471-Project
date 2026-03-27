@@ -23,13 +23,18 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
 
     console.log(`[EMAIL] Sending to: ${to}, Subject: "${subject}", via Brevo HTTP API`);
 
-    const body = JSON.stringify({
+    const payload = {
         sender: { name: 'Klivra', email: senderEmail },
         to: [{ email: to }],
         subject,
         htmlContent: html,
-        attachment: attachments, // Brevo API expects 'attachment' (array of { name, content, contentId })
-    });
+    };
+
+    // ONLY add attachment field if there are actual attachments.
+    // Brevo API returns 400 Bad Request if "attachment" is an empty array [].
+    if (attachments && attachments.length > 0) {
+        payload.attachment = attachments;
+    }
 
     const response = await fetch(BREVO_API_URL, {
         method: 'POST',
@@ -38,14 +43,16 @@ const sendEmail = async ({ to, subject, html, attachments }) => {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
         },
-        body,
+        body: JSON.stringify(payload),
     });
 
     const data = await response.json();
 
     if (!response.ok) {
         console.error(`[EMAIL] ❌ Brevo API error: ${JSON.stringify(data)}`);
-        throw new Error(`Brevo API error: ${data.message || response.statusText}`);
+        const error = new Error(`Brevo API error: ${data.message || response.statusText}`);
+        error.statusCode = response.status; // Pass API status back to error middleware
+        throw error;
     }
 
     console.log(`[EMAIL] ✅ Sent to ${to}. MessageId: ${data.messageId}`);
