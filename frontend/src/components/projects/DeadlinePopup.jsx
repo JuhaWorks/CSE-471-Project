@@ -4,7 +4,6 @@ import { Shield, Activity } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { api } from '../../store/useAuthStore';
-import Button from '../ui/Button';
 
 const DeadlinePopup = ({ projects, user }) => {
     const queryClient = useQueryClient();

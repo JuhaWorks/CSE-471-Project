@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
-import { Skeleton } from '../ui/Loading';
+import { Skeleton } from '../ui/PremiumLoaders';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

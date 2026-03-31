@@ -71,9 +71,9 @@ const Button = forwardRef(({
             {...props}
         >
             {/* Inner Glow/Highlight */}
-            <span 
-                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" 
-                aria-hidden="true" 
+            <span
+                className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
+                aria-hidden="true"
             />
 
             <AnimatePresence mode="wait">

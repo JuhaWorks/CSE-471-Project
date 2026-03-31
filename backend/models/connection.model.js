@@ -43,11 +43,15 @@ const connectionSchema = new mongoose.Schema(
 // Prevent duplicate requests in both directions
 connectionSchema.index({ requester: 1, recipient: 1 }, { unique: true });
 
-// Fast lookup for pending incoming requests
-connectionSchema.index({ recipient: 1, status: 1 });
+// Fast lookup for pending incoming requests (paginated)
+connectionSchema.index({ recipient: 1, status: 1, createdAt: -1 });
 
-// Fast lookup for accepted connections
-connectionSchema.index({ requester: 1, status: 1 });
+// Fast lookup for sent pending requests (paginated)
+connectionSchema.index({ requester: 1, status: 1, createdAt: -1 });
+
+// Fast lookup for accepted connections (paginated)
+connectionSchema.index({ requester: 1, status: 1, respondedAt: -1 });
+connectionSchema.index({ recipient: 1, status: 1, respondedAt: -1 });
 
 // Pre-save validation: prevent self-connections
 connectionSchema.pre('save', function () {

@@ -78,14 +78,26 @@ export const useIdleTimer = () => {
             }
         };
 
+        // THROTTLE: Only reset timer once every 500ms for high-frequency events
+        let lastEventTime = 0;
+        const throttledReset = () => {
+            const now = Date.now();
+            if (now - lastEventTime > 500) {
+                lastEventTime = now;
+                resetTimer();
+            }
+        };
+
         const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-        events.forEach(event => document.addEventListener(event, () => resetTimer()));
+        events.forEach(event => document.addEventListener(event, throttledReset));
         document.addEventListener('visibilitychange', handleVisibilityChange);
 
         resetTimer();
 
         return () => {
-            events.forEach(event => document.removeEventListener(event, resetTimer));
+            events.forEach(event => {
+                document.removeEventListener(event, throttledReset);
+            });
             document.removeEventListener('visibilitychange', handleVisibilityChange);
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
             if (channelRef.current) {

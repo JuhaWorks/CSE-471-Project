@@ -1,25 +1,15 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-    LayoutDashboard, 
-    FolderKanban, 
-    CheckSquare, 
-    Presentation, 
-    ShieldAlert, 
-    Activity, 
-    Settings, 
-    LogOut, 
-    X,
-    ChevronRight,
-    Sun,
-    Moon,
-    UserCircle,
-    Users2
+    LayoutDashboard, FolderKanban, CheckSquare, Presentation, ShieldAlert, 
+    Activity, Settings, LogOut, X, ChevronRight, Sun, Moon, UserCircle, Users2
 } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme, MODES } from '../../store/useTheme';
+import { useUIStore } from '../../store/useUIStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { cn } from '../../utils/cn';
 import GlassSurface from '../ui/GlassSurface';
 
@@ -88,23 +78,32 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
     );
 });
 
-const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) => {
+const SidebarComponent = () => {
     const { logout, user } = useAuthStore();
+    const { isSidebarExpanded, isCollapsed, toggleSidebar, toggleCollapse, setSidebarExpanded, setCollapsed } = useUIStore();
     const navigate = useNavigate();
     const location = useLocation();
     const queryClient = useQueryClient();
     const { mode, setMode } = useTheme();
+    
+    // Responsive Detection
+    const isMobile = useMediaQuery('(max-width: 1024px)');
+    const isTablet = useMediaQuery('(min-width: 1025px) and (max-width: 1280px)');
 
     const isAdminSection = location.pathname.startsWith('/admin');
+
+    // Sync collapse state with tablet view
+    useEffect(() => {
+        if (isTablet && !isCollapsed) {
+            setCollapsed(true);
+        }
+    }, [isTablet, isCollapsed, setCollapsed]);
 
     const handlePrefetch = (path) => {
         if (path === '/projects') {
             queryClient.prefetchQuery({
                 queryKey: ['projects'],
-                queryFn: async () => {
-                    const res = await api.get('/projects');
-                    return res.data;
-                },
+                queryFn: async () => (await api.get('/projects')).data,
                 staleTime: 1000 * 60 * 5
             });
         }
@@ -119,16 +118,19 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
         ? navItems.filter(item => item.path === '/')
         : navItems;
 
+    // Don't use effectively "isCollapsed" when on mobile drawer, force expanded look
+    const effectiveCollapsed = isMobile ? false : isCollapsed;
+
     return (
         <>
             <AnimatePresence>
-                {isOpen && (
+                {isMobile && isSidebarExpanded && (
                     <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/60 backdrop-blur-md z-40 lg:hidden" 
-                        onClick={onClose} 
+                        onClick={() => setSidebarExpanded(false)} 
                     />
                 )}
             </AnimatePresence>
@@ -136,31 +138,22 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
             <motion.aside
                 initial={false}
                 animate={{ 
-                    width: isOpen ? (isCollapsed ? 80 : 280) : 0,
-                    x: isOpen ? 0 : -280
+                    width: isSidebarExpanded ? (effectiveCollapsed ? 80 : 280) : 0,
+                    x: isSidebarExpanded ? 0 : -280
                 }}
-                transition={{ 
-                    type: 'spring', 
-                    stiffness: 300, 
-                    damping: 35,
-                    mass: 0.8
-                }}
+                transition={{ type: 'spring', stiffness: 300, damping: 35, mass: 0.8 }}
                 className={cn(
-                    "fixed inset-y-0 left-0 z-40 border-r border-default shadow-2xl transition-all",
-                    "flex flex-col rounded-r-[2rem] overflow-hidden"
+                    "fixed inset-y-0 left-0 z-50 border-r border-default shadow-2xl transition-all",
+                    "flex flex-col rounded-r-[2rem] overflow-hidden",
+                    !isSidebarExpanded && "pointer-events-none"
                 )}
                 style={{ borderRightColor: 'var(--border-glass)' }}
             >
                 {/* GLASS BACKGROUND */}
                 <div className="absolute inset-0 z-0">
                     <GlassSurface 
-                        width="100%" 
-                        height="100%" 
-                        borderRadius={0} 
-                        displace={0.5} 
-                        distortionScale={-40} 
-                        backgroundOpacity={mode === MODES.DARK ? 0.06 : 0.15} 
-                        opacity={0.93} 
+                        width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} 
+                        backgroundOpacity={mode === MODES.DARK ? 0.06 : 0.15} opacity={0.93} 
                     />
                 </div>
 
@@ -168,94 +161,58 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                 <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-accent-500/5 to-transparent pointer-events-none z-[-1]" />
 
                 {/* Brand */}
-                <div className={cn(
-                    "h-20 flex items-center relative z-10 shrink-0",
-                    isCollapsed ? "justify-center px-0" : "gap-4 px-6" 
-                )}>
+                <div className={cn("h-20 flex items-center relative z-10 shrink-0", effectiveCollapsed ? "justify-center px-0" : "gap-4 px-6")}>
                     <div className="w-10 h-10 shrink-0 rounded-2xl bg-gradient-to-br from-accent-500 to-accent-600 flex items-center justify-center shadow-xl shadow-accent-500/10 active:scale-95 transition-transform overflow-hidden">
                         <img src="/logo.png?v=2" alt="klvira logo" className="w-full h-full object-cover" />
                     </div>
-                    {!isCollapsed && (
-                        <motion.div 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="flex flex-col min-w-0"
-                        >
+                    {!effectiveCollapsed && (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-w-0">
                             <span className="text-lg font-black tracking-tighter text-primary truncate">klvira</span>
                             <span className="text-[10px] font-bold text-tertiary uppercase tracking-widest truncate">{isAdminSection ? 'Administration' : 'Workspace'}</span>
                         </motion.div>
                     )}
                     <button 
-                        onClick={onToggleCollapse} 
+                        onClick={toggleCollapse} 
                         className="hidden lg:flex ml-auto p-2 text-tertiary hover:text-primary rounded-xl transition-all hover:bg-white/5"
-                        title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
                     >
-                        <ChevronRight className={cn("w-5 h-5 transition-transform duration-300", !isCollapsed && "rotate-180")} />
+                        <ChevronRight className={cn("w-5 h-5 transition-transform duration-300", !effectiveCollapsed && "rotate-180")} />
                     </button>
-                    {!isCollapsed && (
-                        <button 
-                            onClick={onClose} 
-                            className="p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5 lg:hidden ml-auto"
-                            title="Hide Sidebar"
-                        >
+                    {isMobile && isSidebarExpanded && (
+                        <button onClick={() => setSidebarExpanded(false)} className="p-2 text-tertiary hover:text-rose-500 rounded-xl transition-all hover:bg-rose-500/5 lg:hidden ml-auto">
                             <X className="w-5 h-5" />
                         </button>
                     )}
                 </div>
 
                 {/* Nav */}
-                <nav className={cn(
-                    "flex-1 py-6 space-y-2 overflow-y-auto overflow-x-hidden relative z-10 scrollbar-hide",
-                    isCollapsed ? "px-2" : "px-4"
-                )}>
-                    {!isCollapsed && (
-                        <motion.p 
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="px-4 mb-4 text-[10px] font-black text-tertiary uppercase tracking-[0.2em]"
-                        >
+                <nav className={cn("flex-1 py-6 space-y-2 overflow-y-auto overflow-x-hidden relative z-10 scrollbar-hide", effectiveCollapsed ? "px-2" : "px-4")}>
+                    {!effectiveCollapsed && (
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="px-4 mb-4 text-[10px] font-black text-tertiary uppercase tracking-[0.2em]">
                             {isAdminSection ? 'System Control' : 'Navigation'}
                         </motion.p>
                     )}
 
                     {user?.role === 'Admin' && (
                         <div className="mb-6 space-y-2 px-1">
-                            <NavLink
-                                to="/admin"
-                                end
-                                onClick={onClose}
+                            <NavLink to="/admin" end onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                    isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                                    isActive 
-                                        ? "bg-theme/10 text-theme border border-theme/20" 
-                                        : "text-tertiary hover:text-primary hover:bg-white/5"
+                                    effectiveCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
+                                    isActive ? "bg-theme/10 text-theme border border-theme/20" : "text-tertiary hover:text-primary hover:bg-white/5"
                                 )}
                             >
                                 <ShieldAlert className="w-5 h-5 shrink-0" />
-                                {!isCollapsed && <span>Admin Panel</span>}
-                                {!isCollapsed && (
-                                    <motion.span 
-                                        animate={{ scale: [1, 1.2, 1] }}
-                                        transition={{ repeat: Infinity, duration: 2 }}
-                                        className="ml-auto w-2 h-2 rounded-full bg-theme shadow-theme"
-                                    />
-                                )}
+                                {!effectiveCollapsed && <span>Admin Panel</span>}
                             </NavLink>
-                            
-                            <NavLink
-                                to="/admin/security"
-                                onClick={onClose}
+                            <NavLink to="/admin/security" onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                    isCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
-                                    isActive 
-                                        ? "bg-danger/10 text-danger border border-danger/20" 
-                                        : "text-tertiary hover:text-danger hover:bg-danger/5"
+                                    effectiveCollapsed ? "justify-center h-12 w-full px-0" : "gap-4 px-4 py-3",
+                                    isActive ? "bg-danger/10 text-danger border border-danger/20" : "text-tertiary hover:text-danger hover:bg-danger/5"
                                 )}
                             >
                                 <Activity className="w-5 h-5 shrink-0" />
-                                {!isCollapsed && <span>Security Feed</span>}
+                                {!effectiveCollapsed && <span>Security Feed</span>}
                             </NavLink>
                         </div>
                     )}
@@ -263,101 +220,48 @@ const SidebarComponent = ({ isOpen, isCollapsed, onClose, onToggleCollapse }) =>
                     <div className="space-y-1">
                         {visibleNavItems.map((item) => (
                             <SidebarItem 
-                                key={item.path} 
-                                item={item} 
-                                isActive={location.pathname === item.path}
-                                onClose={onClose} 
-                                onPrefetch={handlePrefetch}
-                                isCollapsed={isCollapsed}
+                                key={item.path} item={item} isActive={location.pathname === item.path}
+                                onClose={() => isMobile && setSidebarExpanded(false)} onPrefetch={handlePrefetch} isCollapsed={effectiveCollapsed}
                             />
                         ))}
                     </div>
                 </nav>
 
-                {/* Optimized Footer Hierarchy */}
-                <div className={cn(
-                    "mt-auto border-t border-white/5 relative z-10 shrink-0",
-                    isCollapsed ? "p-3" : "p-4"
-                )}>
-                    {/* Part 1: Operational Actions */}
+                {/* Footer */}
+                <div className={cn("mt-auto border-t border-white/5 relative z-10 shrink-0", effectiveCollapsed ? "p-3" : "p-4")}>
                     <div className="space-y-1 mb-6">
                         {!isAdminSection && (
-                            <NavLink
-                                to="/settings"
-                                onClick={onClose}
+                            <NavLink to="/settings" onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
                                     "flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                    isCollapsed ? "justify-center h-11 w-full px-0" : "gap-4 px-4 py-3",
+                                    effectiveCollapsed ? "justify-center h-11 w-full px-0" : "gap-4 px-4 py-3",
                                     isActive ? "bg-theme/10 text-theme border border-theme/20" : "text-tertiary hover:text-primary hover:bg-white/5"
                                 )}
                             >
                                 <Settings className="w-5 h-5 shrink-0" />
-                                {!isCollapsed && <span>Settings</span>}
+                                {!effectiveCollapsed && <span>Settings</span>}
                             </NavLink>
                         )}
-
-                        <button
-                            onClick={() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK)}
-                            className={cn(
-                                "w-full flex items-center rounded-2xl text-sm font-bold transition-all duration-300",
-                                isCollapsed ? "justify-center h-11 px-0" : "gap-4 px-4 py-3",
-                                "text-tertiary hover:text-primary hover:bg-white/5"
-                            )}
+                        <button onClick={() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK)}
+                            className={cn("w-full flex items-center rounded-2xl text-sm font-bold transition-all duration-300", effectiveCollapsed ? "justify-center h-11 px-0" : "gap-4 px-4 py-3", "text-tertiary hover:text-primary hover:bg-white/5")}
                         >
                             {mode === MODES.DARK ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                            {!isCollapsed && <span>{mode === MODES.DARK ? 'Light Mode' : 'Dark Mode'}</span>}
+                            {!effectiveCollapsed && <span>{mode === MODES.DARK ? 'Light Mode' : 'Dark Mode'}</span>}
                         </button>
                     </div>
 
-                    {/* Part 2: Identity & Session */}
-                    <div className={cn(
-                        "rounded-[2.5rem] bg-white/5 border border-white/5 transition-all p-1.5",
-                        isCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-3 pr-3"
-                    )}>
-                        <Link 
-                            to="/profile"
-                            onClick={onClose}
-                            className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-accent-500/10 to-accent-500/20 border border-white/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform"
-                        >
-                            {user?.avatar ? (
-                                <img 
-                                    src={user.avatar} 
-                                    alt={user.name} 
-                                    loading="lazy" 
-                                    decoding="async" 
-                                    className="w-full h-full object-cover" 
-                                />
-                            ) : (
-                                <UserCircle className="w-6 h-6 text-theme" />
-                            )}
+                    <div className={cn("rounded-[2.5rem] bg-white/5 border border-white/5 transition-all p-1.5", effectiveCollapsed ? "flex flex-col items-center gap-2" : "flex items-center gap-3 pr-3")}>
+                        <Link to="/profile" onClick={() => isMobile && setSidebarExpanded(false)} className="shrink-0 w-10 h-10 rounded-2xl bg-gradient-to-br from-accent-500/10 to-accent-500/20 border border-white/10 flex items-center justify-center overflow-hidden hover:scale-105 transition-transform">
+                            {user?.avatar ? <img src={user.avatar} alt={user.name} loading="lazy" decoding="async" className="w-full h-full object-cover" /> : <UserCircle className="w-6 h-6 text-theme" />}
                         </Link>
-                        
-                        {!isCollapsed && (
+                        {!effectiveCollapsed && (
                             <Link to="/profile" className="flex flex-col min-w-0 flex-1 group">
                                 <span className="text-sm font-black text-primary truncate group-hover:text-theme transition-colors">{user?.name}</span>
                                 <span className="text-[10px] font-black text-tertiary uppercase tracking-tighter truncate">{user?.role}</span>
                             </Link>
                         )}
-
-                        {!isCollapsed && (
-                            <button 
-                                onClick={handleLogout}
-                                className="p-2 text-tertiary hover:text-danger transition-colors"
-                                title="Sign Out"
-                            >
-                                <LogOut className="w-4 h-4" />
-                            </button>
-                        )}
-
-                        {isCollapsed && (
-                             <button 
-                                onClick={handleLogout}
-                                className="w-10 h-10 rounded-2xl flex items-center justify-center text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
-                                title="Sign Out"
-                            >
-                                <LogOut className="w-5 h-5" />
-                            </button>
-                        )}
+                        {!effectiveCollapsed && <button onClick={handleLogout} className="p-2 text-tertiary hover:text-danger transition-colors"><LogOut className="w-4 h-4" /></button>}
+                        {effectiveCollapsed && <button onClick={handleLogout} className="w-10 h-10 rounded-2xl flex items-center justify-center text-tertiary hover:text-danger hover:bg-danger/5 transition-all"><LogOut className="w-5 h-5" /></button>}
                     </div>
                 </div>
             </motion.aside>

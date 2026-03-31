@@ -61,6 +61,14 @@ const userSchema = new mongoose.Schema(
             maxlength: [150, 'Custom message cannot exceed 150 characters'],
             default: '',
         },
+        skills: {
+            type: [String],
+            default: [],
+        },
+        totalConnections: {
+            type: Number,
+            default: 0,
+        },
         isBanned: {
             type: Boolean,
             default: false,
@@ -173,9 +181,11 @@ userSchema.statics.deleteAndCleanUp = async function (userId) {
     }
 };
 
-// Optimize lookups for Admin Dashboard filtering
+// Optimize lookups for Admin Dashboard & Networking
 userSchema.index({ role: 1, status: 1 });
 userSchema.index({ status: 1 });
 userSchema.index({ createdAt: -1 });
+userSchema.index({ totalConnections: -1 });
+userSchema.index({ skills: 1 });
 
 module.exports = mongoose.model('User', userSchema);

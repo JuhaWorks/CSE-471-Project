@@ -1,7 +1,11 @@
-import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 
-export default function DecryptedText({
+/**
+ * High-Performance DecryptedText Component
+ * Optimized for LCP (Largest Contentful Paint) and INP (Interaction to Next Paint)
+ */
+const DecryptedText = memo(({
   text,
   speed = 50,
   maxIterations = 10,
@@ -16,7 +20,7 @@ export default function DecryptedText({
   clickMode = 'once',
   trigger = false,
   ...props
-}) {
+}) => {
   const [displayText, setDisplayText] = useState(text);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isDecrypted, setIsDecrypted] = useState(animateOn !== 'click');
@@ -99,32 +103,25 @@ export default function DecryptedText({
         const nextRevealed = new Set(prev);
         const textLength = text.length;
 
-        // Calculate how many characters SHOULD be revealed by now
+        // Calculate reveal target
         let revealTarget;
         if (sequential) {
           revealTarget = prev.size + 1;
         } else {
-          // In non-sequential, we reveal based on iteration count
           iterationCount.current += 1;
           revealTarget = Math.floor((iterationCount.current / maxIterations) * textLength);
         }
 
-        // Add indices until target is reached
         while (nextRevealed.size < revealTarget && nextRevealed.size < textLength) {
           const nextIndex = getNextIndex(nextRevealed);
-          if (nextIndex !== null) {
-            nextRevealed.add(nextIndex);
-          } else {
-            break;
-          }
+          if (nextIndex !== null) nextRevealed.add(nextIndex);
+          else break;
         }
 
-        // Update display text with new reveal set
+        // BATCH: Update display text in the same tick if possible
         setDisplayText(shuffleText(text, nextRevealed));
 
-        // Check if we are done
         if (nextRevealed.size >= textLength) {
-          // Wait a tiny bit before stopping to let the final reveal "settle"
           setTimeout(stopAnimation, speed);
           return nextRevealed;
         }
@@ -169,15 +166,11 @@ export default function DecryptedText({
   }, [animateOn, hasAnimated, startAnimation]);
 
   const handleMouseEnter = () => {
-    if (animateOn === 'hover' || animateOn === 'inViewHover') {
-      startAnimation();
-    }
+    if (animateOn === 'hover' || animateOn === 'inViewHover') startAnimation();
   };
 
   const handleMouseLeave = () => {
-    if (animateOn === 'hover' || animateOn === 'inViewHover') {
-      stopAnimation();
-    }
+    if (animateOn === 'hover' || animateOn === 'inViewHover') stopAnimation();
   };
 
   const handleClick = () => {
@@ -190,6 +183,22 @@ export default function DecryptedText({
       }
     }
   };
+
+  // ── Optimization: Return a single text node when not animating to save DOM nodes & INP ──
+  if (!isAnimating && isDecrypted) {
+    return (
+      <motion.span
+        ref={containerRef}
+        className={`inline-block whitespace-pre-wrap font-mono tracking-normal ${parentClassName} ${className}`}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onClick={handleClick}
+        {...props}
+      >
+        {text}
+      </motion.span>
+    );
+  }
 
   const activeText = isAnimating ? displayText : text;
 
@@ -216,4 +225,6 @@ export default function DecryptedText({
       </span>
     </motion.span>
   );
-}
+});
+
+export default DecryptedText;

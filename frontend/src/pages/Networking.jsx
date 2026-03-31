@@ -1,6 +1,7 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useVirtualizer, useWindowVirtualizer } from '@tanstack/react-virtual';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     Search, Users2, UserPlus, UserCheck, UserX, Clock,
@@ -9,9 +10,12 @@ import {
 } from 'lucide-react';
 import { api } from '../store/useAuthStore';
 import { useAuthStore } from '../store/useAuthStore';
+import { useSocketStore } from '../store/useSocketStore';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import toast from 'react-hot-toast';
+import NetworkingSkeleton from '../components/networking/NetworkingSkeleton';
+import { API_BASE } from '../components/auth/AuthLayout';
 
 const EASE = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
 
@@ -41,15 +45,50 @@ const StatusDot = ({ status }) => {
 
 // ── Avatar ───────────────────────────────────────────────────────────────────
 const Avatar = ({ user, size = 'md' }) => {
+    const [isError, setIsError] = useState(false);
     const sizes = { sm: 'w-9 h-9', md: 'w-12 h-12', lg: 'w-16 h-16' };
-    const textSizes = { sm: 'text-xs', md: 'text-sm', lg: 'text-lg' };
+    const textSizes = { sm: 'text-[10px]', md: 'text-sm', lg: 'text-lg' };
+    
+    const getOptimizedAvatar = (url) => {
+        if (!url) return null;
+        if (url.includes('upload/')) {
+            return url.replace('upload/', 'upload/w_200,h_200,c_fill,f_auto,q_auto/');
+        }
+        return url;
+    };
+
+    const avatarUrl = useMemo(() => {
+        if (!user?.avatar) return null;
+        let url = user.avatar;
+        // If it's a relative path, prefix it with API_BASE
+        if (url.startsWith('/') && !url.startsWith('//')) {
+            const base = API_BASE.replace(/\/api$/, '');
+            url = `${base}${url}`;
+        }
+        return getOptimizedAvatar(url);
+    }, [user?.avatar]);
+    const initials = useMemo(() => {
+        if (!user?.name) return '?';
+        const parts = user.name.split(' ');
+        if (parts.length > 1) return (parts[0][0] + parts[1][0]).toUpperCase();
+        return user.name.charAt(0).toUpperCase();
+    }, [user?.name]);
+
     return (
-        <div className={`${sizes[size]} rounded-2xl bg-gradient-to-br from-theme/10 to-theme/20 border border-default flex-shrink-0 flex items-center justify-center overflow-hidden`}>
-            {user?.avatar ? (
-                <img src={user.avatar} alt={user.name} className="w-full h-full object-cover" loading="lazy" decoding="async" />
+        <div className={`${sizes[size]} rounded-2xl bg-gradient-to-br from-theme/10 to-theme/20 border border-default flex-shrink-0 flex items-center justify-center overflow-hidden relative`}>
+            {avatarUrl && !isError ? (
+                <img 
+                    src={avatarUrl} 
+                    alt="" 
+                    referrerPolicy="no-referrer"
+                    onError={() => setIsError(true)}
+                    className="w-full h-full object-cover" 
+                    loading="lazy" 
+                    decoding="async" 
+                />
             ) : (
-                <span className={`${textSizes[size]} font-black text-theme`}>
-                    {user?.name?.charAt(0)?.toUpperCase() || '?'}
+                <span className={`${textSizes[size]} font-black text-theme tracking-tight`}>
+                    {initials}
                 </span>
             )}
         </div>
@@ -67,6 +106,19 @@ const RoleBadge = ({ role }) => {
         <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${styles[role] || styles.Developer}`}>
             {role}
         </span>
+    );
+};
+
+const SocialStats = ({ count }) => {
+    if (count === undefined || count === null) return null;
+    const displayCount = Math.max(0, count);
+    return (
+        <div className="flex items-center gap-1 mt-1">
+            <Users2 className="w-3 h-3 text-tertiary" />
+            <span className="text-[10px] font-bold text-tertiary uppercase tracking-wider">
+                {displayCount} {displayCount === 1 ? 'Connection' : 'Connections'}
+            </span>
+        </div>
     );
 };
 
@@ -95,6 +147,7 @@ const ConnectionCard = ({ connection, onRemove }) => {
                             <RoleBadge role={user?.role} />
                         </div>
                         <p className="text-xs text-tertiary truncate font-medium">{user?.email}</p>
+                        <SocialStats count={user?.totalConnections} />
                         {user?.customMessage && (
                             <p className="text-xs text-secondary mt-1.5 italic truncate">"{user.customMessage}"</p>
                         )}
@@ -150,6 +203,7 @@ const IncomingRequestCard = ({ request, onRespond }) => {
                                 <RoleBadge role={user?.role} />
                             </div>
                             <p className="text-xs text-tertiary truncate font-medium">{user?.email}</p>
+                            <SocialStats count={user?.totalConnections} />
                         </div>
                         <span className="text-[10px] text-tertiary font-mono">
                             {new Date(request.createdAt).toLocaleDateString()}
@@ -199,6 +253,7 @@ const SentRequestCard = ({ request, onWithdraw }) => {
                     <div className="flex-1 min-w-0">
                         <h4 className="text-sm font-bold text-primary truncate">{user?.name}</h4>
                         <p className="text-xs text-tertiary truncate">{user?.email}</p>
+                        <SocialStats count={user?.totalConnections} />
                     </div>
                     <div className="flex items-center gap-2">
                         <span className="flex items-center gap-1 text-[10px] text-amber-500 font-bold">
@@ -279,11 +334,17 @@ const DiscoverCard = ({ user, onConnect }) => {
                                 <RoleBadge role={user?.role} />
                             </div>
                             <p className="text-xs text-tertiary truncate font-medium">{user?.email}</p>
+                            <SocialStats count={user?.totalConnections} />
                             {user?.customMessage && (
                                 <p className="text-xs text-secondary mt-1 italic truncate">"{user.customMessage}"</p>
                             )}
                             {user?.reason && (
-                                <p className="text-[10px] text-theme/70 mt-1 font-bold">✦ {user.reason}</p>
+                                <div className="flex items-start gap-1.5 mt-2 p-1.5 rounded-lg bg-theme/5 border border-theme/10">
+                                    <Sparkles className="w-3 h-3 text-theme shrink-0 mt-0.5" />
+                                    <p className="text-[10px] text-theme font-bold leading-tight uppercase tracking-tight">
+                                        {user.reason}
+                                    </p>
+                                </div>
                             )}
                         </div>
                         {getActionButton()}
@@ -357,6 +418,47 @@ const Networking = () => {
     const [activeTab, setActiveTab] = useState('network');
     const [searchQuery, setSearchQuery] = useState('');
     const [roleFilter, setRoleFilter] = useState('');
+    const { socket } = useSocketStore();
+
+    // ── Real-time Listeners ──────────────────────────────────────────────────
+    useEffect(() => {
+        if (!socket) return;
+
+        const handleReceived = (data) => {
+            toast(data.message, { icon: '👋', duration: 4000 });
+            invalidateAll();
+        };
+
+        const handleStatusUpdate = (data) => {
+            if (data.status === 'accepted') {
+                toast.success(data.message, { icon: '🤝', duration: 5000 });
+            } else {
+                toast(data.message, { icon: '❌' });
+            }
+            invalidateAll();
+        };
+
+        const handleWithdrawn = () => {
+            invalidateAll();
+        };
+
+        const handleRemoved = () => {
+            toast('A connection was removed', { icon: '🗑️' });
+            invalidateAll();
+        };
+
+        socket.on('connection:received', handleReceived);
+        socket.on('connection:status_updated', handleStatusUpdate);
+        socket.on('connection:withdrawn', handleWithdrawn);
+        socket.on('connection:removed', handleRemoved);
+
+        return () => {
+            socket.off('connection:received', handleReceived);
+            socket.off('connection:status_updated', handleStatusUpdate);
+            socket.off('connection:withdrawn', handleWithdrawn);
+            socket.off('connection:removed', handleRemoved);
+        };
+    }, [socket]);
 
     // Admin users cannot access the Networking page
     if (user?.role === 'Admin') {
@@ -364,21 +466,50 @@ const Networking = () => {
     }
 
     // ── Queries ──────────────────────────────────────────────────────────────
-    const { data: connectionsRes, isLoading: loadingConns } = useQuery({
+    const { 
+        data: connectionsRes, 
+        fetchNextPage: fetchNextConnections, 
+        hasNextPage: hasMoreConnections, 
+        isFetchingNextPage: loadingMoreConnections,
+        isLoading: loadingConns 
+    } = useInfiniteQuery({
         queryKey: ['connections'],
-        queryFn: async ({ signal }) => (await api.get('/connections', { signal })).data,
+        queryFn: async ({ pageParam, signal }) => {
+            const url = pageParam ? `/connections?cursor=${pageParam}` : '/connections';
+            return (await api.get(url, { signal })).data;
+        },
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
         staleTime: 1000 * 60 * 3,
     });
 
-    const { data: pendingRes, isLoading: loadingPending } = useQuery({
+    const { 
+        data: pendingRes, 
+        fetchNextPage: fetchNextPending, 
+        hasNextPage: hasMorePending,
+        isFetchingNextPage: loadingMorePending,
+        isLoading: loadingPending 
+    } = useInfiniteQuery({
         queryKey: ['connections', 'pending'],
-        queryFn: async ({ signal }) => (await api.get('/connections/pending', { signal })).data,
+        queryFn: async ({ pageParam, signal }) => {
+            const url = pageParam ? `/connections/pending?cursor=${pageParam}` : '/connections/pending';
+            return (await api.get(url, { signal })).data;
+        },
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
         staleTime: 1000 * 60 * 2,
     });
 
-    const { data: sentRes } = useQuery({
+    const { 
+        data: sentRes,
+        fetchNextPage: fetchNextSent,
+        hasNextPage: hasMoreSent,
+        isFetchingNextPage: loadingMoreSent
+    } = useInfiniteQuery({
         queryKey: ['connections', 'sent'],
-        queryFn: async ({ signal }) => (await api.get('/connections/sent', { signal })).data,
+        queryFn: async ({ pageParam, signal }) => {
+            const url = pageParam ? `/connections/sent?cursor=${pageParam}` : '/connections/sent';
+            return (await api.get(url, { signal })).data;
+        },
+        getNextPageParam: (lastPage) => lastPage.nextCursor,
         staleTime: 1000 * 60 * 2,
     });
 
@@ -406,9 +537,9 @@ const Networking = () => {
         enabled: activeTab === 'discover' && searchQuery.length >= 2,
     });
 
-    const connections = connectionsRes?.data || [];
-    const pending = pendingRes?.data || [];
-    const sent = sentRes?.data || [];
+    const connections = useMemo(() => connectionsRes?.pages?.flatMap(page => page.data) || [], [connectionsRes]);
+    const pending = useMemo(() => pendingRes?.pages?.flatMap(page => page.data) || [], [pendingRes]);
+    const sent = useMemo(() => sentRes?.pages?.flatMap(page => page.data) || [], [sentRes]);
     const stats = statsRes?.data || { connectionCount: 0, pendingCount: 0, sentCount: 0 };
     const suggestions = suggestionsRes?.data || [];
     const searchResults = searchRes?.data || [];
@@ -416,28 +547,91 @@ const Networking = () => {
     // ── Mutations ────────────────────────────────────────────────────────────
     const invalidateAll = () => {
         queryClient.invalidateQueries({ queryKey: ['connections'] });
+        queryClient.invalidateQueries({ queryKey: ['connections', 'stats'] });
     };
 
     const connectMutation = useMutation({
         mutationFn: async ({ recipientId, note }) => {
             return (await api.post('/connections/request', { recipientId, note })).data;
         },
+        onMutate: async ({ recipientId }) => {
+            // Cancel outgoing queries
+            await queryClient.cancelQueries({ queryKey: ['connections'] });
+            // Snapshot previous value
+            const previoussuggestions = queryClient.getQueryData(['connections', 'suggestions']);
+            const previousSearch = queryClient.getQueryData(['connections', 'search']);
+            
+            // Optimistically update
+            queryClient.setQueryData(['connections', 'suggestions'], old => ({
+                ...old,
+                data: old?.data?.map(u => u._id === recipientId ? { ...u, connectionStatus: 'pending', direction: 'sent' } : u)
+            }));
+
+            return { previoussuggestions, previousSearch };
+        },
         onSuccess: (data) => {
             toast.success(data.message);
             invalidateAll();
         },
-        onError: (err) => toast.error(err.response?.data?.message || 'Failed to send request'),
+        onError: (err, variables, context) => {
+            toast.error(err.response?.data?.message || 'Failed to send request');
+            if (context?.previoussuggestions) queryClient.setQueryData(['connections', 'suggestions'], context.previoussuggestions);
+        },
     });
 
     const respondMutation = useMutation({
         mutationFn: async ({ connectionId, action }) => {
             return (await api.put('/connections/respond', { connectionId, action })).data;
         },
+        onMutate: async ({ connectionId, action }) => {
+            await queryClient.cancelQueries({ queryKey: ['connections'] });
+            const previousPending = queryClient.getQueryData(['connections', 'pending']);
+            
+            // Optimistically remove from pending if accepted or declined
+            queryClient.setQueryData(['connections', 'pending'], old => ({
+                ...old,
+                pages: old?.pages?.map(page => ({
+                    ...page,
+                    data: page.data.filter(req => req._id !== connectionId)
+                }))
+            }));
+
+            // Optimistically update connection count if accepted
+            if (action === 'accept') {
+                queryClient.setQueryData(['connections', 'stats'], old => {
+                    if (!old?.data) return old;
+                    return {
+                        ...old,
+                        data: {
+                            ...old.data,
+                            connectionCount: (old.data.connectionCount || 0) + 1,
+                            pendingCount: Math.max(0, (old.data.pendingCount || 0) - 1)
+                        }
+                    };
+                });
+            } else {
+                queryClient.setQueryData(['connections', 'stats'], old => {
+                    if (!old?.data) return old;
+                    return {
+                        ...old,
+                        data: {
+                            ...old.data,
+                            pendingCount: Math.max(0, (old.data.pendingCount || 0) - 1)
+                        }
+                    };
+                });
+            }
+
+            return { previousPending };
+        },
         onSuccess: (data) => {
             toast.success(data.message);
             invalidateAll();
         },
-        onError: (err) => toast.error(err.response?.data?.message || 'Failed to respond'),
+        onError: (err, variables, context) => {
+            toast.error(err.response?.data?.message || 'Failed to respond');
+            if (context?.previousPending) queryClient.setQueryData(['connections', 'pending'], context.previousPending);
+        },
     });
 
     const withdrawMutation = useMutation({
@@ -455,11 +649,31 @@ const Networking = () => {
         mutationFn: async (connectionId) => {
             return (await api.delete(`/connections/${connectionId}`)).data;
         },
+        onMutate: async (connectionId) => {
+            await queryClient.cancelQueries({ queryKey: ['connections', 'stats'] });
+            const previousStats = queryClient.getQueryData(['connections', 'stats']);
+            
+            queryClient.setQueryData(['connections', 'stats'], old => {
+                if (!old?.data) return old;
+                return {
+                    ...old,
+                    data: {
+                        ...old.data,
+                        connectionCount: Math.max(0, (old.data.connectionCount || 0) - 1)
+                    }
+                };
+            });
+
+            return { previousStats };
+        },
         onSuccess: () => {
             toast.success('Connection removed');
             invalidateAll();
         },
-        onError: (err) => toast.error(err.response?.data?.message || 'Failed to remove'),
+        onError: (err, variables, context) => {
+            toast.error(err.response?.data?.message || 'Failed to remove');
+            if (context?.previousStats) queryClient.setQueryData(['connections', 'stats'], context.previousStats);
+        },
     });
 
     const handleConnect = useCallback(async (recipientId, note) => {
@@ -472,12 +686,21 @@ const Networking = () => {
 
     // ── Stats Cards ──────────────────────────────────────────────────────────
     const STATS = [
-        { label: 'Connections', value: stats.connectionCount, icon: Users2, accent: 'var(--accent-500)' },
-        { label: 'Received', value: stats.pendingCount, icon: UserPlus, accent: 'oklch(0.70 0.15 240)' },
-        { label: 'Sent', value: stats.sentCount, icon: Send, accent: 'oklch(0.72 0.15 60)' },
+        { label: 'Connections', value: Math.max(stats.connectionCount, connections.length), icon: Users2, accent: 'var(--accent-500)' },
+        { label: 'Received', value: Math.max(stats.pendingCount, pending.length), icon: UserPlus, accent: 'oklch(0.70 0.15 240)' },
+        { label: 'Sent', value: Math.max(stats.sentCount, sent.length), icon: Send, accent: 'oklch(0.72 0.15 60)' },
     ];
 
     const discoverData = searchQuery.length >= 2 ? searchResults : suggestions;
+
+    // ── Virtualization for My Network ────────────────────────────────────────
+    const parentRef = React.useRef(null);
+    const rowVirtualizer = useWindowVirtualizer({
+        count: Math.ceil(connections.length / 2),
+        estimateSize: () => 180,
+        overscan: 5,
+        scrollMargin: parentRef.current?.offsetTop || 0,
+    });
 
     return (
         <>
@@ -489,7 +712,7 @@ const Networking = () => {
                 .net-scroll::-webkit-scrollbar-thumb { background: var(--border-default); border-radius: 2px; }
             `}</style>
 
-            <article className="net-root min-h-[calc(100vh-120px)] flex flex-col pb-6 relative">
+            <article className="net-root min-h-[calc(100vh-120px)] flex flex-col pb-10 relative max-w-[2000px] mx-auto w-full">
                 {/* Ambient glow */}
                 <div className="fixed top-0 left-0 right-0 h-[220px] pointer-events-none z-0 overflow-hidden">
                     <div className="absolute top-[-50px] left-1/2 -translate-x-1/2 w-[1000px] h-[300px] bg-theme/10 rounded-full blur-[120px] opacity-40" />
@@ -497,52 +720,49 @@ const Networking = () => {
 
                 <div className="px-1 relative z-10">
                     {/* Header */}
-                    <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={EASE} className="mb-8">
-                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
-                            <div>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <Users2 className="w-4 h-4 text-theme" />
-                                    <span className="text-[11px] text-tertiary" style={{ fontFamily: 'var(--mono)' }}>
-                                        Professional Network
+                    <motion.header initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={EASE} className="mb-10 sm:mb-12">
+                        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-xl bg-theme/10 flex items-center justify-center">
+                                        <Users2 className="w-4 h-4 text-theme" />
+                                    </div>
+                                    <span className="text-[10px] sm:text-[11px] text-tertiary uppercase tracking-[0.3em] font-mono">
+                                        Professional Network Domain
                                     </span>
                                 </div>
-                                <h1 className="text-4xl md:text-5xl font-bold text-primary tracking-tight leading-tight m-0 mb-2">
+                                <h1 className="text-5xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">
                                     Networking
                                 </h1>
-                                <p className="text-base text-secondary max-w-lg leading-relaxed opacity-80">
-                                    Build meaningful professional connections, discover teammates, and grow your network.
+                                <p className="text-sm sm:text-lg text-secondary max-w-xl leading-relaxed opacity-80 font-medium">
+                                    Expand your professional neural link, sync with elite teams, and orchestrate global collaborations.
                                 </p>
                             </div>
                         </div>
                     </motion.header>
 
                     {/* Stats Row */}
-                    <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+                    <section className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-10 sm:mb-12">
                         {STATS.map((s, i) => (
                             <Card
                                 key={s.label}
                                 variant="glass"
                                 performance="premium"
                                 hideBorder={true}
-                                padding="p-5"
-                                className="cursor-default"
+                                padding="p-6 sm:p-8"
+                                className="cursor-default rounded-[2.5rem] sm:rounded-[3.15rem]"
                                 initial={{ opacity: 0, y: 12 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ ...EASE, delay: i * 0.06 }}
                             >
-                                <div style={{
-                                    width: 30, height: 30, borderRadius: 9,
-                                    background: `color-mix(in oklch, ${s.accent}, transparent 85%)`,
-                                    border: `1px solid color-mix(in oklch, ${s.accent}, transparent 70%)`,
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    marginBottom: 14
-                                }}>
-                                    <s.icon style={{ width: 14, height: 14, color: s.accent }} />
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-8"
+                                     style={{ background: `color-mix(in oklch, ${s.accent}, transparent 85%)`, border: `1px solid color-mix(in oklch, ${s.accent}, transparent 70%)` }}>
+                                    <s.icon className="w-5 h-5 sm:w-6 sm:h-6" style={{ color: s.accent }} />
                                 </div>
-                                <div style={{ fontSize: 28, fontWeight: 600, letterSpacing: '-1px', color: 'var(--text-primary)', lineHeight: 1, marginBottom: 4 }}>
+                                <div className="text-3xl sm:text-5xl font-bold tracking-tighter text-primary leading-none mb-2">
                                     {s.value}
                                 </div>
-                                <div style={{ fontSize: 10, fontWeight: 500, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>
+                                <div className="text-[10px] sm:text-[11px] font-bold tracking-widest text-tertiary uppercase font-mono">
                                     {s.label}
                                 </div>
                             </Card>
@@ -550,7 +770,7 @@ const Networking = () => {
                     </section>
 
                     {/* Tabs */}
-                    <div className="flex items-center gap-1 mb-6 p-1 rounded-2xl bg-sunken border border-default w-fit">
+                    <div className="flex flex-wrap items-center gap-1.5 mb-10 p-1.5 rounded-[1.75rem] bg-sunken/50 border border-subtle w-fit backdrop-blur-xl">
                         {TABS.map((tab) => {
                             const isActive = activeTab === tab.key;
                             const count = tab.key === 'pending' ? pending.length : tab.key === 'sent' ? sent.length : tab.key === 'network' ? connections.length : 0;
@@ -558,19 +778,28 @@ const Networking = () => {
                                 <button
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`relative flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 ${
-                                        isActive ? 'bg-surface text-primary shadow-sm border border-default' : 'text-tertiary hover:text-secondary'
+                                    className={`relative flex items-center gap-3 px-5 sm:px-8 py-3 rounded-2xl text-[10px] sm:text-xs font-black transition-all duration-300 uppercase tracking-widest ${
+                                        isActive ? 'text-primary' : 'text-tertiary hover:text-secondary'
                                     }`}
                                 >
-                                    <tab.icon className="w-3.5 h-3.5" />
-                                    {tab.label}
-                                    {count > 0 && tab.key !== 'discover' && (
-                                        <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-black ${
-                                            isActive ? 'bg-theme/10 text-theme' : 'bg-default text-tertiary'
-                                        }`}>
-                                            {count}
-                                        </span>
+                                    {isActive && (
+                                        <motion.div
+                                            layoutId="activeTab"
+                                            className="absolute inset-0 bg-surface shadow-xl border border-subtle rounded-2xl z-0"
+                                            transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                                        />
                                     )}
+                                    <div className="relative z-10 flex items-center gap-2.5">
+                                        <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                                        <span className="hidden xs:inline">{tab.label}</span>
+                                        {count > 0 && tab.key !== 'discover' && (
+                                            <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-mono ${
+                                                isActive ? 'bg-theme/10 text-theme' : 'bg-sunken text-tertiary'
+                                            }`}>
+                                                {count}
+                                            </span>
+                                        )}
+                                    </div>
                                 </button>
                             );
                         })}
@@ -578,32 +807,32 @@ const Networking = () => {
 
                     {/* Search (visible in discover tab) */}
                     {activeTab === 'discover' && (
-                        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={EASE} className="mb-6">
-                            <div className="flex gap-3">
-                                <div className="flex-1 flex items-center gap-3 px-5 py-3.5 rounded-2xl bg-sunken border border-default focus-within:border-theme focus-within:ring-2 focus-within:ring-theme/10 transition-all">
-                                    <Search className="w-4 h-4 text-tertiary shrink-0" />
+                        <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={EASE} className="mb-10">
+                            <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
+                                <div className="flex-1 flex items-center gap-4 px-6 py-4 rounded-[2rem] bg-sunken/50 border border-subtle focus-within:border-theme/30 focus-within:ring-4 focus-within:ring-theme/5 transition-all shadow-inner">
+                                    <Search className="w-5 h-5 text-tertiary shrink-0" />
                                     <input
                                         type="text"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
-                                        placeholder="Search by name or email..."
-                                        className="w-full bg-transparent text-sm font-bold text-primary placeholder-tertiary outline-none"
+                                        placeholder="Synchronize with other creators..."
+                                        className="w-full bg-transparent text-sm font-medium text-primary placeholder-tertiary outline-none"
                                     />
-                                    {searching && <Loader2 className="w-4 h-4 text-theme animate-spin shrink-0" />}
+                                    {searching && <Loader2 className="w-5 h-5 text-theme animate-spin shrink-0" />}
                                     {searchQuery && (
-                                        <button onClick={() => setSearchQuery('')} className="p-1 rounded-lg text-tertiary hover:text-primary transition-colors">
-                                            <X className="w-3.5 h-3.5" />
+                                        <button onClick={() => setSearchQuery('')} className="p-1.5 rounded-xl text-tertiary hover:text-primary transition-colors">
+                                            <X className="w-4 h-4" />
                                         </button>
                                     )}
                                 </div>
                                 <select
                                     value={roleFilter}
                                     onChange={(e) => setRoleFilter(e.target.value)}
-                                    className="px-4 py-3 rounded-2xl bg-sunken border border-default text-xs font-bold text-secondary outline-none focus:border-theme transition-all cursor-pointer"
+                                    className="px-8 py-4 rounded-[2rem] bg-sunken/50 border border-subtle text-xs font-black uppercase tracking-widest text-secondary outline-none focus:border-theme/30 transition-all cursor-pointer shadow-inner min-w-[200px]"
                                 >
-                                    <option value="">All Roles</option>
-                                    <option value="Manager">Manager</option>
-                                    <option value="Developer">Developer</option>
+                                    <option value="">Operational Roles</option>
+                                    <option value="Manager">Managers</option>
+                                    <option value="Developer">Developers</option>
                                 </select>
                             </div>
                         </motion.div>
@@ -613,14 +842,54 @@ const Networking = () => {
                     <AnimatePresence mode="wait">
                         {/* My Network */}
                         {activeTab === 'network' && (
-                            <motion.div key="network" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={EASE}>
-                                {connections.length === 0 ? (
+                            <motion.div 
+                                key="network" 
+                                initial={{ opacity: 0 }} 
+                                animate={{ opacity: 1 }} 
+                                exit={{ opacity: 0 }} 
+                                transition={EASE}
+                                ref={parentRef}
+                            >
+                                {loadingConns ? (
+                                    <NetworkingSkeleton />
+                                ) : connections.length === 0 ? (
                                     <EmptyState icon={Users2} title="No connections yet" subtitle="Start building your professional network by discovering and connecting with teammates." />
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {connections.map(conn => (
-                                            <ConnectionCard key={conn._id} connection={conn} onRemove={(id) => removeMutation.mutate(id)} />
-                                        ))}
+                                    <div 
+                                        className="relative w-full"
+                                        style={{ height: `${rowVirtualizer.getTotalSize() - rowVirtualizer.options.scrollMargin}px` }}
+                                    >
+                                        {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                                            const startIndex = virtualRow.index * 2;
+                                            const rowItems = connections.slice(startIndex, startIndex + 2);
+                                            
+                                            return (
+                                                <div
+                                                    key={virtualRow.key}
+                                                    className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 gap-3"
+                                                    style={{ 
+                                                        transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
+                                                        height: `${virtualRow.size}px`
+                                                    }}
+                                                >
+                                                    {rowItems.map(conn => (
+                                                        <ConnectionCard key={conn._id} connection={conn} onRemove={(id) => removeMutation.mutate(id)} />
+                                                    ))}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                                {hasMoreConnections && !loadingConns && (
+                                    <div className="flex justify-center mt-6">
+                                        <Button 
+                                            variant="ghost" 
+                                            onClick={() => fetchNextConnections()} 
+                                            loading={loadingMoreConnections}
+                                            className="px-8"
+                                        >
+                                            Load More Connections
+                                        </Button>
                                     </div>
                                 )}
                             </motion.div>
@@ -629,14 +898,32 @@ const Networking = () => {
                         {/* Received Requests */}
                         {activeTab === 'pending' && (
                             <motion.div key="pending" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={EASE}>
-                                {pending.length === 0 ? (
+                                {loadingPending ? (
+                                    <NetworkingSkeleton />
+                                ) : pending.length === 0 ? (
                                     <EmptyState icon={UserPlus} title="No pending requests" subtitle="When someone sends you a connection request, it will appear here." />
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {pending.map(req => (
-                                            <IncomingRequestCard key={req._id} request={req} onRespond={handleRespond} />
-                                        ))}
-                                    </div>
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                                            <AnimatePresence mode="popLayout">
+                                                {pending.map(req => (
+                                                    <IncomingRequestCard key={req._id} request={req} onRespond={handleRespond} />
+                                                ))}
+                                            </AnimatePresence>
+                                        </div>
+                                        {hasMorePending && (
+                                            <div className="flex justify-center mt-6">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    onClick={() => fetchNextPending()} 
+                                                    loading={loadingMorePending}
+                                                    className="px-8"
+                                                >
+                                                    Load More Requests
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </motion.div>
                         )}
@@ -644,14 +931,32 @@ const Networking = () => {
                         {/* Sent Requests */}
                         {activeTab === 'sent' && (
                             <motion.div key="sent" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={EASE}>
-                                {sent.length === 0 ? (
+                                {loadingMoreSent ? (
+                                     <NetworkingSkeleton />
+                                ) : sent.length === 0 ? (
                                     <EmptyState icon={Send} title="No sent requests" subtitle="Requests you've sent will appear here until they're accepted or declined." />
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {sent.map(req => (
-                                            <SentRequestCard key={req._id} request={req} onWithdraw={(id) => withdrawMutation.mutate(id)} />
-                                        ))}
-                                    </div>
+                                    <>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                                            <AnimatePresence mode="popLayout">
+                                                {sent.map(req => (
+                                                    <SentRequestCard key={req._id} request={req} onWithdraw={(id) => withdrawMutation.mutate(id)} />
+                                                ))}
+                                            </AnimatePresence>
+                                        </div>
+                                        {hasMoreSent && (
+                                            <div className="flex justify-center mt-6">
+                                                <Button 
+                                                    variant="ghost" 
+                                                    onClick={() => fetchNextSent()} 
+                                                    loading={loadingMoreSent}
+                                                    className="px-8"
+                                                >
+                                                    Load More Requests
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                             </motion.div>
                         )}
@@ -671,10 +976,12 @@ const Networking = () => {
                                 {discoverData.length === 0 && (searchQuery.length >= 2 || (!searchQuery && suggestions.length === 0)) ? (
                                     <EmptyState icon={Search} title="No users found" subtitle={searchQuery ? "Try a different search term or filter." : "No suggestions available right now."} />
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                        {discoverData.map(u => (
-                                            <DiscoverCard key={u._id} user={u} onConnect={handleConnect} />
-                                        ))}
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 relative">
+                                        <AnimatePresence mode="popLayout">
+                                            {discoverData.map(u => (
+                                                <DiscoverCard key={u._id} user={u} onConnect={handleConnect} />
+                                            ))}
+                                        </AnimatePresence>
                                     </div>
                                 )}
                             </motion.div>

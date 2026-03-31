@@ -172,5 +172,5 @@ export const AuthLayout = ({ children, reverse = false }) => {
 export default AuthLayout;
 
 // Re-exporting dynamic constants
-export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:5000' : '');
+export const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : '');
 export const useCursor = () => {}; // No longer needed in 2026 design

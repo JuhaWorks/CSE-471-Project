@@ -20,6 +20,7 @@ const { securityMiddleware, sanitizationMiddleware, apiLimiter } = require('./mi
 const passport = require('./config/passport');
 const startGarbageCollection = require('./cron/gc');
 const startDeadlineChecker = require('./cron/deadlineCheck');
+const startSocialCleanup = require('./cron/socialCleanup');
 
 // 1. Redis Initialization (Optional performance enhancement)
 const { initRedis } = require('./utils/redis');
@@ -31,6 +32,9 @@ if (process.env.REDIS_URL || process.env.NODE_ENV === 'production') {
 } else {
   logger.info('ℹ️ Redis URL not found, skipping cache initialization (Optional for Dev)');
 }
+
+// Start Background Integrity Jobs
+startSocialCleanup();
 
 app.set('trust proxy', 1);
 const server = http.createServer(app);
@@ -57,6 +61,26 @@ logger.info(`🌐 Server starting in ${process.env.NODE_ENV || 'development'} mo
 if (process.env.NODE_ENV !== 'production') {
   logger.info(`🔓 CORS internal allowance: ${Array.from(allowedOrigins).join(', ')}`);
 }
+app.use(cors({
+  origin: (origin, cb) => {
+    // 1. Allow requests with no origin (like mobile apps, curl, or direct browser hits)
+    if (!origin) return cb(null, true);
+
+    // 2. Check if origin is in the allowed list
+    if (allowedOrigins.has(origin)) return cb(null, true);
+
+    // 3. Allow Vercel preview deployments (regex match)
+    if (origin.endsWith('.vercel.app')) return cb(null, true);
+
+    // 4. Otherwise, block
+    logger.warn(`🚫 CORS blocked origin: ${origin}`);
+    cb(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
+  exposedHeaders: ['set-cookie']
+}));
 
 // Apply global rate limit to API routes
 app.use('/api', apiLimiter);
@@ -81,26 +105,6 @@ app.use(helmet({
 
 app.use(compression({ threshold: 1024 }));
 
-app.use(cors({
-  origin: (origin, cb) => {
-    // 1. Allow requests with no origin (like mobile apps, curl, or direct browser hits)
-    if (!origin) return cb(null, true);
-
-    // 2. Check if origin is in the allowed list
-    if (allowedOrigins.has(origin)) return cb(null, true);
-
-    // 3. Allow Vercel preview deployments (regex match)
-    if (origin.endsWith('.vercel.app')) return cb(null, true);
-
-    // 4. Otherwise, block
-    logger.warn(`🚫 CORS blocked origin: ${origin}`);
-    cb(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['set-cookie']
-}));
 
 app.use(cookieParser());
 app.use(sanitizationMiddleware);
@@ -148,11 +152,11 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
   const numCPUs = os.cpus().length;
   logger.info(`🔥 Global Cluster Manager (PID ${process.pid}) initializing...`);
   logger.info(`Spawning ${numCPUs} background workers to handle traffic load.`);
-  
+
   for (let i = 0; i < numCPUs; i++) {
     cluster.fork();
   }
-  
+
   cluster.on('exit', (worker, code, signal) => {
     logger.error(`Worker ${worker.process.pid} died. Automatically respawning to maintain capacity.`);
     cluster.fork();
@@ -168,7 +172,7 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
     compressors: ['zlib'] // Enable network compression
   }).then(async () => {
     logger.info(`✅ MongoDB Connected in Worker ${process.pid}!`);
-    
+
     // Only run Cron Jobs on the first worker to avoid duplication
     if (!enableCluster || cluster.worker.id === 1) {
       startGarbageCollection();

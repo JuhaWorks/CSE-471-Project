@@ -3,7 +3,7 @@ import axios from 'axios';
 import { motion } from 'framer-motion';
 import { Rocket, Info, Calendar } from 'lucide-react';
 import Card from '../ui/Card';
-import { Skeleton } from '../ui/Loading';
+import { Skeleton } from '../ui/PremiumLoaders';
 
 /**
  * Modern 2026 APOD Widget

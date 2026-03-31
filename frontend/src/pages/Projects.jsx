@@ -27,7 +27,7 @@ import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import Input from '../components/ui/Input';
 import GlassSurface from '../components/ui/GlassSurface';
-import { Skeleton } from '../components/ui/Loading';
+import { Skeleton } from '../components/ui/PremiumLoaders';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -100,31 +100,31 @@ const Projects = () => {
     };
 
     return (
-        <div className="w-full space-y-12 pb-20">
+        <div className="w-full space-y-12 pb-20 max-w-[2000px] mx-auto">
             <DeadlinePopup projects={activeProjects} user={user} />
             {/* Header Area */}
-            <header className="relative -mx-6 lg:-mx-12 px-6 lg:px-12 pt-4 pb-12 overflow-hidden border-b border-default mb-10">
+            <header className="relative -mx-4 sm:-mx-6 lg:-mx-12 px-4 sm:px-6 lg:px-12 pt-6 sm:pt-10 pb-12 sm:pb-16 overflow-hidden border-b border-default rounded-b-[3.15rem] sm:rounded-b-[5rem] mb-12">
                 <div className="absolute inset-0 z-0">
-                    <GlassSurface width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} />
+                    <GlassSurface width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} blur={30} />
                 </div>
                 
                 <div className="absolute -top-10 left-0 w-64 h-64 bg-theme/5 rounded-full blur-[100px] pointer-events-none" />
                 
-                <div className="relative z-10 flex flex-col lg:flex-row lg:items-end justify-between gap-10">
-                    <div className="space-y-4">
+                <div className="relative z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-10">
+                    <div className="space-y-4 sm:space-y-6">
                         <div className="flex items-center gap-3 text-theme font-black text-[10px] uppercase tracking-[0.4em]">
-                            <LayoutGrid className="w-3 h-3" />
-                            <span>Project Management</span>
+                            <LayoutGrid className="w-3.5 h-3.5 text-theme/60" />
+                            <span>Neural Project Domains</span>
                         </div>
-                        <h1 className="text-4xl md:text-6xl font-black text-primary tracking-tighter">Projects</h1>
-                        <p className="text-secondary font-medium text-lg max-w-xl leading-relaxed">
-                            Manage and collaborate on team projects efficiently in a centralized workspace.
+                        <h1 className="text-5xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">Projects</h1>
+                        <p className="text-secondary font-medium text-base sm:text-xl max-w-xl leading-relaxed opacity-80">
+                            Orchestrate and synchronize team operations within a high-fidelity creative workspace.
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
                         {/* Segmented Control */}
-                        <div className="flex p-1.5 glass-2 bg-sunken/50 border-subtle rounded-2xl">
+                        <div className="flex p-1.5 glass-2 bg-sunken/50 border-subtle rounded-[1.75rem] sm:rounded-[2rem]">
                             {[
                                 { id: 'active', label: 'Active', count: activeProjects.length, icon: Box },
                                 { id: 'archived', label: 'Archived', count: archivedProjects.length, icon: Trash2 },
@@ -134,22 +134,22 @@ const Projects = () => {
                                     key={tab.id}
                                     onClick={() => startTransition(() => setView(tab.id))}
                                     className={twMerge(clsx(
-                                        "flex items-center gap-3 px-6 py-2.5 rounded-xl text-xs font-black transition-all relative overflow-hidden",
+                                        "flex items-center gap-3 px-4 sm:px-6 py-2.5 rounded-2xl text-[10px] sm:text-xs font-black transition-all relative overflow-hidden",
                                         view === tab.id ? "text-theme" : "text-tertiary hover:text-secondary"
                                     ))}
                                 >
                                     {view === tab.id && (
                                         <motion.div 
                                             layoutId="project-tab"
-                                            className="absolute inset-0 bg-surface border border-subtle rounded-xl"
+                                            className="absolute inset-0 bg-surface border border-subtle rounded-2xl shadow-sm shadow-black/20"
                                             transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                                         />
                                     )}
-                                    <tab.icon className="w-3.5 h-3.5 relative z-10" />
-                                    <span className="relative z-10">{tab.label}</span>
+                                    <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10" />
+                                    <span className="relative z-10 uppercase tracking-widest">{tab.label}</span>
                                     <span className={twMerge(clsx(
-                                        "relative z-10 px-1.5 py-0.5 rounded-md text-[9px]",
-                                        view === tab.id ? "bg-theme-muted text-theme" : "bg-sunken text-tertiary"
+                                        "relative z-10 px-1.5 py-0.5 rounded-lg text-[9px] font-mono",
+                                        view === tab.id ? "bg-theme/10 text-theme" : "bg-sunken text-tertiary"
                                     ))}>{tab.count}</span>
                                 </button>
                             ))}
@@ -160,6 +160,7 @@ const Projects = () => {
                                 size="lg"
                                 onClick={() => setIsCreateModalOpen(true)}
                                 leftIcon={Plus}
+                                className="h-14 sm:h-16 px-8 rounded-[1.75rem] sm:rounded-[2rem] shadow-xl shadow-theme/10"
                             >
                                 New Project
                             </Button>
@@ -169,43 +170,43 @@ const Projects = () => {
             </header>
 
             {/* Filter Bar */}
-            <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-between px-1">
                 <div className="w-full md:w-[450px]">
                     <Input
-                        placeholder="Search projects..."
+                        placeholder="Search project archives..."
                         leftIcon={Search}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="rounded-3xl"
+                        className="rounded-[2rem] sm:rounded-[2.5rem] h-12 sm:h-14 bg-sunken/50 border-subtle"
                     />
                 </div>
             </div>
 
             {/* Content Segment */}
             {isLoading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 gap-8 px-1">
                     {[1, 2, 3, 4, 5, 6].map(i => (
-                        <Skeleton key={i} className="h-80 w-full rounded-[3.15rem]" />
+                        <Skeleton key={i} className="h-96 w-full rounded-[3.15rem] sm:rounded-[4rem]" />
                     ))}
                 </div>
             ) : filteredProjects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 gap-8 px-1">
                     <AnimatePresence mode="popLayout">
                         {filteredProjects.map((project) => (
                             <Card 
                                 key={project._id} 
-                                className="group h-full flex flex-col"
+                                className="group h-full flex flex-col rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden border-subtle hover:border-theme/30 transition-all duration-500"
                                 padding="p-0"
                             >
-                                <div className="p-4 flex flex-col h-full">
-                                    <div className="relative mb-6">
+                                <div className="p-4 sm:p-5 flex flex-col h-full">
+                                    <div className="relative mb-6 sm:mb-8">
                                         <ProjectImage
                                             project={project}
-                                            className="rounded-3xl border border-subtle"
+                                            className="rounded-[2rem] sm:rounded-[2.5rem] border border-subtle aspect-video object-cover"
                                         />
                                         <div className="absolute top-4 right-4">
                                             <div className={twMerge(clsx(
-                                                "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-widest border backdrop-blur-md shadow-xl transition-all group-hover:scale-105",
+                                                "px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-[0.2em] border backdrop-blur-xl shadow-2xl transition-all group-hover:scale-105",
                                                 getStatusStyles(project.status)
                                             ))}>
                                                 {project.status || 'Active'}
@@ -213,70 +214,71 @@ const Projects = () => {
                                         </div>
                                     </div>
 
-                                    <div className="px-4 space-y-4 mb-8">
-                                        <div className="space-y-1">
-                                            <h3 className="text-2xl font-black text-primary tracking-tighter group-hover:text-theme transition-colors line-clamp-1">
+                                    <div className="px-4 sm:px-6 space-y-4 mb-8">
+                                        <div className="space-y-1.5">
+                                            <h3 className="text-2xl sm:text-3xl font-black text-primary tracking-tighter group-hover:text-theme transition-colors line-clamp-1">
                                                 {project.name}
                                             </h3>
-                                            <p className="text-tertiary text-xs font-medium line-clamp-2 leading-relaxed min-h-[32px]">
+                                            <p className="text-tertiary text-xs sm:text-sm font-medium line-clamp-2 leading-relaxed min-h-[40px] opacity-80">
                                                 {project.description}
                                             </p>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-6 pt-2">
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block">Deadline</span>
-                                                <div className="flex items-center gap-2 text-primary">
-                                                    <Calendar className="w-3.5 h-3.5 text-theme-lt" />
-                                                    <span className="text-xs font-bold">
-                                                        {new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                                        <div className="grid grid-cols-2 gap-8 pt-4 border-t border-subtle/50">
+                                            <div className="space-y-1.5">
+                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block opacity-60">Deadline</span>
+                                                <div className="flex items-center gap-2.5 text-primary">
+                                                    <Calendar className="w-4 h-4 text-theme/60" />
+                                                    <span className="text-xs sm:text-sm font-bold font-mono">
+                                                        {new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })}
                                                     </span>
                                                 </div>
                                             </div>
-                                            <div className="space-y-1">
-                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block">Team Members</span>
-                                                <div className="flex items-center gap-2 text-primary">
-                                                    <Users className="w-3.5 h-3.5 text-theme-lt" />
-                                                    <span className="text-xs font-bold">{project.members?.length || 0}</span>
+                                            <div className="space-y-1.5">
+                                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest block opacity-60">Synchronized</span>
+                                                <div className="flex items-center gap-2.5 text-primary">
+                                                    <Users className="w-4 h-4 text-theme/60" />
+                                                    <span className="text-xs sm:text-sm font-bold font-mono">{project.members?.length || 0} MEMBERS</span>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
 
-                                    <div className="mt-auto px-4 py-6 border-t border-subtle flex items-center justify-between">
-                                        <div className="flex -space-x-2">
+                                    <div className="mt-auto px-6 sm:px-8 py-6 sm:py-8 border-t border-subtle bg-sunken/30 flex items-center justify-between">
+                                        <div className="flex -space-x-2.5">
                                             {project.members?.slice(0, 4).map((m, i) => (
-                                                <div key={i} className="w-8 h-8 rounded-xl border-2 border-base bg-sunken flex items-center justify-center overflow-hidden transition-transform group-hover:scale-110">
+                                                <div key={i} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-base bg-sunken flex items-center justify-center overflow-hidden transition-all group-hover:scale-110 hover:z-10 shadow-lg">
                                                     {m.userId?.avatar ? (
                                                         <img src={m.userId.avatar} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
                                                     ) : (
-                                                        <span className="text-[10px] font-black text-gray-600">{m.userId?.name?.charAt(0)}</span>
+                                                        <span className="text-[10px] sm:text-xs font-black text-gray-400">{m.userId?.name?.charAt(0)}</span>
                                                     )}
                                                 </div>
                                             ))}
                                             {project.members?.length > 4 && (
-                                                <div className="w-8 h-8 rounded-xl border-2 border-base bg-sunken flex items-center justify-center text-[9px] font-black text-tertiary">
+                                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-base bg-sunken flex items-center justify-center text-[10px] font-black text-tertiary shadow-lg">
                                                     +{project.members.length - 4}
                                                 </div>
                                             )}
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-3">
                                             {view === 'invitations' ? (
                                                 <>
-                                                    <Button size="sm" variant="secondary" onClick={() => respondMutation.mutate({ id: project._id, status: 'rejected' })} disabled={respondMutation.isPending} className="px-3">
+                                                    <button onClick={() => respondMutation.mutate({ id: project._id, status: 'rejected' })} disabled={respondMutation.isPending} className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-danger transition-colors">
                                                         Decline
-                                                    </Button>
-                                                    <Button size="sm" onClick={() => respondMutation.mutate({ id: project._id, status: 'active' })} rightIcon={ChevronRight} disabled={respondMutation.isPending}>
+                                                    </button>
+                                                    <Button size="md" onClick={() => respondMutation.mutate({ id: project._id, status: 'active' })} rightIcon={ChevronRight} disabled={respondMutation.isPending} className="rounded-xl">
                                                         Accept
                                                     </Button>
                                                 </>
                                             ) : project.status === 'Archived' ? (
                                                 <Button
-                                                    size="sm"
+                                                    size="md"
                                                     variant="secondary"
                                                     onClick={() => restoreMutation.mutate(project._id)}
                                                     leftIcon={RefreshCw}
+                                                    className="rounded-xl"
                                                 >
                                                     Restore
                                                 </Button>
@@ -284,18 +286,19 @@ const Projects = () => {
                                                 <>
                                                     <Button
                                                         variant="secondary"
-                                                        size="sm"
+                                                        size="md"
                                                         as={Link}
                                                         to={`/projects/${project._id}/settings`}
-                                                        className="px-3"
+                                                        className="w-10 sm:w-12 h-10 sm:h-12 p-0 flex items-center justify-center rounded-xl"
                                                     >
-                                                        <Settings className="w-4 h-4" />
+                                                        <Settings className="w-5 h-5" />
                                                     </Button>
                                                     <Button
-                                                        size="sm"
+                                                        size="md"
                                                         as={Link}
                                                         to={`/tasks?project=${project._id}`}
                                                         rightIcon={ChevronRight}
+                                                        className="px-6 rounded-xl"
                                                     >
                                                         Enter
                                                     </Button>
@@ -309,20 +312,21 @@ const Projects = () => {
                     </AnimatePresence>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-40 text-center glass-2 border-dashed border-subtle rounded-[5rem]">
-                    <div className="w-24 h-24 rounded-[2.5rem] bg-sunken border border-subtle flex items-center justify-center mb-8">
-                        <SearchX className="w-10 h-10 text-tertiary" />
+                <div className="flex flex-col items-center justify-center py-40 sm:py-60 text-center glass-2 border-dashed border-subtle rounded-[5rem] sm:rounded-[8rem] px-8">
+                    <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[3rem] sm:rounded-[4rem] bg-sunken border border-subtle flex items-center justify-center mb-10 sm:mb-12 shadow-inner">
+                        <SearchX className="w-10 h-10 sm:w-14 sm:h-14 text-tertiary/40" />
                     </div>
-                    <h2 className="text-4xl font-black text-primary tracking-tighter mb-3">No Projects Found</h2>
-                    <p className="text-gray-500 font-medium max-w-sm mb-12 leading-relaxed">
-                        This view is currently empty. Create a new project to get started.
+                    <h2 className="text-4xl sm:text-6xl font-black text-primary tracking-tighter mb-4 leading-none">Neutral Space.</h2>
+                    <p className="text-tertiary font-medium text-base sm:text-lg max-w-sm mb-12 sm:mb-16 leading-relaxed opacity-80">
+                        This operational view is currently empty. Initialize a new project segment to begin.
                     </p>
                     <Button
                         size="lg"
                         onClick={() => setIsCreateModalOpen(true)}
                         leftIcon={Plus}
+                        className="h-16 sm:h-20 px-10 sm:px-12 rounded-[2rem] sm:rounded-[2.5rem] shadow-2xl shadow-theme/20 text-lg"
                     >
-                        New Project
+                        New Directive
                     </Button>
                 </div>
             )}

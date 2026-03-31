@@ -1,5 +1,3 @@
-@import url("https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@800,700,600,500,400&f[]=switzer@700,600,500,400,300&display=swap");
-@import url("https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600&display=swap");
 @import "tailwindcss";
 
 @property --gradient-angle {
@@ -72,21 +70,21 @@
   --font-sans: "Switzer", system-ui, sans-serif;
   --font-mono: "Geist Mono", "Fira Code", monospace;
 
-  /* Type scale */
-  --text-2xs: 0.625rem;
-  --text-xs: 0.75rem;
-  --text-sm: 0.8125rem;
-  --text-base: 0.9375rem;
-  --text-lg: 1.0625rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-  --text-5xl: 3rem;
-  --text-6xl: 3.75rem;
-  --text-hero: clamp(2.75rem, 8vw, 6rem);
-  --text-fluid-lg: clamp(1.125rem, 2.5vw, 1.5rem);
-  --text-fluid-base: clamp(0.875rem, 1.5vw, 1rem);
+  /* Fluid Type Scale (Desktop-First with clamping) */
+  --text-2xs: clamp(0.55rem, 1.5vw, 0.625rem);
+  --text-xs: clamp(0.65rem, 1.8vw, 0.75rem);
+  --text-sm: clamp(0.75rem, 2vw, 0.8125rem);
+  --text-base: clamp(0.875rem, 2.5vw, 0.9375rem);
+  --text-lg: clamp(0.95rem, 2.8vw, 1.0625rem);
+  --text-xl: clamp(1.1rem, 3.2vw, 1.25rem);
+  --text-2xl: clamp(1.25rem, 4vw, 1.5rem);
+  --text-3xl: clamp(1.5rem, 5vw, 1.875rem);
+  --text-4xl: clamp(1.875rem, 6vw, 2.25rem);
+  --text-5xl: clamp(2.25rem, 8vw, 3rem);
+  --text-6xl: clamp(3rem, 10vw, 3.75rem);
+  --text-hero: clamp(2.75rem, 12vw, 7rem);
+  --text-fluid-lg: clamp(1.125rem, 4vw, 2rem);
+  --text-fluid-base: clamp(0.875rem, 2.5vw, 1.125rem);
 
   /* OKLCH neutral scale */
   --color-neutral-50: oklch(0.985 0.002 247);
@@ -109,17 +107,19 @@
   --color-danger: oklch(0.65 0.22 25);
   --color-info: oklch(0.70 0.15 240);
 
-  /* Custom breakpoints */
+  /* Precise Responsive Breakpoints */
+  --breakpoint-2xs: 375px;
   --breakpoint-xs: 480px;
   --breakpoint-3xl: 1920px;
+  --breakpoint-4xl: 2560px;
 
   /* Spacing extras with fluid scaling */
-  --spacing-18: clamp(3rem, 6vw, 4.5rem);
-  --spacing-22: clamp(4rem, 8vw, 5.5rem);
-  --spacing-26: clamp(5rem, 10vw, 6.5rem);
-  --spacing-fluid-sm: clamp(1rem, 2vw, 1.5rem);
-  --spacing-fluid-md: clamp(1.5rem, 4vw, 2.5rem);
-  --spacing-fluid-lg: clamp(2rem, 6vw, 4rem);
+  --spacing-18: clamp(2.5rem, 6vw, 4.5rem);
+  --spacing-22: clamp(3.5rem, 8vw, 5.5rem);
+  --spacing-26: clamp(4.5rem, 10vw, 6.5rem);
+  --spacing-fluid-sm: clamp(0.75rem, 2vw, 1.5rem);
+  --spacing-fluid-md: clamp(1.25rem, 4vw, 2.5rem);
+  --spacing-fluid-lg: clamp(1.75rem, 6vw, 4.5rem);
 
   /* Border radius */
   --radius-xs: 4px;

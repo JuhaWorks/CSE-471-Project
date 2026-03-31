@@ -1,28 +1,5 @@
 "use client";
-
-/**
- * AsciiWave — Generative Art Edition
- *
- * Upgrades over v2:
- *  ─ Fluid spring simulation: each column has real velocity + position state,
- *    nudged by wave forces and damped each frame → momentum-carrying crests
- *  ─ Perlin-ish smooth noise (no deps) layered on top of sine waves for
- *    aperiodic, never-looping organic swell
- *  ─ Chromatic aberration: crest cells emit offset R and B ghost copies
- *  ─ Mouse / touch ripple distortion: pointer warps column heights; click
- *    fires a larger splash that propagates outward and decays
- *  ─ Five-tier heat-map character set (cold mist → hot foam)
- *  ─ Crest foam: top 1-2 rows always render dense chars at near-full alpha
- *  ─ Exponential subsurface fade (vs linear) for realistic light absorption
- *  ─ Temporal dithering: ~6 % of body cells skipped per frame → organic shimmer
- *  ─ Multi-colour palette prop: hex[] interpolated across column width
- *  ─ CRT scanline + vignette CSS overlays (zero extra draw calls)
- *  ─ Parallax layers: deeper layers use independent wave eval + y-offset
- */
-
 import React, { useRef, useEffect, useCallback } from "react";
-
-// ─── Character tiers: cold → hot ──────────────────────────────────────────
 const TIERS = [
     " ·".split(""),
     "·:;,".split(""),

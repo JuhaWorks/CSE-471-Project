@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import { User, Mail, Lock, Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { User, Mail, Lock, Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2, Chrome, Github } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
 import Button from '../components/ui/Button';

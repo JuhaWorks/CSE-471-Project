@@ -18,7 +18,8 @@ const auditSchema = new mongoose.Schema(
                 'Create', 'Update', 'Delete', 'Deactivate', 'StatusChange',
                 'PROJECT_CREATED', 'PROJECT_UPDATED', 'PROJECT_DELETED', 'PROJECT_RESTORED',
                 'MEMBER_ADDED', 'MEMBER_ROLE_UPDATED', 'MEMBER_REMOVED',
-                'ROLE_UPDATED', 'USER_BANNED', 'USER_UNBANNED', 'FAILED_LOGIN',
+                'ROLE_UPDATED', 'USER_BANNED', 'USER_UNBANNED', 'FAILED_LOGIN', 'LOGIN_SUCCESS', 'LOGOUT',
+                'TOKEN_REFRESH', 'TOKEN_REUSE_DETECTED', 'EMAIL_VERIFIED',
                 'MAINTENANCE_ENABLED', 'MAINTENANCE_DISABLED', 'IP_BLOCKED', 'IP_UNBLOCKED'
             ],
         },

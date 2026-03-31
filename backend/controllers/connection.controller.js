@@ -1,6 +1,12 @@
 const Connection = require('../models/connection.model');
 const User = require('../models/user.model');
 const { z } = require('zod');
+const { getIO } = require('../utils/socket');
+const { getRedisClient } = require('../utils/redis');
+
+// Local LRU/Memory cache for stats (5s TTL)
+const statsCache = new Map(); // userId -> { data, expires }
+const STATS_TTL = 5000;
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 
@@ -110,6 +116,14 @@ const sendRequest = async (req, res, next) => {
             note: note || '',
         });
 
+        // Notify recipient in real-time
+        try {
+            getIO().to(recipientId).emit('connection:received', {
+                request: await Connection.findById(connection._id).populate('requester', 'name email avatar role status customMessage').lean(),
+                message: `${req.user.name} sent you a connection request.`
+            });
+        } catch (err) { /* Socket fail shouldn't break DB ops */ }
+
         res.status(201).json({
             status: 'success',
             message: 'Connection request sent',
@@ -159,6 +173,30 @@ const respondToRequest = async (req, res, next) => {
         connection.respondedAt = new Date();
         await connection.save();
 
+        if (action === 'accept') {
+            await User.updateMany(
+                { _id: { $in: [connection.requester, connection.recipient] } },
+                { $inc: { totalConnections: 1 } }
+            );
+
+            // Pre-calculate mutual connections hint for both users
+            // (Invalidate suggestions cache for both parties to trigger re-calc on next view)
+            if (redisClient && redisClient.isReady) {
+                await redisClient.del(`suggestions:${connection.requester}`);
+                await redisClient.del(`suggestions:${connection.recipient}`);
+            }
+        }
+
+        // Notify requester in real-time
+        try {
+            getIO().to(connection.requester.toString()).emit('connection:status_updated', {
+                connectionId: connection._id,
+                status: connection.status,
+                responderName: req.user.name,
+                message: action === 'accept' ? `${req.user.name} accepted your connection request!` : `${req.user.name} declined your connection request.`
+            });
+        } catch (err) { /* Socket fail shouldn't break DB ops */ }
+
         res.status(200).json({
             status: 'success',
             message: action === 'accept' ? 'Connection accepted' : 'Connection declined',
@@ -195,6 +233,11 @@ const withdrawRequest = async (req, res, next) => {
 
         await Connection.findByIdAndDelete(connectionId);
 
+        // Notify recipient that request was withdrawn
+        try {
+            getIO().to(connection.recipient.toString()).emit('connection:withdrawn', { connectionId });
+        } catch (err) { /* Socket fail shouldn't break DB ops */ }
+
         res.status(200).json({
             status: 'success',
             message: 'Connection request withdrawn',
@@ -225,6 +268,18 @@ const removeConnection = async (req, res, next) => {
         }
 
         await Connection.findByIdAndDelete(connectionId);
+
+        // Decrement counts
+        await User.updateMany(
+            { _id: { $in: [connection.requester, connection.recipient] } },
+            { $inc: { totalConnections: -1 } }
+        );
+
+        // Notify the other party that connection was removed
+        try {
+            const otherId = connection.requester.toString() === userId ? connection.recipient.toString() : connection.requester.toString();
+            getIO().to(otherId).emit('connection:removed', { connectionId });
+        } catch (err) { /* Socket fail shouldn't break DB ops */ }
 
         res.status(200).json({
             status: 'success',
@@ -279,17 +334,30 @@ const updateLabels = async (req, res, next) => {
 const getMyConnections = async (req, res, next) => {
     try {
         const userId = req.user._id;
+        const limit = parseInt(req.query.limit) || 20;
+        const cursor = req.query.cursor; // This would be the 'respondedAt' of the last item
 
-        const connections = await Connection.find({
+        const query = {
             $or: [{ requester: userId }, { recipient: userId }],
             status: 'accepted',
-        })
-            .populate('requester', 'name email avatar role status customMessage')
-            .populate('recipient', 'name email avatar role status customMessage')
-            .sort({ respondedAt: -1 });
+        };
+
+        if (cursor) {
+            query.respondedAt = { $lt: new Date(cursor) };
+        }
+
+        const connections = await Connection.find(query)
+            .populate('requester', 'name email avatar role status customMessage totalConnections')
+            .populate('recipient', 'name email avatar role status customMessage totalConnections')
+            .sort({ respondedAt: -1 })
+            .limit(limit + 1);
+
+        const hasNextPage = connections.length > limit;
+        const results = hasNextPage ? connections.slice(0, limit) : connections;
+        const nextCursor = hasNextPage ? results[results.length - 1].respondedAt : null;
 
         // Format: always return the "other person" as the connection
-        const formatted = connections.map(conn => {
+        const formatted = results.map(conn => {
             const other = conn.requester._id.toString() === userId.toString()
                 ? conn.recipient
                 : conn.requester;
@@ -304,6 +372,7 @@ const getMyConnections = async (req, res, next) => {
         res.status(200).json({
             status: 'success',
             count: formatted.length,
+            nextCursor,
             data: formatted,
         });
     } catch (error) {
@@ -317,18 +386,32 @@ const getMyConnections = async (req, res, next) => {
 const getPendingRequests = async (req, res, next) => {
     try {
         const userId = req.user._id;
+        const limit = parseInt(req.query.limit) || 20;
+        const cursor = req.query.cursor;
 
-        const incoming = await Connection.find({
+        const query = {
             recipient: userId,
             status: 'pending',
-        })
-            .populate('requester', 'name email avatar role status customMessage')
-            .sort({ createdAt: -1 });
+        };
+
+        if (cursor) {
+            query.createdAt = { $lt: new Date(cursor) };
+        }
+
+        const incoming = await Connection.find(query)
+            .populate('requester', 'name email avatar role status customMessage totalConnections')
+            .sort({ createdAt: -1 })
+            .limit(limit + 1);
+
+        const hasNextPage = incoming.length > limit;
+        const results = hasNextPage ? incoming.slice(0, limit) : incoming;
+        const nextCursor = hasNextPage ? results[results.length - 1].createdAt : null;
 
         res.status(200).json({
             status: 'success',
-            count: incoming.length,
-            data: incoming,
+            count: results.length,
+            nextCursor,
+            data: results,
         });
     } catch (error) {
         next(error);
@@ -341,18 +424,32 @@ const getPendingRequests = async (req, res, next) => {
 const getSentRequests = async (req, res, next) => {
     try {
         const userId = req.user._id;
+        const limit = parseInt(req.query.limit) || 20;
+        const cursor = req.query.cursor;
 
-        const sent = await Connection.find({
+        const query = {
             requester: userId,
             status: 'pending',
-        })
-            .populate('recipient', 'name email avatar role status customMessage')
-            .sort({ createdAt: -1 });
+        };
+
+        if (cursor) {
+            query.createdAt = { $lt: new Date(cursor) };
+        }
+
+        const sent = await Connection.find(query)
+            .populate('recipient', 'name email avatar role status customMessage totalConnections')
+            .sort({ createdAt: -1 })
+            .limit(limit + 1);
+
+        const hasNextPage = sent.length > limit;
+        const results = hasNextPage ? sent.slice(0, limit) : sent;
+        const nextCursor = hasNextPage ? results[results.length - 1].createdAt : null;
 
         res.status(200).json({
             status: 'success',
-            count: sent.length,
-            data: sent,
+            count: results.length,
+            nextCursor,
+            data: results,
         });
     } catch (error) {
         next(error);
@@ -365,19 +462,35 @@ const getSentRequests = async (req, res, next) => {
 const getStats = async (req, res, next) => {
     try {
         const userId = req.user._id;
+        const now = Date.now();
 
-        const [connectionCount, pendingCount, sentCount] = await Promise.all([
-            Connection.countDocuments({
-                $or: [{ requester: userId }, { recipient: userId }],
-                status: 'accepted',
-            }),
+        // Layer 1: Memory Cache check
+        if (statsCache.has(userId.toString())) {
+            const cached = statsCache.get(userId.toString());
+            if (now < cached.expires) {
+                return res.status(200).json({ status: 'success', data: cached.data });
+            }
+        }
+
+        // Layer 2: User model denormalized count + pending counts
+        const [user, pendingCount, sentCount] = await Promise.all([
+            User.findById(userId).select('totalConnections'),
             Connection.countDocuments({ recipient: userId, status: 'pending' }),
             Connection.countDocuments({ requester: userId, status: 'pending' }),
         ]);
 
+        const stats = {
+            connectionCount: user?.totalConnections || 0,
+            pendingCount,
+            sentCount,
+        };
+
+        // Update Layer 1 (Memory Cache)
+        statsCache.set(userId.toString(), { data: stats, expires: now + STATS_TTL });
+
         res.status(200).json({
             status: 'success',
-            data: { connectionCount, pendingCount, sentCount },
+            data: stats,
         });
     } catch (error) {
         next(error);
@@ -513,68 +626,174 @@ const searchUsers = async (req, res, next) => {
 // @desc    Get suggested connections ("People you may know")
 // @route   GET /api/connections/suggestions
 // @access  Private
+// @desc    Get suggested connections ("People you may know")
+// @route   GET /api/connections/suggestions
+// @access  Private
 const getSuggestions = async (req, res, next) => {
     try {
         const userId = req.user._id;
+        const redisClient = getRedisClient();
 
-        // Get IDs of all users I'm already connected to or have pending with
+        // 1. Try Cache First
+        if (redisClient && redisClient.isReady) {
+            const cached = await redisClient.get(`suggestions:${userId}`);
+            if (cached) {
+                return res.status(200).json(JSON.parse(cached));
+            }
+        }
+
+        // 2. Identify Users to Exclude (self, already connected, pending)
         const existing = await Connection.find({
             $or: [{ requester: userId }, { recipient: userId }],
             status: { $in: ['pending', 'accepted'] },
         });
 
         const excludeIds = new Set([userId.toString()]);
+        const myConnectionIds = [];
         existing.forEach(c => {
-            excludeIds.add(c.requester.toString());
-            excludeIds.add(c.recipient.toString());
+            const rId = c.requester.toString();
+            const pId = c.recipient.toString();
+            excludeIds.add(rId);
+            excludeIds.add(pId);
+            if (c.status === 'accepted') {
+                myConnectionIds.push(rId === userId.toString() ? pId : rId);
+            }
         });
 
-        // Find users I share projects with (co-workers get prioritized)
-        const Project = require('../models/project.model');
-        const myProjects = await Project.find({
-            'members.userId': userId,
-            deletedAt: null,
-        }).select('members');
+        // 3. Find Mutual Connections (N-Degree)
+        // Find connections of my connections
+        const mutualConnections = await Connection.find({
+            $or: [
+                { requester: { $in: myConnectionIds }, recipient: { $nin: Array.from(excludeIds) }, status: 'accepted' },
+                { recipient: { $in: myConnectionIds }, requester: { $nin: Array.from(excludeIds) }, status: 'accepted' }
+            ]
+        }).limit(200);
 
-        const coworkerIds = new Set();
-        myProjects.forEach(p => {
-            p.members.forEach(m => {
-                const mid = m.userId.toString();
-                if (!excludeIds.has(mid)) coworkerIds.add(mid);
+        const candidateMap = new Map(); // userId -> { count, mutualIds }
+        mutualConnections.forEach(c => {
+            const potentialId = myConnectionIds.includes(c.requester.toString()) ? c.recipient.toString() : c.requester.toString();
+            const mutualWith = myConnectionIds.includes(c.requester.toString()) ? c.requester.toString() : c.recipient.toString();
+            
+            if (!candidateMap.has(potentialId)) {
+                candidateMap.set(potentialId, { count: 0, mutualIds: [] });
+            }
+            const data = candidateMap.get(potentialId);
+            data.count++;
+            if (data.mutualIds.length < 3) data.mutualIds.push(mutualWith);
+        });
+
+        // Convert map to sorted array
+        const sortedCandidates = Array.from(candidateMap.entries())
+            .sort((a, b) => b[1].count - a[1].count) // Sort by mutual count descending
+            .slice(0, 15);
+
+        const mutualUserIds = sortedCandidates.map(c => c[0]);
+        const allMutualWithIds = [...new Set(sortedCandidates.flatMap(c => c[1].mutualIds))];
+
+        // 4. Get User Details and Mutual Names
+        const [foundMutuals, mutualUserNames] = await Promise.all([
+            User.find({
+                _id: { $in: mutualUserIds },
+                isActive: { $ne: false },
+                isBanned: { $ne: true },
+                role: { $ne: 'Admin' },
+            }).select('name email avatar role status customMessage totalConnections').lean(),
+            User.find({ _id: { $in: allMutualWithIds } }).select('name').lean()
+        ]);
+
+        const nameLookup = new Map(mutualUserNames.map(u => [u._id.toString(), u.name]));
+
+        // Map back to maintain sorting and add mutual count + names
+        const mutualSuggestions = foundMutuals.map(u => {
+            const stats = candidateMap.get(u._id.toString());
+            const names = stats.mutualIds.map(id => nameLookup.get(id)).filter(Boolean);
+            let reason = `${stats.count} mutual connections`;
+            if (names.length > 0) {
+                reason = `Mutual friends: ${names.join(', ')}${stats.count > names.length ? ` + ${stats.count - names.length} others` : ''}`;
+            }
+
+            return {
+                ...u,
+                mutualCount: stats.count,
+                reason
+            };
+        }).sort((a, b) => b.mutualCount - a.mutualCount);
+
+        // 5. Fill remaining with Co-workers or Role-based Discoveries
+        const remaining = 15 - mutualSuggestions.length;
+        let coworkers = [];
+
+        if (remaining > 0) {
+            const Project = require('../models/project.model');
+            const myProjects = await Project.find({
+                'members.userId': userId,
+                deletedAt: null,
+            }).select('members');
+
+            const coworkerIds = new Set();
+            myProjects.forEach(p => {
+                p.members.forEach(m => {
+                    const mid = m.userId.toString();
+                    if (!excludeIds.has(mid) && !mutualUserIds.includes(mid)) coworkerIds.add(mid);
+                });
             });
-        });
 
-        // Get coworker users first (priority suggestions)
-        const coworkers = coworkerIds.size > 0
-            ? await User.find({
-                _id: { $in: [...coworkerIds] },
+            if (coworkerIds.size > 0) {
+                coworkers = await User.find({
+                    _id: { $in: [...coworkerIds] },
+                    isActive: { $ne: false },
+                    isBanned: { $ne: true },
+                    role: { $ne: 'Admin' },
+                }).select('name email avatar role status customMessage').limit(remaining).lean();
+            }
+        }
+
+        // 6. Last Resort: Complementary or Same-role members
+        const finalRemaining = remaining - coworkers.length;
+        let roleMatches = [];
+        if (finalRemaining > 0) {
+            // Determine complementary role
+            const currentRole = req.user.role;
+            const targetRole = currentRole === 'Manager' ? 'Developer' : 'Manager';
+
+            // Try complementary first
+            roleMatches = await User.find({
+                _id: { $nin: [...Array.from(excludeIds), ...mutualUserIds, ...coworkers.map(u => u._id.toString())] },
+                role: targetRole,
                 isActive: { $ne: false },
                 isBanned: { $ne: true },
-                role: { $ne: 'Admin' },
-            }).select('name email avatar role status customMessage').limit(10)
-            : [];
+            }).select('name email avatar role status customMessage totalConnections').limit(finalRemaining).lean();
 
-        // Fill remaining slots with other active users
-        const remaining = 15 - coworkers.length;
-        const otherUsers = remaining > 0
-            ? await User.find({
-                _id: { $nin: [...excludeIds, ...coworkerIds] },
-                isActive: { $ne: false },
-                isBanned: { $ne: true },
-                role: { $ne: 'Admin' },
-            }).select('name email avatar role status customMessage').limit(remaining)
-            : [];
+            // If still space, fill with same role
+            if (roleMatches.length < finalRemaining) {
+                const sameRoleMatches = await User.find({
+                    _id: { $nin: [...Array.from(excludeIds), ...mutualUserIds, ...coworkers.map(u => u._id.toString()), ...roleMatches.map(u => u._id.toString())] },
+                    role: currentRole,
+                    isActive: { $ne: false },
+                    isBanned: { $ne: true },
+                }).select('name email avatar role status customMessage totalConnections').limit(finalRemaining - roleMatches.length).lean();
+                roleMatches = [...roleMatches, ...sameRoleMatches];
+            }
+        }
 
         const suggestions = [
-            ...coworkers.map(u => ({ ...u.toObject(), reason: 'Works on a shared project' })),
-            ...otherUsers.map(u => ({ ...u.toObject(), reason: 'People on the platform' })),
+            ...mutualSuggestions,
+            ...coworkers.map(u => ({ ...u, reason: 'Works on a shared project' })),
+            ...roleMatches.map(u => ({ ...u, reason: `Also a ${u.role}` }))
         ];
 
-        res.status(200).json({
+        const response = {
             status: 'success',
             count: suggestions.length,
             data: suggestions,
-        });
+        };
+
+        // Cache for 15 minutes
+        if (redisClient && redisClient.isReady) {
+            await redisClient.setEx(`suggestions:${userId}`, 900, JSON.stringify(response));
+        }
+
+        res.status(200).json(response);
     } catch (error) {
         next(error);
     }

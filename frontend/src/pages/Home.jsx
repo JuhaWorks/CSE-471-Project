@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useMemo } from 'react';
+import React, { useRef, useState, useEffect, useMemo, memo } from 'react';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -49,26 +49,37 @@ const ActivitySkeleton = ({ delay = 0 }) => (
     </motion.div>
 );
 
-/* ─── Animated Counter ───────────────────────────────────────── */
-const Counter = ({ value, delay = 0 }) => {
-    const [display, setDisplay] = useState(0);
+/* ─── Animated Counter (High-Performance) ───────────────────── */
+const Counter = memo(({ value, delay = 0 }) => {
+    const textRef = useRef(null);
+    
     useEffect(() => {
         let start = 0;
         const end = Number(value) || 0;
-        if (end === 0) { setDisplay(0); return; }
-        const step = end / (900 / 16);
+        if (end === 0) { 
+            if (textRef.current) textRef.current.textContent = '0'; 
+            return; 
+        }
+        
+        const duration = 900;
+        const step = end / (duration / 16);
+        
         const timer = setTimeout(() => {
             const tick = () => {
                 start = Math.min(start + step, end);
-                setDisplay(Math.round(start));
+                if (textRef.current) {
+                    textRef.current.textContent = Math.round(start).toLocaleString();
+                }
                 if (start < end) requestAnimationFrame(tick);
             };
             tick();
         }, delay);
+        
         return () => clearTimeout(timer);
     }, [value, delay]);
-    return <span>{display.toLocaleString()}</span>;
-};
+
+    return <span ref={textRef}>0</span>;
+});
 
 /* ─── Status Dot ─────────────────────────────────────────────── */
 const StatusDot = ({ active }) => (
@@ -268,7 +279,7 @@ const Home = () => {
                 }
             `}</style>
 
-            <article className="h-root min-h-[calc(100vh-120px)] flex flex-col pb-6 relative">
+            <article className="h-root min-h-[calc(100vh-120px)] flex flex-col pb-6 relative max-w-[2000px] mx-auto w-full">
                 {/* Subtle ambient glow — no GlassSurface overlay */}
                 <div className="fixed top-0 left-0 right-0 h-[220px] pointer-events-none z-0 overflow-hidden">
                     <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-base/20 pointer-events-none" />
@@ -278,33 +289,30 @@ const Home = () => {
                 <div className="px-1 relative z-10">
                     <DashboardErrorBoundary>
                         <motion.header
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={EASE}
-                            className="mb-8"
+                            className="mb-10"
                         >
-                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-5">
-                                <div>
-                                    <div className="flex items-center gap-2 mb-3">
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
+                                <div className="space-y-4">
+                                    <div className="flex items-center gap-2">
                                         <StatusDot active />
-                                        <span className="text-[11px] text-tertiary" style={{ fontFamily: 'var(--mono)' }}>
+                                        <span className="text-[10px] sm:text-[11px] text-tertiary uppercase tracking-widest font-mono">
                                             {dateString}
                                         </span>
                                     </div>
-                                    <h1 className="text-4xl md:text-5xl font-bold text-primary tracking-tight leading-tight m-0 mb-2">
+                                    <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-primary tracking-tight leading-tight m-0">
                                         {greeting}, <DecryptedText
                                             text={firstName}
-                                            animateOn="inViewHover"
+                                            animateOn="view"
                                             revealDirection="center"
                                             useOriginalCharsOnly={true}
                                             className="text-theme"
                                             encryptedClassName="text-theme opacity-50"
-                                            speed={100}
-                                            maxIterations={20}
+                                            speed={20}
+                                            maxIterations={5}
                                             sequential={false}
                                         />
                                     </h1>
-                                    <p className="text-base text-secondary max-w-lg leading-relaxed opacity-80">
+                                    <p className="text-sm sm:text-base text-secondary max-w-xl leading-relaxed opacity-80">
                                         {user?.role === 'Admin'
                                             ? 'Platform oversight and operational metrics are live. Control center ready.'
                                             : 'Your creative workspace is operational. Explore your active projects.'}
@@ -313,11 +321,12 @@ const Home = () => {
                                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ ...EASE, delay: 0.15 }}>
                                     <Button 
                                         variant="primary" 
-                                        size="md" 
+                                        size="lg" 
                                         leftIcon={Plus} 
                                         as={Link} 
                                         to="/projects"
                                         onMouseEnter={() => handlePrefetch('/projects')}
+                                        className="rounded-2xl sm:rounded-3xl shadow-xl shadow-theme/10 h-14"
                                     >
                                         New Project
                                     </Button>
@@ -325,35 +334,30 @@ const Home = () => {
                             </div>
                         </motion.header>
 
-                        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-5 4xl:grid-cols-6 gap-4 sm:gap-6 mb-10">
                             {STATS.map((s, i) => (
                                 <Card
                                     key={s.label}
                                     variant="glass"
                                     performance="premium"
                                     hideBorder={true}
-                                    padding="p-6"
-                                    className="cursor-default"
+                                    padding="p-6 sm:p-8"
+                                    className="cursor-default rounded-[2.5rem] sm:rounded-[3.15rem]"
                                     initial={{ opacity: 0, y: 12 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: i * 0.06 }}
                                 >
-                                    <div style={{
-                                        width: 34, height: 34, borderRadius: 10,
-                                        background: s.glow,
-                                        border: `1px solid ${s.accent}20`,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        marginBottom: 18
-                                    }}>
-                                        <s.icon style={{ width: 15, height: 15, color: s.accent }} />
+                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl flex items-center justify-center mb-6 sm:mb-8"
+                                         style={{ background: s.glow, border: `1px solid ${s.accent}20` }}>
+                                        <s.icon className="w-5 h-5" style={{ color: s.accent }} />
                                     </div>
-                                    <div style={{ fontSize: 32, fontWeight: 600, letterSpacing: '-1px', color: 'var(--text-primary)', lineHeight: 1, marginBottom: 5 }}>
+                                    <div className="text-3xl sm:text-4xl font-bold tracking-tighter text-primary leading-none mb-2">
                                         <Counter value={s.value} delay={i * 60 + 180} />
                                     </div>
-                                    <div style={{ fontSize: 11, fontWeight: 500, letterSpacing: '.08em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 14 }}>
+                                    <div className="text-[10px] sm:text-[11px] font-bold tracking-widest text-tertiary uppercase font-mono mb-4 sm:mb-6">
                                         {s.label}
                                     </div>
-                                    <div style={{ height: 2, background: 'var(--bg-sunken)', borderRadius: 2, overflow: 'hidden' }}>
+                                    <div className="h-0.5 sm:h-1 bg-sunken rounded-full overflow-hidden">
                                         <motion.div
                                             initial={{ width: 0 }}
                                             animate={{ width: `${Math.min(100, (s.value / Math.max(statsData.totalProjects || 1, s.value)) * 100)}%` }}
@@ -361,12 +365,12 @@ const Home = () => {
                                             style={{ height: '100%', background: s.accent, borderRadius: 2, opacity: 0.7 }}
                                         />
                                     </div>
-                                    <div style={{ marginTop: 6, fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>{s.sub}</div>
+                                    <div className="mt-3 text-[10px] text-tertiary font-mono">{s.sub}</div>
                                 </Card>
                             ))}
                         </section>
 
-                        <section className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-5 items-start">
+                        <section className="grid grid-cols-1 lg:grid-cols-[1fr_340px] 3xl:grid-cols-[1fr_400px] gap-6 sm:gap-8 items-start">
                             <Card
                                 variant="glass"
                                 performance="premium"
@@ -375,72 +379,52 @@ const Home = () => {
                                 initial={{ opacity: 0, y: 16 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ ...EASE, delay: 0.2 }}
+                                className="rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden"
                                 style={{
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    height: isAuditExpanded ? 700 : 380,
+                                    height: isAuditExpanded ? 700 : 440,
                                     transition: 'height 0.4s cubic-bezier(0.22, 1, 0.36, 1)',
                                 }}
                             >
-                                <div style={{
-                                    padding: '16px 20px',
-                                    borderBottom: '1px solid var(--border-subtle)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                        <div style={{
-                                            width: 32, height: 32, borderRadius: 9,
-                                            background: 'var(--accent-bg)',
-                                            border: '1px solid var(--accent-border)',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        }}>
-                                            <Activity className="w-3.5 h-3.5 text-theme" />
+                                <div className="p-6 sm:p-8 border-b border-subtle flex items-center justify-between">
+                                    <div className="flex items-center gap-4">
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-theme/5 border border-theme/10 flex items-center justify-center">
+                                            <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-theme" />
                                         </div>
                                         <div>
-                                            <h3 style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: 0 }}>Activity</h3>
-                                            <p style={{ fontSize: 10, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', margin: '1px 0 0', textTransform: 'uppercase', letterSpacing: '.1em' }}>Audit log</p>
+                                            <h3 className="text-sm sm:text-base font-bold text-primary m-0">Recent Activity</h3>
+                                            <p className="text-[10px] text-tertiary font-mono m-0 uppercase tracking-widest">Neural Operational Log</p>
                                         </div>
                                     </div>
                                     <button
                                         onClick={() => setIsAuditExpanded(!isAuditExpanded)}
-                                        style={{
-                                            background: 'none', border: 'none', display: 'flex', alignItems: 'center', gap: 4,
-                                            fontSize: 11, fontWeight: 500, color: 'var(--text-tertiary)', cursor: 'pointer', outline: 'none', transition: 'color .15s'
-                                        }}
-                                        onMouseEnter={e => e.currentTarget.style.color = 'var(--text-primary)'}
-                                        onMouseLeave={e => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                                        className="flex items-center gap-2 text-xs font-bold text-tertiary hover:text-primary transition-colors outline-none"
                                     >
                                         {isAuditExpanded ? 'Show less' : 'View all'}
-                                        <ArrowUpRight style={{ width: 11, height: 11, transition: 'transform 0.3s', transform: isAuditExpanded ? 'rotate(180deg)' : 'none' }} />
+                                        <ArrowUpRight className={cn("w-3.5 h-3.5 transition-transform duration-300", isAuditExpanded && "rotate-180")} />
                                     </button>
                                 </div>
 
-                                <div style={{ flex: 1, minHeight: 0, overflowY: 'auto' }} className="h-scroll">
+                                <div className="flex-1 min-height-0 overflow-y-auto custom-scrollbar">
                                     {!canViewActivity ? (
-                                        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10, padding: 32, textAlign: 'center' }}>
-                                            <div style={{
-                                                width: 38, height: 38, borderRadius: 11,
-                                                background: 'var(--accent-bg)',
-                                                border: '1px solid var(--accent-border)',
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            }}>
-                                                <Lock style={{ width: 15, height: 15, color: 'var(--accent-500)' }} />
+                                        <div className="h-full flex flex-col items-center justify-center p-12 text-center gap-6">
+                                            <div className="w-14 h-14 rounded-2xl bg-theme/5 border border-theme/10 flex items-center justify-center">
+                                                <Lock className="w-6 h-6 text-theme" />
                                             </div>
-                                            <div>
-                                                <p style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)', margin: '0 0 4px' }}>Access Restricted</p>
-                                                <p style={{ fontSize: 12, color: 'var(--text-tertiary)', margin: 0, maxWidth: 240, lineHeight: 1.6 }}>The audit log is available to Managers and Administrators only.</p>
+                                            <div className="space-y-2">
+                                                <p className="text-base font-bold text-primary">Access Restricted</p>
+                                                <p className="text-sm text-tertiary max-w-xs leading-relaxed">The audit log is available to Managers and Administrators only.</p>
                                             </div>
                                         </div>
                                     ) : actLoading ? (
-                                        <div style={{ padding: '14px 20px' }}>{[0, .07, .14, .21, .28].map((d, i) => <ActivitySkeleton key={i} delay={d} />)}</div>
+                                        <div className="p-6 sm:p-8 space-y-4">{[0, .07, .14, .21, .28].map((d, i) => <ActivitySkeleton key={i} delay={d} />)}</div>
                                     ) : activity.length === 0 ? (
-                                        <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                            <p style={{ fontSize: 12, color: 'var(--text-tertiary)', fontFamily: 'var(--mono)' }}>No recent activity</p>
+                                        <div className="h-full flex items-center justify-center p-12">
+                                            <p className="text-sm text-tertiary font-mono tracking-wider">No recent operations detected.</p>
                                         </div>
                                     ) : (
-                                        <div ref={parentRef} style={{ height: '100%', overflowY: 'auto', padding: '6px 12px' }} className="h-scroll">
+                                        <div ref={parentRef} className="h-full overflow-y-auto px-4 sm:px-6 py-4">
                                             <div style={{ height: virt.getTotalSize(), position: 'relative' }}>
                                                 {virt.getVirtualItems().map(vi => {
                                                     const a = activity[vi.index];
@@ -448,24 +432,24 @@ const Home = () => {
                                                     const initial = a.user?.name?.charAt(0)?.toUpperCase() || '?';
                                                     return (
                                                         <div
-                                                            key={vi.key} className="act-row"
+                                                            key={vi.key} 
+                                                            className="flex items-center gap-4 p-3 rounded-2xl hover:bg-sunken transition-all group pointer-events-none"
                                                             style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: vi.size, transform: `translateY(${vi.start}px)` }}
                                                         >
-                                                            <div style={{
-                                                                width: 30, height: 30, borderRadius: 8, background: 'var(--bg-sunken)', border: '1px solid var(--border-subtle)',
-                                                                display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: 'var(--text-tertiary)', flexShrink: 0,
-                                                            }}>{initial}</div>
-                                                            <div style={{ flex: 1, minWidth: 0 }}>
-                                                                <p style={{ margin: 0, fontSize: 12.5, color: 'var(--text-secondary)', lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                                    <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{a.user?.name}</span>
-                                                                    {' '}<span>{actionLabel(a.action)}</span>
+                                                            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-sunken border border-subtle flex items-center justify-center text-xs font-bold text-tertiary shrink-0 group-hover:border-theme/30 transition-colors">
+                                                                {initial}
+                                                            </div>
+                                                            <div className="flex-1 min-w-0">
+                                                                <p className="m-0 text-sm sm:text-base text-secondary truncate leading-tight">
+                                                                    <span className="font-bold text-primary">{a.user?.name}</span>
+                                                                    {' '}<span className="opacity-80">{actionLabel(a.action)}</span>
                                                                     {a.details?.title && (
-                                                                        <> <span style={{ color: 'var(--text-primary)', opacity: 0.9 }}>"{a.details.title}"</span></>
+                                                                        <> <span className="text-theme font-medium">"{a.details.title}"</span></>
                                                                     )}
                                                                 </p>
-                                                                <p style={{ margin: '2px 0 0', fontSize: 10, color: 'var(--border-strong)', fontFamily: 'var(--mono)' }}>{t}</p>
+                                                                <p className="m-0 mt-1 text-[10px] text-tertiary font-mono uppercase tracking-tighter">{t}</p>
                                                             </div>
-                                                            <ChevronRight style={{ width: 12, height: 12, color: 'var(--border-strong)', flexShrink: 0 }} />
+                                                            <ChevronRight className="w-4 h-4 text-tertiary opacity-0 group-hover:opacity-100 transition-opacity" />
                                                         </div>
                                                     );
                                                 })}
@@ -475,79 +459,85 @@ const Home = () => {
                                 </div>
                             </Card>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            <div className="flex flex-col gap-6 sm:gap-8">
                                 <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ ...EASE, delay: 0.28 }}>
                                     <ApodWidget />
                                 </motion.div>
 
                                 <Card
                                     variant="glass"
-                                    padding="p-5"
+                                    padding="p-6 sm:p-8"
                                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: 0.34 }}
+                                    className="rounded-[2.5rem] sm:rounded-[3.15rem]"
                                 >
-                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 14 }}>Milestones</p>
-                                    <div style={{ marginBottom: 8 }}>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 7 }}>
-                                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--text-secondary)' }}>Overall Completion</span>
-                                            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-500)', fontFamily: 'var(--mono)' }}>92%</span>
-                                        </div>
-                                        <div style={{ height: 3, background: 'var(--bg-sunken)', borderRadius: 2, overflow: 'hidden' }}>
-                                            <motion.div
-                                                initial={{ width: 0 }} animate={{ width: '92%' }}
-                                                transition={{ duration: 1.1, delay: 0.55, ease: 'easeOut' }}
-                                                style={{ height: '100%', background: 'linear-gradient(90deg, var(--accent-400), var(--accent-600))', borderRadius: 2 }}
-                                            />
-                                        </div>
-                                    </div>
-                                    <p style={{ fontSize: 11, color: 'var(--text-tertiary)', lineHeight: 1.55, margin: '10px 0 14px' }}>On track to reach the next milestone by end of week.</p>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                                        {[
-                                            { label: 'Design Review', pct: 100, done: true },
-                                            { label: 'Backend API', pct: 88, done: false },
-                                            { label: 'QA & Staging', pct: 45, done: false },
-                                        ].map((m, i) => (
-                                            <div key={i}>
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
-                                                    <span style={{ fontSize: 11, color: 'var(--text-tertiary)' }}>{m.label}</span>
-                                                    <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: m.done ? 'var(--color-success)' : 'var(--text-tertiary)' }}>
-                                                        {m.done ? '✓ Done' : `${m.pct}%`}
-                                                    </span>
-                                                </div>
-                                                <div style={{ height: 2, background: 'var(--bg-sunken)', borderRadius: 1, overflow: 'hidden' }}>
-                                                    <motion.div
-                                                        initial={{ width: 0 }} animate={{ width: `${m.pct}%` }}
-                                                        transition={{ duration: 0.9, delay: 0.65 + i * 0.1, ease: 'easeOut' }}
-                                                        style={{ height: '100%', background: m.done ? 'var(--color-success)' : 'var(--accent-400)', borderRadius: 1 }}
-                                                    />
-                                                </div>
+                                    <p className="text-[10px] font-black tracking-widest text-tertiary uppercase font-mono mb-6">Milestones</p>
+                                    <div className="space-y-6">
+                                        <div className="space-y-3">
+                                            <div className="flex justify-between items-baseline">
+                                                <span className="text-sm sm:text-base font-bold text-secondary">Overall Progress</span>
+                                                <span className="text-sm sm:text-base font-black text-theme font-mono">92%</span>
                                             </div>
-                                        ))}
+                                            <div className="h-1.5 sm:h-2 bg-sunken rounded-full overflow-hidden">
+                                                <motion.div
+                                                    initial={{ width: 0 }} animate={{ width: '92%' }}
+                                                    transition={{ duration: 1.1, delay: 0.55, ease: 'easeOut' }}
+                                                    className="h-full bg-gradient-to-r from-theme to-theme/60 rounded-full"
+                                                />
+                                            </div>
+                                        </div>
+                                        <p className="text-xs sm:text-sm text-tertiary leading-relaxed">Neural synchronization on track for end of week milestone.</p>
+                                        <div className="space-y-4">
+                                            {[
+                                                { label: 'Design Review', pct: 100, done: true },
+                                                { label: 'Backend API', pct: 88, done: false },
+                                                { label: 'QA & Staging', pct: 45, done: false },
+                                            ].map((m, i) => (
+                                                <div key={i} className="space-y-2">
+                                                    <div className="flex justify-between items-center text-[11px] font-bold">
+                                                        <span className="text-secondary">{m.label}</span>
+                                                        <span className={m.done ? 'text-success' : 'text-tertiary font-mono'}>
+                                                            {m.done ? 'COMPLETED' : `${m.pct}%`}
+                                                        </span>
+                                                    </div>
+                                                    <div className="h-1 sm:h-1.5 bg-sunken rounded-full overflow-hidden">
+                                                        <motion.div
+                                                            initial={{ width: 0 }} animate={{ width: `${m.pct}%` }}
+                                                            transition={{ duration: 0.9, delay: 0.65 + i * 0.1, ease: 'easeOut' }}
+                                                            className={cn("h-full rounded-full transition-colors", m.done ? 'bg-success' : 'bg-theme/40')}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </Card>
 
                                 <Card
                                     variant="glass"
-                                    padding="p-4"
+                                    padding="p-6 sm:p-8"
                                     initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}
                                     transition={{ ...EASE, delay: 0.42 }}
+                                    className="rounded-[2.5rem] sm:rounded-[3.15rem]"
                                 >
-                                    <p style={{ fontSize: 10, fontWeight: 600, letterSpacing: '.12em', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontFamily: 'var(--mono)', marginBottom: 10 }}>Quick Links</p>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <p className="text-[10px] font-black tracking-widest text-tertiary uppercase font-mono mb-4">Quick Links</p>
+                                    <div className="space-y-2">
                                         {[
                                             { label: 'Projects', to: '/projects', icon: FolderKanban },
                                             { label: 'Tasks', to: '/tasks', icon: CheckSquare },
-                                            ...(canViewActivity ? [{ label: 'Admin & Security', to: '/admin', icon: Shield }] : []),
+                                            ...(canViewActivity ? [{ label: 'Admin Panel', to: '/admin', icon: Shield }] : []),
                                         ].map((link, i) => (
                                             <Link 
                                                 key={i} 
                                                 to={link.to} 
-                                                className="nav-link"
+                                                className="flex items-center gap-4 p-3 rounded-2xl hover:bg-sunken text-secondary hover:text-primary transition-all group"
                                                 onMouseEnter={() => handlePrefetch(link.to)}
                                             >
-                                                <link.icon style={{ width: 13, height: 13, flexShrink: 0 }} />
-                                                <span style={{ fontSize: 13, fontWeight: 500 }}>{link.label}</span>
-                                                <ChevronRight style={{ width: 11, height: 11, marginLeft: 'auto', opacity: 0.4 }} />
+                                                <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-theme/10 group-hover:text-theme transition-all">
+                                                    <link.icon className="w-4 h-4" />
+                                                </div>
+                                                <span className="text-sm font-bold">{link.label}</span>
+                                                <ChevronRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-all translate-x-[-4px] group-hover:translate-x-0" />
                                             </Link>
                                         ))}
                                     </div>
@@ -557,16 +547,16 @@ const Home = () => {
 
                         <motion.footer
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.55 }}
-                            className="mt-auto pt-12 flex flex-wrap items-center gap-3 pb-2"
+                            className="mt-12 pt-12 flex flex-wrap items-center gap-6 pb-6 border-t border-subtle"
                         >
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-2">
                                 <StatusDot active />
-                                <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)' }}>All systems operational</span>
+                                <span className="text-[10px] font-mono text-tertiary uppercase tracking-widest">All systems operational</span>
                             </div>
-                            <span style={{ fontSize: 10, color: 'var(--text-tertiary)', opacity: 0.4 }}>·</span>
-                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{roleLabel}</span>
-                            <span style={{ fontSize: 10, color: 'var(--text-tertiary)', opacity: 0.4 }}>·</span>
-                            <span style={{ fontSize: 10, fontFamily: 'var(--mono)', color: 'var(--text-tertiary)' }}>{user?.email}</span>
+                            <span className="hidden sm:inline text-tertiary opacity-30">·</span>
+                            <span className="text-[10px] font-mono text-tertiary uppercase tracking-widest">{roleLabel} ACCESS LEVEL</span>
+                            <span className="hidden sm:inline text-tertiary opacity-30">·</span>
+                            <span className="text-[10px] font-mono text-tertiary uppercase tracking-widest truncate">{user?.email}</span>
                         </motion.footer>
                     </DashboardErrorBoundary>
                 </div>

@@ -3,6 +3,7 @@ const { createAdapter } = require('@socket.io/redis-adapter');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const logger = require('./logger');
+const { getRedisClient } = require('./redis');
 
 let io;
 
@@ -37,9 +38,9 @@ module.exports = {
             const subClient = pubClient.duplicate();
 
             // Suppress background connection errors when Redis is not available
-            pubClient.on('error', () => {});
-            subClient.on('error', () => {});
-            
+            pubClient.on('error', () => { });
+            subClient.on('error', () => { });
+
             Promise.all([pubClient.connect(), subClient.connect()])
                 .then(() => {
                     io.adapter(createAdapter(pubClient, subClient));
@@ -91,17 +92,29 @@ module.exports = {
         const pendingDisconnects = new Map(); // userId -> timeoutId
 
         // --- BROADCAST HELPERS ---
-        const getGlobalPresenceData = () => {
+        const getGlobalPresenceData = async () => {
+            const redisClient = getRedisClient();
+            if (redisClient && redisClient.isReady) {
+                const data = await redisClient.hGetAll('presence:global');
+                // Only return necessary fields for global list to save bandwidth
+                return Object.values(data).map(val => {
+                    const parsed = JSON.parse(val);
+                    return {
+                        userId: parsed.userId,
+                        name: parsed.name,
+                        status: parsed.status
+                    };
+                });
+            }
             return Array.from(globalPresence.entries()).map(([userId, userState]) => ({
                 userId,
                 name: userState.name,
-                avatar: userState.avatar,
                 status: userState.status
             }));
         };
 
-        const broadcastGlobalPresence = () => {
-            const data = getGlobalPresenceData();
+        const broadcastGlobalPresence = async () => {
+            const data = await getGlobalPresenceData();
             io.emit('globalPresenceUpdate', data);
         };
 
@@ -132,6 +145,10 @@ module.exports = {
             const userId = socket.user._id.toString();
             logger.info(`🔌 Socket Connected: ${socket.user.name} (${socket.id})`);
 
+            // Join a private room with the userID for targeted notifications
+            socket.join(userId);
+            logger.debug(`User ${socket.user.name} joined personal room: ${userId}`);
+
             // Cancel any pending disconnect for this user (e.g., they reloaded)
             if (pendingDisconnects.has(userId)) {
                 clearTimeout(pendingDisconnects.get(userId));
@@ -140,19 +157,24 @@ module.exports = {
 
             // 1. Initial Global Presence Setup
             if (!globalPresence.has(userId)) {
-                // If the user's last saved status was "Offline", they are now "Online"
-                // but if they were "Away" or "DND", we preserve that.
                 let initialStatus = socket.user.status || 'Online';
                 if (initialStatus === 'Offline') initialStatus = 'Online';
 
-                globalPresence.set(userId, {
+                const state = {
+                    userId,
                     name: socket.user.name,
                     avatar: socket.user.avatar,
-                    status: initialStatus,
-                    sockets: new Set()
-                });
+                    status: initialStatus
+                };
 
-                // Persist the "Online" status if they were previously offline
+                globalPresence.set(userId, { ...state, sockets: new Set() });
+
+                // Sync to Redis for cross-cluster visibility
+                const redisClient = getRedisClient();
+                if (redisClient && redisClient.isReady) {
+                    await redisClient.hSet('presence:global', userId, JSON.stringify(state));
+                }
+
                 if (socket.user.status === 'Offline') {
                     try {
                         await User.findByIdAndUpdate(userId, { status: 'Online' });
@@ -162,7 +184,7 @@ module.exports = {
                 }
             }
             globalPresence.get(userId).sockets.add(socket.id);
-            broadcastGlobalPresence();
+            await broadcastGlobalPresence();
 
             // Track joined projects for this socket to cleanup on disconnect
             const joinedProjects = new Set();
@@ -204,13 +226,26 @@ module.exports = {
             });
 
             // 3. Status Update (Active/Away/DND/Offline)
-            // This is called from the Profile page or the Idle timer
+            // Throttled to 3 seconds to prevent spam
+            const lastStatusUpdate = new Map();
             socket.on('setStatus', async ({ projectId, status }) => {
+                const now = Date.now();
+                if (lastStatusUpdate.has(userId) && now - lastStatusUpdate.get(userId) < 3000) return;
+                lastStatusUpdate.set(userId, now);
+
                 const gState = globalPresence.get(userId);
                 if (gState && gState.status !== status) {
                     // 1. Update Globally
                     gState.status = status;
-                    broadcastGlobalPresence();
+
+                    const redisClient = getRedisClient();
+                    if (redisClient && redisClient.isReady) {
+                        await redisClient.hSet('presence:global', userId, JSON.stringify({
+                            userId, name: gState.name, avatar: gState.avatar, status: gState.status
+                        }));
+                    }
+
+                    await broadcastGlobalPresence();
 
                     // 1.5 Notify all user's sockets to sync local store
                     gState.sockets.forEach(sId => {

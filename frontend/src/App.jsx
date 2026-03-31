@@ -22,10 +22,10 @@ const ProjectSettings = lazy(() => import('./components/projects/ProjectSettings
 const Tasks = lazy(() => import('./pages/Tasks'));
 const OAuthCallback = lazy(() => import('./pages/OAuthCallback'));
 
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
-const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
-const Home = lazy(() => import('./pages/Home'));
-const Networking = lazy(() => import('./pages/Networking'));
+import AdminDashboard from './pages/AdminDashboard';
+import SecurityFeed from './pages/SecurityFeed';
+import Home from './pages/Home';
+import Networking from './pages/Networking';
 
 import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
 
@@ -33,7 +33,7 @@ import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
 const ProtectedRoute = ({ children }) => {
   const { isAuthenticated, isCheckingAuth } = useAuthStore();
 
-  if (isCheckingAuth) return <GlobalLoadingScreen />; 
+  if (isCheckingAuth && !isAuthenticated) return <GlobalLoadingScreen />;
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />;
@@ -52,13 +52,13 @@ const WhiteboardWrapper = () => {
 useTheme.getState().initTheme();
 
 function App() {
-  const { checkAuth, isCheckingAuth } = useAuthStore();
+  const { checkAuth, isCheckingAuth, isAuthenticated } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
-  if (isCheckingAuth) {
+  if (isCheckingAuth && !isAuthenticated) {
     return <GlobalLoadingScreen />;
   }
 

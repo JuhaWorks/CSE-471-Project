@@ -1,91 +1,56 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import AsciiWave from './AsciiWave';
-
+import { RefreshCw } from 'lucide-react';
 
 /**
- * Modern 2026 Vite-Optimized Loading States
- * Skeleton Evolution, Glassmorphism 2.0, Performance-First
+ * GlobalLoadingScreen
+ * Full-page loader for initial auth checks
  */
-
-export const PageLoader = () => (
-    <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-8 relative overflow-hidden">
-        {/* Ambient background glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-cyan-500/10 rounded-full blur-[120px] pointer-events-none" />
-        
-        <div className="relative flex items-center justify-center">
-            {/* 2026 Orbiting Rings */}
+export const GlobalLoadingScreen = () => (
+    <div className="fixed inset-0 z-[9999] bg-base flex flex-col items-center justify-center p-6 text-center">
+        <div className="relative mb-8">
+            <div className="absolute inset-0 bg-theme/20 blur-3xl rounded-full animate-pulse" />
             <motion.div 
                 animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 2, ease: "linear" }}
-                className="absolute w-20 h-20 border-[3px] border-transparent border-t-cyan-500/40 rounded-full"
-            />
-            <motion.div 
-                animate={{ rotate: -360 }}
-                transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-                className="absolute w-14 h-14 border-[2px] border-transparent border-t-blue-500/30 rounded-full"
-            />
-            
-            {/* Central Core */}
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-[0_0_30px_rgba(6,182,212,0.4)] animate-pulse" />
+                transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                className="relative z-10 w-24 h-24 rounded-[2.5rem] bg-surface border-2 border-theme/20 flex items-center justify-center shadow-2xl shadow-theme/10"
+            >
+                <img src="/logo.png?v=2" alt="klvira" className="w-12 h-12 grayscale opacity-50" />
+            </motion.div>
         </div>
         
-        <div className="flex flex-col items-center gap-2">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-500">Loading</span>
-            <div className="flex gap-1.5">
-                {[0, 1, 2].map(i => (
-                    <motion.div
-                        key={i}
-                        animate={{ opacity: [0.2, 1, 0.2] }}
-                        transition={{ repeat: Infinity, duration: 1, delay: i * 0.2 }}
-                        className="w-1.5 h-1.5 rounded-full bg-cyan-500"
-                    />
-                ))}
+        <div className="space-y-2">
+            <h2 className="text-xl font-black text-primary tracking-tighter">Initializing Klivra Core</h2>
+            <div className="flex items-center justify-center gap-2 text-tertiary">
+                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em]">Synchronizing Session...</span>
             </div>
         </div>
-    </div>
-);
-
-export const GlobalLoadingScreen = () => (
-    <div className="min-h-screen bg-[#09090b] flex flex-col items-center justify-center gap-10 relative overflow-hidden">
-        {/* Background ASCII Animation */}
-        <div className="absolute inset-x-0 bottom-0 h-64 opacity-20 pointer-events-none">
-            <AsciiWave speed={0.5} />
-        </div>
         
-        <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="relative z-10"
-        >
-            <div className="absolute inset-0 w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500/20 to-blue-600/20 blur-2xl animate-pulse" />
-            <div className="relative w-20 h-20 rounded-3xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-2xl shadow-cyan-500/25">
-                <span className="text-white font-black text-3xl">K</span>
-            </div>
-        </motion.div>
-        
-        <div className="flex flex-col items-center gap-4 relative z-10">
-            <div className="w-48 h-1 bg-white/5 rounded-full overflow-hidden border border-white/5">
+        <div className="fixed bottom-12 left-0 right-0 px-12">
+            <div className="max-w-xs mx-auto h-[2px] bg-white/5 rounded-full overflow-hidden">
                 <motion.div 
-                    initial={{ x: "-100%" }}
-                    animate={{ x: "100%" }}
-                    transition={{ repeat: Infinity, duration: 1.5, ease: "easeInOut" }}
-                    className="h-full w-full bg-gradient-to-r from-transparent via-cyan-400 to-transparent"
+                    initial={{ width: 0 }}
+                    animate={{ width: '100%' }}
+                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                    className="h-full bg-gradient-to-r from-transparent via-theme to-transparent opacity-60"
                 />
             </div>
-            <p className="text-xs font-black uppercase tracking-[0.4em] text-gray-500">Loading application</p>
         </div>
-
-        {/* Standard footer removed for professional simplicity */}
     </div>
 );
 
-export const Skeleton = ({ className }) => (
-    <div className={twMerge(clsx(
-        "bg-white/5 rounded-xl animate-pulse relative overflow-hidden",
-        "after:absolute after:inset-0 after:bg-gradient-to-r after:from-transparent after:via-white/[0.03] after:to-transparent after:animate-[shimmer_2s_infinite]",
-        className
-    ))} />
+/**
+ * PageLoader
+ * Subtle loader for route transitions
+ */
+export const PageLoader = () => (
+    <div className="w-full h-full min-h-[400px] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+            <div className="p-4 rounded-3xl bg-theme/5 border border-theme/10">
+                <RefreshCw className="w-6 h-6 text-theme animate-spin" />
+            </div>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-tertiary opacity-50">Loading Node</span>
+        </div>
+    </div>
 );

@@ -1,22 +1,16 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Search,
-    Bell,
-    Menu,
-    User,
-    Settings,
-    LogOut,
-    Command,
-    ChevronDown,
-    Circle
+    Search, Bell, Menu, User, Settings, LogOut, Command, ChevronDown
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useUIStore } from '../../store/useUIStore';
+import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import GlassSurface from '../ui/GlassSurface';
-
+import { API_BASE } from '../auth/AuthLayout';
 
 const STATUS_COLOR = {
     Online: 'text-success',
@@ -27,17 +21,28 @@ const STATUS_COLOR = {
 
 const getOptimizedAvatar = (url) => {
     if (!url) return 'https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&format=webp';
-    if (url.includes('upload/')) {
-        // Cloudinary optimization: fetch specifically sized webp
-        return url.replace('upload/', 'upload/w_200,h_200,c_fill,f_auto,q_auto/');
+    
+    let processedUrl = url;
+    // If it's a relative path, prefix it with API_BASE
+    if (processedUrl.startsWith('/') && !processedUrl.startsWith('//')) {
+        const base = API_BASE.replace(/\/api$/, '');
+        processedUrl = `${base}${processedUrl}`;
     }
-    return url;
+
+    if (processedUrl.includes('upload/')) {
+        return processedUrl.replace('upload/', 'upload/w_200,h_200,c_fill,f_auto,q_auto/');
+    }
+    return processedUrl;
 };
 
-const TopBar = ({ onMenuToggle }) => {
+const TopBar = () => {
     const { user, logout } = useAuthStore();
+    const { toggleSidebar, isSidebarExpanded } = useUIStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const dropdownRef = useRef(null);
+    
+    // Responsive Detection
+    const isMobile = useMediaQuery('(max-width: 1024px)');
 
     useEffect(() => {
         const handler = (e) => {
@@ -55,11 +60,15 @@ const TopBar = ({ onMenuToggle }) => {
                 <GlassSurface width="100%" height="100%" borderRadius="0 0 3.15rem 3.15rem" displace={0.5} distortionScale={-20} backgroundOpacity={0.04} opacity={0.93} />
             </div>
             
-            <div className="w-full h-full flex items-center justify-between px-6 lg:px-10 relative z-10">
-                <div className="flex items-center gap-4 flex-1">
+            <div className="w-full h-full flex items-center justify-between px-4 sm:px-6 lg:px-10 relative z-10">
+                <div className="flex items-center gap-2 sm:gap-4 flex-1 pr-4">
                     <button
-                        onClick={onMenuToggle}
-                        className="p-2 text-tertiary hover:text-primary hover:bg-sunken rounded-2xl transition-all active:scale-90"
+                        onClick={toggleSidebar}
+                        className={twMerge(clsx(
+                            "p-2.5 text-tertiary hover:text-primary rounded-2xl transition-all active:scale-90",
+                            isMobile ? "bg-theme/10 text-theme" : "hover:bg-sunken",
+                            isMobile && isSidebarExpanded && "opacity-0 pointer-events-none"
+                        ))}
                     >
                         <Menu className="w-5 h-5" />
                     </button>
@@ -79,15 +88,20 @@ const TopBar = ({ onMenuToggle }) => {
                             <span>K</span>
                         </div>
                     </div>
+                    
+                    {/* Brand name for very small mobile screens when sidebar is hidden */}
+                    {isMobile && (
+                        <span className="text-xl font-black tracking-tighter text-primary truncate sm:hidden">klvira</span>
+                    )}
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 shrink-0">
                     <button className="relative p-2.5 text-tertiary hover:text-primary hover:bg-sunken rounded-2xl transition-all group">
                         <Bell className="w-5 h-5" />
                         <span className="absolute top-2 right-2 w-2 h-2 bg-theme rounded-full border-2 border-base shadow-theme" />
                     </button>
 
-                    <div className="w-px h-6 bg-default mx-2 hidden sm:block" />
+                    <div className="w-px h-6 bg-default mx-1 hidden sm:block" />
 
                     <div className="relative" ref={dropdownRef}>
                         <button
@@ -100,7 +114,8 @@ const TopBar = ({ onMenuToggle }) => {
                             <div className="relative">
                                 <img
                                     src={getOptimizedAvatar(user?.avatar)}
-                                    alt={user?.name}
+                                    alt=""
+                                    referrerPolicy="no-referrer"
                                     className="w-9 h-9 rounded-xl border border-default object-cover"
                                 />
                                 <div className={twMerge(clsx(
@@ -124,24 +139,15 @@ const TopBar = ({ onMenuToggle }) => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[60] overflow-hidden rounded-[2.5rem] border border-white/10 backdrop-blur-3xl bg-black/60"
-                                    style={{ isolation: 'isolate' }}
+                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[100] overflow-hidden rounded-[2.5rem] border border-white/10 backdrop-blur-3xl bg-black/60"
                                 >
-                                    {/* Glass Backing */}
                                     <div className="absolute inset-0 z-0 pointer-events-none">
                                         <GlassSurface 
-                                            width="100%" 
-                                            height="100%" 
-                                            borderRadius={40} 
-                                            displace={0.4} 
-                                            distortionScale={-20} 
-                                            backgroundOpacity={0.08} 
-                                            opacity={0.95} 
-                                            blur={20}
+                                            width="100%" height="100%" borderRadius={40} displace={0.4} distortionScale={-20} 
+                                            backgroundOpacity={0.08} opacity={0.95} blur={20}
                                         />
                                     </div>
 
-                                    {/* Dropdown Content */}
                                     <div className="relative z-10">
                                         <div className="p-5 border-b border-default mb-2">
                                             <p className="text-sm font-black text-primary tracking-tight">{user?.name}</p>
@@ -193,4 +199,5 @@ const TopBar = ({ onMenuToggle }) => {
     );
 };
 
-export default React.memo(TopBar);
+export default memo(TopBar);
+
