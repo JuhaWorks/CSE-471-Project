@@ -15,6 +15,8 @@ import DecryptedText from '../components/ui/DecryptedText';
 import DeadlinePopup from '../components/projects/DeadlinePopup';
 import Card from '../components/ui/Card';
 import GlassSurface from '../components/ui/GlassSurface';
+import { cn } from '../utils/cn';
+
 
 const EASE = { duration: 0.4, ease: [0.22, 1, 0.36, 1] };
 
