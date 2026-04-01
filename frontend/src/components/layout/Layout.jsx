@@ -146,12 +146,11 @@ const Layout = ({ checkingAuth }) => {
 
             <div className={twMerge(clsx(
                 "fixed bottom-0 left-0 transition-all duration-300",
-                isMobile ? "z-[70] inset-0 pointer-events-none" : "z-40 top-0 pointer-events-none",
+                isMobile ? "z-[70] inset-0" : "z-40 top-0",
+                "pointer-events-none", // Always transparent to events unless children override it
                 showNotice && !isMobile ? "top-11" : ""
             ))}>
-                <div className="h-full w-full pointer-events-auto">
-                    <SidebarComponent />
-                </div>
+                <SidebarComponent />
             </div>
 
             <main 

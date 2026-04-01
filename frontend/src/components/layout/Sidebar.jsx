@@ -130,7 +130,7 @@ const SidebarComponent = () => {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[80] lg:hidden" 
+                        className="fixed inset-0 bg-black/60 backdrop-blur-xl z-[80] lg:hidden pointer-events-auto" 
                         onClick={() => setSidebarExpanded(false)} 
                     />
                 )}
@@ -154,7 +154,7 @@ const SidebarComponent = () => {
                     "h-full border-r border-default shadow-modal transition-shadow",
                     isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2.5rem]" : "relative rounded-r-[2rem]",
                     "flex flex-col overflow-hidden bg-black/20",
-                    !isSidebarExpanded && "pointer-events-none"
+                    isSidebarExpanded ? "pointer-events-auto" : "pointer-events-none"
                 )}
                 style={{ borderRightColor: 'var(--border-glass)' }}
             >
