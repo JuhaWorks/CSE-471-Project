@@ -96,19 +96,13 @@ module.exports = {
             const redisClient = getRedisClient();
             if (redisClient && redisClient.isReady) {
                 const data = await redisClient.hGetAll('presence:global');
-                // Only return necessary fields for global list to save bandwidth
-                return Object.values(data).map(val => {
-                    const parsed = JSON.parse(val);
-                    return {
-                        userId: parsed.userId,
-                        name: parsed.name,
-                        status: parsed.status
-                    };
-                });
+                return Object.values(data).map(val => JSON.parse(val));
             }
+            // Return FULL data including avatar for client-side merging
             return Array.from(globalPresence.entries()).map(([userId, userState]) => ({
                 userId,
                 name: userState.name,
+                avatar: userState.avatar,
                 status: userState.status
             }));
         };
@@ -118,16 +112,26 @@ module.exports = {
             io.emit('globalPresenceUpdate', data);
         };
 
+        // Push global presence directly to a single socket (instant, no round-trip)
+        const pushPresenceToSocket = async (sock) => {
+            const data = await getGlobalPresenceData();
+            sock.emit('globalPresenceUpdate', data);
+        };
+
         const getRoomViewers = (projectId) => {
             const roomData = projectRooms.get(projectId);
             if (!roomData) return [];
 
-            return Array.from(roomData.entries()).map(([userId, userState]) => ({
-                userId,
-                name: userState.name,
-                avatar: userState.avatar,
-                status: userState.status
-            }));
+            return Array.from(roomData.entries()).map(([userId, userState]) => {
+                // Enrich with live global status for accuracy
+                const gState = globalPresence.get(userId);
+                return {
+                    userId,
+                    name: userState.name,
+                    avatar: userState.avatar,
+                    status: gState ? gState.status : userState.status
+                };
+            });
         };
 
         const broadcastPresence = (projectId) => {
@@ -184,7 +188,18 @@ module.exports = {
                 }
             }
             globalPresence.get(userId).sockets.add(socket.id);
+
+            // INSTANT: push full presence directly to THIS socket right now
+            // so they see all online users without any round-trip request
+            await pushPresenceToSocket(socket);
+
+            // Broadcast to everyone else that a new user is online
             await broadcastGlobalPresence();
+
+            // Allow any client to request a fresh presence snapshot on demand
+            socket.on('requestPresenceSync', async () => {
+                await pushPresenceToSocket(socket);
+            });
 
             // Track joined projects for this socket to cleanup on disconnect
             const joinedProjects = new Set();
@@ -208,12 +223,11 @@ module.exports = {
                 const roomData = projectRooms.get(projectId);
 
                 if (!roomData.has(userId)) {
-                    // Pull the most recent status from global presence
                     const gState = globalPresence.get(userId);
                     roomData.set(userId, {
                         name: socket.user.name,
                         avatar: socket.user.avatar,
-                        status: gState.status,
+                        status: gState ? gState.status : 'Online',
                         sockets: new Set()
                     });
                 }
@@ -221,8 +235,14 @@ module.exports = {
                 roomData.get(userId).sockets.add(socket.id);
 
                 logger.info(`👥 User ${socket.user.name} joined project: ${projectId}`);
+
+                // INSTANT: broadcast updated room viewers to everyone in the room
                 broadcastPresence(projectId);
                 broadcastLocks(projectId);
+
+                // INSTANT: also push fresh global presence directly to this socket
+                // so they immediately see all globally-online users
+                pushPresenceToSocket(socket);
             });
 
             // 3. Status Update (Active/Away/DND/Offline)
@@ -408,6 +428,18 @@ module.exports = {
                 socket.to(`whiteboard_${roomId}`).emit('clear-board');
             });
         });
+
+        // ── PRESENCE HEARTBEAT ─────────────────────────────────────────
+        // Re-broadcast global presence every 30s to all clients.
+        // Acts as a self-healing mechanism if any client missed an update.
+        const presenceHeartbeat = setInterval(async () => {
+            if (globalPresence.size > 0) {
+                await broadcastGlobalPresence();
+            }
+        }, 30000);
+
+        // Clean up heartbeat if the server shuts down
+        io.on('close', () => clearInterval(presenceHeartbeat));
 
         return io;
     },

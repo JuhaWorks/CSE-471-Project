@@ -19,21 +19,49 @@ export const useSocketStore = create((set, get) => ({
 
     connect: (token) => {
         if (get().socket?.connected) return;
+        // Don't create a second socket if one is already being set up
+        if (get().socket) return;
 
         const socket = io(BACKEND_URL, {
             auth: { token },
-            reconnectionAttempts: 5,
-            reconnectionDelay: 1000,
+            // WebSocket-only: skip HTTP long-polling entirely for instant connection
+            transports: ['websocket'],
+            reconnectionAttempts: 10,
+            reconnectionDelay: 500,
+            reconnectionDelayMax: 3000,
+            timeout: 5000,
         });
+
+        // Heartbeat interval reference — cleared on disconnect
+        let syncInterval = null;
+
+        const startHeartbeat = () => {
+            if (syncInterval) clearInterval(syncInterval);
+            // Re-request presence every 20s as a client-side safety net
+            syncInterval = setInterval(() => {
+                if (socket.connected) {
+                    socket.emit('requestPresenceSync');
+                }
+            }, 20000);
+        };
 
         socket.on('connect', () => {
             set({ isConnected: true });
+            // Immediately request fresh presence on every (re)connect
+            socket.emit('requestPresenceSync');
+            startHeartbeat();
             console.log('🚀 Socket connected');
         });
 
-        socket.on('disconnect', () => {
+        socket.on('reconnect', () => {
+            socket.emit('requestPresenceSync');
+            console.log('🔄 Socket reconnected — presence synced');
+        });
+
+        socket.on('disconnect', (reason) => {
             set({ isConnected: false, activeViewers: [] });
-            console.log('🔌 Socket disconnected');
+            if (syncInterval) { clearInterval(syncInterval); syncInterval = null; }
+            console.log('🔌 Socket disconnected:', reason);
         });
 
         socket.on('locksUpdated', (locks) => {
@@ -64,9 +92,8 @@ export const useSocketStore = create((set, get) => ({
         });
 
         socket.on('statusUpdated', (newStatus) => {
-            const { user, syncStatus } = useAuthStore.getState();
+            const { user } = useAuthStore.getState();
             if (user && user.status !== newStatus) {
-                // We need a small helper in useAuthStore to just update status without a full API call
                 useAuthStore.setState((state) => ({
                     user: state.user ? { ...state.user, status: newStatus } : null
                 }));
@@ -75,6 +102,7 @@ export const useSocketStore = create((set, get) => ({
 
         set({ socket });
     },
+
 
     toggleGlobalPresence: (visible, context = null) => {
         const isCurrentlyVisible = get().globalPresenceOpen;

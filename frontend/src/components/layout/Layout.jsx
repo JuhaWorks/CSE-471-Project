@@ -6,6 +6,7 @@ import TopBar from './TopBar';
 import MaintenanceNotice, { useMaintenanceStatus } from './MaintenanceNotice';
 import { useIdleTimer } from '../../hooks/useIdleTimer';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useSocketStore } from '../../store/useSocketStore';
 import { useUIStore } from '../../store/useUIStore';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { RefreshCw } from 'lucide-react';
@@ -64,10 +65,24 @@ const Layout = ({ checkingAuth }) => {
     const location = useLocation();
     const { isSidebarExpanded, isCollapsed, isPending, setSidebarExpanded } = useUIStore();
     const { isUnderMaintenance } = useMaintenanceStatus();
-    const { user } = useAuthStore();
-    
+    const { user, accessToken } = useAuthStore();
+    const { connect, disconnect, socket } = useSocketStore();
+
+    // ── GLOBAL SOCKET LIFECYCLE ──────────────────────────────────────
+    // Connect immediately when authenticated (globally, not just on project pages).
+    // The socket store's on('connect') handler requests fresh presence automatically.
+    useEffect(() => {
+        if (accessToken && !socket) {
+            connect(accessToken);
+        }
+        if (!accessToken && socket) {
+            disconnect();
+        }
+    }, [accessToken, socket, connect, disconnect]);
+
     // Responsive Detection
     const isMobile = useMediaQuery('(max-width: 1024px)');
+
 
     const showNotice = isUnderMaintenance && user?.role === 'Admin';
     const isActuallyCheckingAuth = checkingAuth && !user;

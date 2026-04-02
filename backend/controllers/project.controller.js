@@ -7,6 +7,7 @@ const logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const ProjectMemberService = require('../services/projectMember.service');
 const catchAsync = require('../utils/catchAsync');
+const { checkSingleProject } = require('../cron/deadlineCheck');
 
 // --- Core Project Operations ---
 
@@ -117,6 +118,14 @@ const updateProject = async (req, res, next) => {
         await logActivity(project._id, req.user._id, 'PROJECT_UPDATED', req.body);
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, update: req.body });
         req.io.to(`project_${project._id}`).emit('projectActivity', { userName: req.user.name, action: 'updated the project details' });
+
+        // Instantly trigger deadline check if endDate or status was part of this update.
+        // Fire-and-forget (no await) so the API response is never delayed.
+        if (req.body.endDate !== undefined || req.body.status !== undefined) {
+            checkSingleProject(project._id).catch(err =>
+                logger.error(`Instant deadline check error: ${err.message}`)
+            );
+        }
 
         res.status(200).json({ status: 'success', data: project });
     } catch (error) { next(error); }
