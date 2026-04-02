@@ -85,11 +85,24 @@ api.interceptors.response.use(
                 console.log(`[AUTH] Calling /auth/refresh...`);
                 const response = await axios.post(`${BASE_URL}/auth/refresh`, {}, { withCredentials: true });
                 const newAccessToken = response.data.accessToken;
+                const newUser = response.data.data;
+
+                // Tab Isolation Check: Ensure the refreshed session belongs to the same user
+                const currentUser = useAuthStore.getState().user;
+                if (currentUser && newUser && String(currentUser._id) !== String(newUser._id)) {
+                    console.warn('[AUTH] Session crossover detected during refresh. Logging out tab.');
+                    useAuthStore.getState().logout(true); // Forced logout for this tab
+                    return Promise.reject(new Error('SESSION_CROSSOVER'));
+                }
 
                 console.log(`[AUTH] Refresh successful. New token obtained.`);
 
-                // Update store state with new token
-                useAuthStore.setState({ accessToken: newAccessToken });
+                // Update store state with new token & user
+                useAuthStore.setState({ 
+                    accessToken: newAccessToken,
+                    user: newUser,
+                    isAuthenticated: true 
+                });
 
                 processQueue(null, newAccessToken);
 
@@ -97,6 +110,9 @@ api.interceptors.response.use(
                 originalRequest.headers['Authorization'] = `Bearer ${newAccessToken}`;
                 return api(originalRequest);
             } catch (refreshError) {
+                if (refreshError.message === 'SESSION_CROSSOVER') {
+                    return Promise.reject(refreshError);
+                }
                 const status = refreshError.response?.status;
                 const message = refreshError.response?.data?.message;
 
@@ -296,7 +312,7 @@ export const useAuthStore = create(
         }),
         {
             name: 'klivra-auth-storage',
-            storage: createJSONStorage(() => localStorage),
+            storage: createJSONStorage(() => sessionStorage),
             // Only persist essential fields. isCheckingAuth and isAuthenticating 
             // should always reset to their default values on reload.
             partialize: (state) => ({
