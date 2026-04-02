@@ -13,7 +13,8 @@ export const useSocketStore = create((set, get) => ({
     activeViewers: [], // [{ userId, name, avatar, status }]
     onlineUsers: [], // Global presence tracking
     fieldLocks: {}, // { fieldId: { userId, userName } }
-    isGlobalPresenceVisible: false,
+    globalPresenceOpen: false,
+    currentProjectId: null,
     presenceUsers: [], // Contextual users (e.g., project members)
 
     connect: (token) => {
@@ -76,15 +77,21 @@ export const useSocketStore = create((set, get) => ({
     },
 
     toggleGlobalPresence: (visible, context = null) => {
-        const isCurrentlyVisible = get().isGlobalPresenceVisible;
+        const isCurrentlyVisible = get().globalPresenceOpen;
         const nextVisible = visible ?? !isCurrentlyVisible;
 
         // "context" can be an array of members or a projectId string
-        const newState = { isGlobalPresenceVisible: nextVisible };
+        const newState = { globalPresenceOpen: nextVisible };
         if (Array.isArray(context)) {
             newState.presenceUsers = context;
+            newState.currentProjectId = null;
         } else if (typeof context === 'string') {
-            newState.projectSearchId = context;
+            newState.currentProjectId = context;
+            newState.presenceUsers = [];
+        } else if (!nextVisible) {
+            // Reset context on close
+            newState.currentProjectId = null;
+            newState.presenceUsers = [];
         }
 
         set(newState);
@@ -92,6 +99,6 @@ export const useSocketStore = create((set, get) => ({
 
     disconnect: () => {
         get().socket?.disconnect();
-        set({ socket: null, isConnected: false, activeViewers: [], onlineUsers: [] });
+        set({ socket: null, isConnected: false, activeViewers: [], onlineUsers: [], globalPresenceOpen: false, currentProjectId: null, presenceUsers: [] });
     }
 }));

@@ -14,27 +14,25 @@ const GlobalPresence = () => {
         activeViewers,
         currentProjectId
     } = useSocketStore();
-
     const isVisible = globalPresenceOpen;
-
-    // The logic:
-    // 1. If presenceUsers is provided (from a project click), show those.
-    // 2. Otherwise show onlineUsers.
-    // 3. Match statuses for project members from activeViewers if possible.
-
     const displayList = useMemo(() => {
-        // If we are in a project context, show presenceUsers
-        if (currentProjectId && presenceUsers && presenceUsers.length > 0) {
-            return presenceUsers.map(user => ({
-                userId: user.userId?._id || user.userId,
-                name: user.name || user.userId?.name || 'Collaborator',
-                avatar: user.avatar || user.userId?.avatar,
-                status: user.status || 'Offline'
-            }));
+        if (presenceUsers && presenceUsers.length > 0) {
+            return presenceUsers.map(user => {
+                const memberId = user.userId?._id || user.userId;
+                const memberName = user.name || user.userId?.name || 'Collaborator';
+                const memberAvatar = user.avatar || user.userId?.avatar;
+                const globalUser = onlineUsers.find(u => u.userId === memberId);
+                const liveStatus = globalUser ? globalUser.status : 'Offline';
+                return {
+                    userId: memberId,
+                    name: memberName,
+                    avatar: memberAvatar,
+                    status: liveStatus
+                };
+            });
         }
-        // Fallback to global online users
         return onlineUsers;
-    }, [presenceUsers, onlineUsers, currentProjectId]);
+    }, [presenceUsers, onlineUsers]);
 
     return (
         <AnimatePresence>
@@ -51,10 +49,10 @@ const GlobalPresence = () => {
                             <div>
                                 <h3 className="text-primary font-black text-lg tracking-tight flex items-center gap-2">
                                     <Users className="w-5 h-5 text-theme" />
-                                    {currentProjectId ? 'Project Team' : 'Live Presence'}
+                                    {presenceUsers?.length > 0 ? 'Project Team' : 'Live Presence'}
                                 </h3>
                                 <p className="text-[10px] font-bold text-tertiary uppercase tracking-[0.2em] mt-0.5">
-                                    {currentProjectId ? 'Project Workspace' : 'Global Network'}
+                                    {presenceUsers?.length > 0 ? 'Project Workspace' : 'Global Network'}
                                 </p>
                             </div>
                             <button
@@ -112,7 +110,7 @@ const GlobalPresence = () => {
                         {/* Footer Stats */}
                         <div className="p-4 bg-sunken border-t border-subtle flex items-center justify-between">
                             <span className="text-[10px] font-black text-tertiary uppercase tracking-widest">
-                                {displayList.filter(u => u.status !== 'Offline').length} Active
+                                {displayList.filter(u => u.status === 'Online' || u.status === 'active' || u.status === 'Away' || u.status === 'Do Not Disturb').length} Active
                             </span>
                             <div className="flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 rounded-full bg-success" />

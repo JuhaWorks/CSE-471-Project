@@ -44,7 +44,7 @@ const ProjectSettingsDashboard = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const { user: currentUser } = useAuthStore();
-    const { activeViewers, isConnected } = useSocketStore();
+    const { activeViewers, onlineUsers, isConnected } = useSocketStore();
     const [activeTab, setActiveTab] = useState('core');
 
     // Socket Synchronization & Presence
@@ -57,15 +57,22 @@ const ProjectSettingsDashboard = () => {
         if (!project?.members) return [];
         const activeMembers = project.members.filter(m => !m.status || m.status === 'active');
         return activeMembers.map(m => {
-            const isViewing = activeViewers.some(v => v.userId === (m.userId?._id || m.userId));
+            const memberId = m.userId?._id || m.userId;
+            // Check project-room presence first (most accurate for current tab)
+            const isInRoom = activeViewers.some(v => v.userId === memberId);
+            // Fallback: check global presence (online users connected anywhere)
+            const isOnlineGlobally = onlineUsers.some(
+                u => u.userId === memberId && u.status !== 'Offline'
+            );
+            const isActive = isInRoom || isOnlineGlobally;
             return {
-                userId: m.userId?._id || m.userId,
+                userId: memberId,
                 name: m.userId?.name || 'Unknown',
                 avatar: m.userId?.avatar,
-                status: isViewing ? 'active' : 'away'
+                status: isActive ? 'active' : 'away'
             };
         });
-    }, [project?.members, activeViewers]);
+    }, [project?.members, activeViewers, onlineUsers]);
 
     if (!isValidId) {
         return <ProjectSettingsError
