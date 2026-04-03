@@ -21,6 +21,7 @@ const passport = require('./config/passport');
 const startGarbageCollection = require('./cron/gc');
 const startDeadlineChecker = require('./cron/deadlineCheck');
 const startSocialCleanup = require('./cron/socialCleanup');
+const startRedundancyCleanup = require('./cron/redundancyCleanup');
 
 // 1. Redis Initialization (Optional performance enhancement)
 const { initRedis } = require('./utils/redis');
@@ -184,6 +185,7 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
     if (!enableCluster || cluster.worker.id === 1) {
       startGarbageCollection();
       startDeadlineChecker();
+      startRedundancyCleanup();
     }
 
     // Verify Brevo email service at startup

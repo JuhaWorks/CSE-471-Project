@@ -8,8 +8,9 @@ const startGarbageCollection = () => {
         logger.info('🗑️ Starting Database Garbage Collection...');
         try {
             const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-            // 1. Purge Unverified Users
+            // 1. Purge Unverified Users (24h standard)
             const userResult = await User.deleteMany({
                 isEmailVerified: false,
                 role: { $ne: 'Admin' },
@@ -20,7 +21,7 @@ const startGarbageCollection = () => {
                 logger.info(`✅ GC: Purged ${userResult.deletedCount} unverified zombie accounts.`);
             }
 
-            // 2. Purge Stale Audit Logs (Security Hardening: Clear logs older than 24 hours as requested)
+            // 2. Purge Stale Audit Logs (User requested 24h retention)
             const Audit = require('../models/audit.model');
             const auditResult = await Audit.deleteMany({
                 createdAt: { $lt: twentyFourHoursAgo }
@@ -28,6 +29,29 @@ const startGarbageCollection = () => {
 
             if (auditResult.deletedCount > 0) {
                 logger.info(`✅ GC: Purged ${auditResult.deletedCount} stale audit log entries.`);
+            }
+
+            // 3. Purge Soft-Deleted/Archived Projects (> 7 days)
+            const Project = require('../models/project.model');
+            const Task = require('../models/task.model');
+            
+            // Find projects that were either soft-deleted or archived more than 7 days ago
+            const staleProjects = await Project.find({
+                $or: [
+                    { deletedAt: { $lt: sevenDaysAgo, $ne: null } },
+                    { status: 'Archived', updatedAt: { $lt: sevenDaysAgo } }
+                ]
+            }).select('_id');
+
+            if (staleProjects.length > 0) {
+                const projectIds = staleProjects.map(p => p._id);
+                
+                // Delete associated tasks
+                const taskResult = await Task.deleteMany({ project: { $in: projectIds } });
+                // Delete projects
+                const projectResult = await Project.deleteMany({ _id: { $in: projectIds } });
+
+                logger.info(`✅ GC: Permanently purged ${projectResult.deletedCount} stale projects and ${taskResult.deletedCount} associated tasks.`);
             }
 
             logger.info('✨ Garbage Collection Cycle Complete.');

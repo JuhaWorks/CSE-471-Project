@@ -33,13 +33,13 @@ const startSocialCleanup = () => {
                 }
             }
 
-            // 2. Auto-expire old pending requests (90+ days)
-            const ninetyDaysAgo = new Date();
-            ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+            // 2. Auto-expire old pending requests (7+ days)
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
             const expired = await Connection.deleteMany({
                 status: 'pending',
-                createdAt: { $lt: ninetyDaysAgo }
+                createdAt: { $lt: sevenDaysAgo }
             });
 
             if (expired.deletedCount > 0) {
