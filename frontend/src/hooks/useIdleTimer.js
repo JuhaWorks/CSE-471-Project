@@ -5,6 +5,20 @@ import { useAuthStore } from '../store/useAuthStore';
 const IDLE_TIMEOUT = 3 * 60 * 1000; // 3 minutes
 const CHANNEL_NAME = 'klivra_presence_sync';
 
+// DOM events that count as user activity
+const events = [
+    'mousemove',
+    'mousedown',
+    'keydown',
+    'keypress',
+    'touchstart',
+    'touchmove',
+    'scroll',
+    'wheel',
+    'click',
+    'pointerdown',
+];
+
 /**
  * useIdleTimer
  * Used globally in Layout.jsx.
