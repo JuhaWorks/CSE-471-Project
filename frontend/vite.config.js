@@ -40,7 +40,7 @@ export default defineConfig({
 
   // Speed up local dev by pre-bundling heavy deps
   optimizeDeps: {
-    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand', '@tanstack/react-query', 'framer-motion'],
+    include: ['react', 'react-dom', 'react-router-dom', 'axios', 'zustand', '@tanstack/react-query', 'framer-motion', 'react-is'],
   },
 
   // proxy /api requests to the backend during local development so that
