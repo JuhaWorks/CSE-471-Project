@@ -14,29 +14,46 @@ const ApodWidget = () => {
     const { data: apodData, isLoading, isError } = useQuery({
         queryKey: ['apod'],
         queryFn: async () => {
-            try {
-                // Fetch NASA APOD using a custom key if available, otherwise DEMO_KEY
-                const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
-                const res = await axios.get(`https://api.nasa.gov/planetary/apod?api_key=${apiKey}&thumbs=true`);
-                return {
-                    title: res.data.title,
-                    explanation: res.data.explanation,
-                    author: res.data.copyright || 'NASA',
-                    url: res.data.media_type === 'video' ? res.data.thumbnail_url : res.data.url,
-                    date: res.data.date,
-                };
-            } catch (err) {
-                console.warn('Failed to fetch APOD.');
-                return {
-                    title: 'System Insight',
-                    explanation: 'Waiting for NASA telemetry...',
-                    author: 'System',
-                    url: `https://picsum.photos/seed/system/600/400`,
-                    date: new Date().toISOString().split('T')[0],
-                };
+            const apiKey = import.meta.env.VITE_NASA_API_KEY || 'DEMO_KEY';
+            
+            const formatData = (data) => ({
+                title: data.title,
+                explanation: data.explanation,
+                author: data.copyright || 'NASA',
+                url: data.media_type === 'video' ? data.thumbnail_url || 'https://picsum.photos/seed/space/600/400' : data.url,
+                date: data.date,
+            });
+
+            const getDateStr = (offsetDays) => {
+                const d = new Date();
+                d.setDate(d.getDate() - offsetDays);
+                return d.toISOString().split('T')[0];
+            };
+
+            // NASA API frequently fails or hasn't updated its default endpoint
+            // for the new day. We must gracefully fall back to the newest working APOD.
+            for (let i = 0; i <= 3; i++) {
+                try {
+                    const dateQuery = i === 0 ? '' : `&date=${getDateStr(i)}`;
+                    const res = await axios.get(`https://api.nasa.gov/planetary/apod?api_key=${apiKey}&thumbs=true${dateQuery}`);
+                    if (res.data) {
+                        return formatData(res.data);
+                    }
+                } catch (err) {
+                    console.warn(`NASA API unavailable for offset ${i} - falling back...`);
+                }
             }
+
+            // Ultimate fallback if API is completely unavailable
+            return {
+                title: 'System Insight',
+                explanation: 'Waiting for NASA telemetry...',
+                author: 'System',
+                url: `https://picsum.photos/seed/system/600/400`,
+                date: new Date().toISOString().split('T')[0],
+            };
         },
-        staleTime: 1000 * 60 * 60 * 24, // cache for 24h
+        staleTime: 1000 * 60 * 5, // cache for 5 minutes instead of 24h so we don't get stuck on old images
         retry: 1,
     });
 
@@ -87,11 +104,14 @@ const ApodWidget = () => {
                         </div>
 
                         <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
-                            <div className="pt-2">
+                            <div className="pt-2 group/explanation cursor-pointer">
                                 <span className="text-[10px] font-black text-cyan-500 uppercase tracking-widest block mb-2">Explanation</span>
-                                <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed border-l-2 border-cyan-500/30 pl-3 group-hover:border-cyan-500 transition-colors">
-                                    {display.explanation}
-                                </p>
+                                <div className="relative">
+                                    <p className="text-[13px] font-medium text-[var(--text-secondary)] leading-relaxed border-l-2 border-cyan-500/30 pl-3 group-hover/explanation:border-cyan-500 transition-colors line-clamp-3 group-hover/explanation:line-clamp-none">
+                                        {display.explanation}
+                                    </p>
+                                    <div className="absolute bottom-0 left-0 w-full h-8 bg-gradient-to-t from-[var(--bg-surface)] to-transparent group-hover/explanation:hidden pointer-events-none" />
+                                </div>
                             </div>
 
                             {display.author && (
