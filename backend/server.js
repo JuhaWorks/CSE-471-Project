@@ -1,4 +1,4 @@
-require('dotenv').config({ override: true });
+require('dotenv').config();
 const dns = require('dns');
 try {
   dns.setServers(['1.1.1.1', '8.8.8.8']);
@@ -210,7 +210,7 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
 
   // 8. Server Initialization
   const PORT = process.env.PORT || 5000;
-  server.listen(PORT, () => logger.info(`🚀 Worker ${process.pid} listening to HTTP & WebSockets on port ${PORT}`));
+  server.listen(PORT, '0.0.0.0', () => logger.info(`🚀 Worker ${process.pid} listening to HTTP & WebSockets on port ${PORT}`));
 
   // Advanced Memory Guardian (Watchdog)
   // Ensures the worker stays under Render's 512MB limit by triggering a graceful
