@@ -30,7 +30,7 @@ import TimelineView from './Kanban/TimelineView';
  * Interactive Kanban Board
  * Refactored from monolithic structure for high performance and maintainability.
  */
-const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd }) => {
+const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter = 'All' }) => {
     const { user } = useAuthStore();
     const queryClient = useQueryClient();
     const [selectedTask, setSelectedTask] = useState(null);
@@ -169,6 +169,15 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd }) => {
             const q = searchQuery.toLowerCase();
             filtered = filtered.filter(t => t.title?.toLowerCase().includes(q) || t.description?.toLowerCase().includes(q));
         }
+        if (quickFilter === 'Active') {
+            filtered = filtered.filter(t => t.status !== 'Completed' && t.status !== 'Canceled');
+        } else if (quickFilter === 'Risk') {
+            filtered = filtered.filter(t => 
+                (t.status !== 'Completed' && t.status !== 'Canceled') && 
+                (t.priority === 'Urgent' || t.priority === 'High' || (t.dueDate && new Date(t.dueDate) < new Date()))
+            );
+        }
+
         if (filterPriority !== 'All') filtered = filtered.filter(t => t.priority === filterPriority);
         if (filterAssignee !== 'All') filtered = filtered.filter(t => (t.assignees && t.assignees.some(a => a._id === filterAssignee)) || t.assignee?._id === filterAssignee);
         if (filterDeadline !== 'All') {
@@ -227,7 +236,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd }) => {
         }
 
         return { type: 'standard', data: grouped };
-    }, [rawTasks, searchQuery, filterPriority, filterAssignee, filterDeadline, boardColumns, swimlane, project]);
+    }, [rawTasks, searchQuery, filterPriority, filterAssignee, filterDeadline, boardColumns, swimlane, project, quickFilter]);
 
     const handleDragStart = useCallback((e, taskId, currentStatus) => {
         e.dataTransfer.setData('taskId', taskId);

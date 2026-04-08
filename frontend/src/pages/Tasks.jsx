@@ -88,6 +88,7 @@ const TasksContent = ({ projectId, searchQuery, viewMode, activeProject, trigger
                             <KanbanBoard 
                                 projectId={projectId} 
                                 searchQuery={searchQuery} 
+                                quickFilter={quickFilter}
                                 triggerQuickAdd={triggerQuickAdd}
                             />
                         ) : (
@@ -112,6 +113,7 @@ export default function Tasks() {
     const [searchParams, setSearchParams] = useSearchParams();
     const projectId = searchParams.get('project');
     const [searchQuery, setSearchQuery] = useState('');
+    const [quickFilter, setQuickFilter] = useState('All');
     const [viewMode, setViewMode] = useState('kanban');
     const [triggerQuickAdd, setTriggerQuickAdd] = useState(0);
     const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -309,21 +311,35 @@ export default function Tasks() {
                     </AnimatePresence>
                 </div>
 
-                {/* Statistics Shaper */}
-                <div className="hidden lg:flex items-center gap-8 px-6">
-                    <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-1 opacity-60">Active</span>
-                        <span className="text-sm font-black text-theme px-4 py-1.5 bg-theme/5 rounded-xl border border-theme/10 font-mono tracking-tighter">
+                {/* Statistics Shaper / Quick Filters */}
+                <div className="hidden lg:flex items-center gap-2 px-6">
+                    <button 
+                        onClick={() => setQuickFilter(quickFilter === 'Active' ? 'All' : 'Active')}
+                        className={cn(
+                            "flex flex-col items-center py-1.5 px-3 rounded-2xl transition-all border-2 group",
+                            quickFilter === 'Active' ? "border-theme/40 bg-theme/5 shadow-[inset_0_0_20px_rgba(var(--theme-rgb),0.1)]" : "border-transparent hover:bg-white/[0.02]"
+                        )}
+                        title="Filter Active Tasks"
+                    >
+                        <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-1 transition-colors", quickFilter === 'Active' ? "text-theme" : "text-tertiary opacity-60 group-hover:opacity-100")}>Active</span>
+                        <span className={cn("text-sm font-black font-mono tracking-tighter px-4 py-1.5 rounded-xl border transition-all", quickFilter === 'Active' ? "text-theme bg-theme/10 border-theme/20 shadow-sm" : "text-theme/70 bg-theme/5 border-theme/5")}>
                             <Counter value={activeTasksCount} />
                         </span>
-                    </div>
-                    <div className="w-px h-10 bg-subtle/50 shadow-sm" />
-                    <div className="flex flex-col items-center">
-                        <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] mb-1 opacity-60">Risk</span>
-                        <span className="text-sm font-black text-danger px-4 py-1.5 bg-danger/5 rounded-xl border border-danger/10 shadow-sm font-mono tracking-tighter">
+                    </button>
+                    <div className="w-px h-10 bg-subtle/50 shadow-sm mx-2" />
+                    <button 
+                        onClick={() => setQuickFilter(quickFilter === 'Risk' ? 'All' : 'Risk')}
+                        className={cn(
+                            "flex flex-col items-center py-1.5 px-3 rounded-xl transition-all border-2 group",
+                            quickFilter === 'Risk' ? "border-danger/40 bg-danger/5 shadow-[inset_0_0_20px_rgba(239,68,68,0.1)]" : "border-transparent hover:bg-white/[0.02]"
+                        )}
+                        title="Filter At-Risk Tasks"
+                    >
+                        <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-1 transition-colors", quickFilter === 'Risk' ? "text-danger" : "text-tertiary opacity-60 group-hover:opacity-100")}>Risk</span>
+                        <span className={cn("text-sm font-black font-mono tracking-tighter px-4 py-1.5 rounded-xl border transition-all", quickFilter === 'Risk' ? "text-danger bg-danger/10 border-danger/20 shadow-sm" : "text-danger/70 bg-danger/5 border-danger/5")}>
                             <Counter value={riskTasksCount} />
                         </span>
-                    </div>
+                    </button>
                 </div>
             </nav>
 
