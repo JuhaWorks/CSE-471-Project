@@ -22,6 +22,9 @@ router.route('/')
     .get(cacheMiddleware('tasks', 300), getTasks)
     .post(createTask);
 
+router.patch('/bulk-update', bulkUpdateTasks);
+
+
 router.route('/:id')
     .put(updateTask)
     .delete(deleteTask);

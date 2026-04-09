@@ -40,6 +40,8 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     const [dragOverCol, setDragOverCol] = useState(null);
     const [quickAddCol, setQuickAddCol] = useState(null);
     const [quickAddTitle, setQuickAddTitle] = useState('');
+    const [selectedTaskIds, setSelectedTaskIds] = useState([]);
+
 
     // Filters
     const [filterPriority, setFilterPriority] = useState('All');
@@ -106,35 +108,24 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     });
 
     const updateTaskMutation = useMutation({
-        mutationFn: async ({ taskId, data }) => {
-            const res = await api.put(`/tasks/${taskId}`, data);
-            return res.data.data;
+        mutationFn: async ({ id, updates }) => {
+            const res = await api.put(`/tasks/${id}`, updates);
+            return res.data;
         },
-        onMutate: async ({ taskId, data }) => {
-            await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
-            const previousTasks = queryClient.getQueryData(['tasks', projectId]);
-            queryClient.setQueryData(['tasks', projectId], (old) => {
-                if (!old) return [];
-                return old.map(t => t._id === taskId ? { ...t, ...data } : t);
-            });
-            if (data.status === 'Completed') {
-                setCelebrationActive(true);
-                setTimeout(() => setCelebrationActive(false), 2000);
-            }
-            return { previousTasks };
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+        }
+    });
+
+    const bulkUpdateTaskMutation = useMutation({
+        mutationFn: async ({ taskIds, updates }) => {
+            const res = await api.patch('/tasks/bulk-update', { taskIds, updates });
+            return res.data;
         },
-        onSuccess: (updatedTask) => {
-             queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
-             if (selectedTask?._id === updatedTask._id) {
-                 setSelectedTask(updatedTask);
-             }
-        },
-        onError: (err, variables, context) => {
-            if (context?.previousTasks) {
-                queryClient.setQueryData(['tasks', projectId], context.previousTasks);
-            }
-            const msg = err.response?.data?.message || 'Update failed - sync conflict';
-            toast.error(msg);
+        onSuccess: (res) => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+            setSelectedTaskIds([]);
+            toast.success(`Moved ${res.count} tasks successfully`);
         }
     });
 
@@ -151,23 +142,6 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     });
 
     // Board Configuration
-    const boardColumns = useMemo(() => {
-        if (projectId && project?.kanbanConfig?.columns?.length > 0) {
-            return project.kanbanConfig.columns.map(col => ({
-                id: col.name,
-                label: col.name,
-                icon: col.name === 'Completed' ? CheckCircle2 : (col.name === 'In Progress' ? Activity : Clock),
-                color: col.color || 'text-theme',
-                wipLimit: col.wipLimit
-            }));
-        }
-        return [
-            { id: 'Pending', label: 'Backlog', icon: Clock, color: 'text-tertiary' },
-            { id: 'In Progress', label: 'In Progress', icon: Activity, color: 'text-theme' },
-            { id: 'Completed', label: 'Completed', icon: CheckCircle2, color: 'text-success' }
-        ];
-    }, [project, projectId]);
-
     const filteredTasksByView = useMemo(() => {
         let filtered = rawTasks;
         if (searchQuery) {
@@ -202,12 +176,13 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
 
         // Grouping by columns
         const grouped = {};
-        boardColumns.forEach(col => grouped[col.id] = []);
+        const colIds = project?.kanbanConfig?.columns?.map(c => c.name) || ['Pending', 'In Progress', 'Completed'];
+        colIds.forEach(id => grouped[id] = []);
         filtered.forEach(task => {
             if (grouped[task.status]) {
                 grouped[task.status].push(task);
-            } else if (boardColumns.length > 0) {
-                grouped[boardColumns[0].id].push(task);
+            } else if (colIds.length > 0) {
+                grouped[colIds[0]].push(task);
             }
         });
 
@@ -243,26 +218,67 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
         }
 
         return { type: 'standard', data: grouped };
-    }, [rawTasks, searchQuery, filterPriority, filterAssignee, filterDeadline, boardColumns, swimlane, project, quickFilter]);
+    }, [rawTasks, searchQuery, filterPriority, filterAssignee, filterDeadline, swimlane, project, quickFilter]);
 
-    const handleDragStart = useCallback((e, taskId, currentStatus) => {
-        e.dataTransfer.setData('taskId', taskId);
+    const boardColumns = useMemo(() => {
+        const baseCols = project?.kanbanConfig?.columns?.length > 0 
+            ? project.kanbanConfig.columns 
+            : [
+                { id: 'Pending', name: 'Backlog', color: '#6B7280', wipLimit: 0 },
+                { id: 'In Progress', name: 'In Progress', color: '#1B73E8', wipLimit: 5 },
+                { id: 'Completed', name: 'Done', color: '#10B981', wipLimit: 0 },
+                { id: 'Canceled', name: 'Canceled', color: '#EF4444', wipLimit: 0 }
+            ];
+            
+        return baseCols.map(col => ({
+            ...col,
+            taskCount: filteredTasksByView.data[col.id]?.length || 0,
+            isOverLimit: col.wipLimit > 0 && (filteredTasksByView.data[col.id]?.length || 0) > col.wipLimit
+        }));
+    }, [project, filteredTasksByView.data]);
+
+    const handleDragStart = (e, taskId, currentStatus) => {
+        // Multi-select drag logic
+        const idsToDrag = selectedTaskIds.includes(taskId) ? selectedTaskIds : [taskId];
+        e.dataTransfer.setData('taskIds', idsToDrag.join(','));
         e.dataTransfer.setData('currentStatus', currentStatus);
-    }, []);
+    };
 
-    const handleDragOver = useCallback((e, columnId) => {
-        e.preventDefault();
-        setDragOverCol(columnId);
-    }, []);
+    const handleDrop = async (e, targetStatus) => {
+        const taskIdsStr = e.dataTransfer.getData('taskIds');
+        const taskIds = taskIdsStr.split(',').filter(Boolean);
+        const sourceStatus = e.dataTransfer.getData('currentStatus');
 
-    const handleDrop = useCallback(async (e, newStatus) => {
-        e.preventDefault();
         setDragOverCol(null);
-        const taskId = e.dataTransfer.getData('taskId');
-        const currentStatus = e.dataTransfer.getData('currentStatus');
-        if (currentStatus === newStatus) return;
-        updateTaskMutation.mutate({ taskId, data: { status: newStatus } });
-    }, [updateTaskMutation]);
+        if (sourceStatus === targetStatus || !taskIds.length) return;
+
+        if (taskIds.length === 1) {
+            updateTaskMutation.mutate({ id: taskIds[0], updates: { status: targetStatus } });
+        } else {
+            bulkUpdateTaskMutation.mutate({ taskIds, updates: { status: targetStatus } });
+        }
+
+        if (targetStatus === 'Completed') {
+            setCelebrationActive(true);
+            setTimeout(() => setCelebrationActive(false), 3000);
+        }
+    };
+
+    const handleTaskSelect = useCallback((e, taskId) => {
+        if (e.ctrlKey || e.metaKey) {
+            setSelectedTaskIds(prev => prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]);
+        } else {
+            setSelectedTaskIds([taskId]);
+        }
+    }, []);
+
+    const toggleSubtask = async (taskId, subtaskId) => {
+        const task = rawTasks.find(t => t._id === taskId);
+        if (!task) return;
+        
+        const newSubtasks = task.subtasks.map(s => s.id === subtaskId ? { ...s, completed: !s.completed } : s);
+        updateTaskMutation.mutate({ id: taskId, updates: { subtasks: newSubtasks } });
+    };
 
     const handleQuickAdd = async (e, status) => {
         e.preventDefault();
@@ -292,7 +308,6 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     if (isLoading) {
         return (
             <div className="flex-1 flex flex-col min-h-0 space-y-6 h-full p-1">
-                {/* Header Placeholders */}
                 <div className="flex flex-col xl:flex-row items-center justify-between gap-6 bg-sunken/20 p-3 rounded-[2rem] border border-white/5">
                      <div className="flex gap-2">
                         <Skeleton className="h-8 w-24 rounded-lg" opacity={0.2} noBorder />
@@ -304,15 +319,11 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                         <Skeleton className="h-10 w-32 rounded-xl" opacity={0.1} noBorder />
                      </div>
                 </div>
-
-                {/* Stats Grid Placeholder */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
                     {[1, 2, 3, 4].map(i => (
                         <Skeleton key={i} className="h-20 w-full rounded-2xl" opacity={0.1} />
                     ))}
                 </div>
-
-                {/* Columns Placeholder */}
                 <div className="flex-1 flex gap-6 overflow-hidden">
                     {[1, 2, 3].map(i => (
                         <div key={i} className="flex flex-col min-w-[320px] max-w-[320px] shrink-0 space-y-4">
@@ -347,7 +358,6 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
             </AnimatePresence>
 
             <div className="flex flex-col xl:flex-row items-center justify-between gap-6 bg-sunken/20 border border-white/[0.02] p-3 rounded-[2rem]">
-                {/* View Selection */}
                 <div className="flex items-center gap-1 bg-black/40 p-1 rounded-xl border border-white/5">
                     {['Board', 'Calendar', 'Timeline'].map(v => (
                         <button 
@@ -364,7 +374,6 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                 </div>
 
                 <div className="flex items-center gap-3 w-full xl:w-auto">
-                    {/* Swimlane Toggle */}
                     <div className="flex items-center gap-2 px-4 py-2 bg-black/20 border border-white/5 rounded-xl">
                         <Layers className="w-3.5 h-3.5 text-tertiary" />
                         <span className="text-[9px] font-black text-gray-500 uppercase">Group By</span>
@@ -403,15 +412,10 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                         {boardColumns.map(col => (
                             <Card key={col.id} className="bg-sunken/40 border-subtle" padding="p-4">
                                 <div className="flex items-center gap-3">
-                                    <div className={twMerge(clsx("w-10 h-10 rounded-xl bg-sunken border border-subtle flex items-center justify-center", col.color))}><col.icon className="w-5 h-5" /></div>
+                                    <div className="w-10 h-10 rounded-xl bg-sunken border border-subtle flex items-center justify-center" style={{ color: col.color }}><Activity className="w-5 h-5" /></div>
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] font-black text-tertiary uppercase tracking-widest leading-none">{col.label}</span>
-                                        <span className="text-xl font-black text-primary font-mono">
-                                            {filteredTasksByView.type === 'standard' 
-                                                ? filteredTasksByView.data[col.id]?.length || 0 
-                                                : Object.values(filteredTasksByView.data).reduce((acc, row) => acc + (row.tasks[col.id]?.length || 0), 0)
-                                            }
-                                        </span>
+                                        <span className="text-[9px] font-black text-tertiary uppercase tracking-widest leading-none">{col.name}</span>
+                                        <span className="text-xl font-black text-primary font-mono">{col.taskCount}</span>
                                     </div>
                                 </div>
                             </Card>
@@ -422,17 +426,42 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                         {filteredTasksByView.type === 'standard' ? (
                             <div className="flex-1 flex gap-6 overflow-x-auto pb-4 custom-scrollbar items-stretch h-full">
                                 {boardColumns.map(col => (
-                                    <div key={col.id} className="flex flex-col min-w-[320px] max-w-[320px] shrink-0 h-full" onDragOver={(e) => handleDragOver(e, col.id)} onDrop={(e) => handleDrop(e, col.id)}>
-                                        <div className="flex items-center justify-between mb-4 px-2">
-                                            <div className="flex items-center gap-3">
-                                                <div className={twMerge(clsx("p-1.5 rounded-lg bg-sunken border border-subtle", col.color))}><col.icon className="w-3.5 h-3.5" /></div>
-                                                <h2 className="text-[11px] font-black text-primary uppercase tracking-[0.2em]">{col.label}</h2>
+                                    <div key={col.id} className="flex flex-col h-full min-w-[300px] max-w-[400px]">
+                                        <div className="flex items-center justify-between px-3 py-2 mb-2">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: col.color }} />
+                                                <h3 className="text-[10px] font-black text-primary uppercase tracking-widest">{col.name}</h3>
+                                                <span className={twMerge(clsx(
+                                                    "px-1.5 py-0.5 rounded bg-sunken border border-subtle text-[8px] font-black text-tertiary",
+                                                    col.isOverLimit && "bg-danger/20 text-danger border-danger/40 animate-pulse"
+                                                ))}>
+                                                    {col.taskCount}{col.wipLimit > 0 ? ` / ${col.wipLimit}` : ''}
+                                                </span>
                                             </div>
                                             <button onClick={() => setQuickAddCol(col.id)} className="p-1.5 text-tertiary hover:text-primary transition-colors"><Plus className="w-4 h-4" /></button>
                                         </div>
-                                        <div className={twMerge(clsx("flex-1 space-y-4 min-h-[180px] p-2 rounded-[2rem] transition-all duration-300", dragOverCol === col.id ? "bg-theme/5 border-theme/20 shadow-inner" : "bg-white/[0.01] border-white/[0.03] border-2"))}>
+                                        <div 
+                                            onDragOver={(e) => { e.preventDefault(); setDragOverCol(col.id); }}
+                                            onDragLeave={() => setDragOverCol(null)}
+                                            onDrop={(e) => handleDrop(e, col.id)}
+                                            className={twMerge(clsx(
+                                                "flex-1 space-y-4 min-h-[180px] p-2 rounded-[2rem] transition-all duration-300 perspective-1000", 
+                                                dragOverCol === col.id ? "bg-theme/5 border-theme/20 shadow-inner" : "bg-white/[0.01] border-white/[0.03] border-2",
+                                                col.isOverLimit && "border-danger/20 bg-danger/[0.02]"
+                                            ))}
+                                        >
                                             <AnimatePresence mode="popLayout">
-                                                {filteredTasksByView.data[col.id]?.map(task => <TaskCard key={task._id} task={task} onDragStart={handleDragStart} onOpen={setSelectedTask} />)}
+                                                {filteredTasksByView.data[col.id]?.map(task => (
+                                                    <TaskCard 
+                                                        key={task._id} 
+                                                        task={task} 
+                                                        isSelected={selectedTaskIds.includes(task._id)}
+                                                        onDragStart={handleDragStart} 
+                                                        onOpen={setSelectedTask} 
+                                                        onSelect={handleTaskSelect}
+                                                        onToggleSubtask={toggleSubtask}
+                                                    />
+                                                ))}
                                             </AnimatePresence>
                                             <AnimatePresence>
                                                 {quickAddCol === col.id && (

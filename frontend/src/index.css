@@ -2034,4 +2034,32 @@ button[type="submit"]:hover {
   outline: 2px solid light-dark(#007aff, #0a84ff);
   outline-offset: 2px;
 }
+
+@keyframes glow-pulse-red {
+  0%, 100% { box-shadow: 0 0 5px oklch(0.65 0.22 25 / 0.2), 0 0 10px oklch(0.65 0.22 25 / 0.1); }
+  50% { box-shadow: 0 0 20px oklch(0.65 0.22 25 / 0.5), 0 0 40px oklch(0.65 0.22 25 / 0.2); }
+}
+
+@keyframes shimmer-gold {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@utility animate-glow-pulse-red {
+  animation: glow-pulse-red 3s ease-in-out infinite;
+}
+
+@utility animate-shimmer-gold {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    oklch(0.82 0.18 75 / 0.2) 45%,
+    oklch(0.82 0.18 75 / 0.6) 50%,
+    oklch(0.82 0.18 75 / 0.2) 55%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer-gold 3s infinite linear;
+}
+
 

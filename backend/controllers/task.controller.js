@@ -267,14 +267,52 @@ const deleteTask = async (req, res, next) => {
     }
 };
 
-const getTaskActivity = async (req, res, next) => {
+const bulkUpdateTasks = async (req, res, next) => {
     try {
-        const logs = await Audit.find({ entityId: req.params.id, entityType: 'Task' })
-            .populate('user', 'name email avatar')
-            .sort('-createdAt')
-            .limit(10)
-            .lean();
-        res.status(200).json({ status: 'success', data: logs });
+        const { taskIds, updates } = req.body;
+        if (!Array.isArray(taskIds) || taskIds.length === 0) {
+            res.status(400);
+            throw new Error('Please provide an array of task IDs');
+        }
+
+        // We fetch all tasks to verify ownership and project membership
+        const tasks = await Task.find({ _id: { $in: taskIds } });
+        
+        if (tasks.length === 0) {
+            res.status(404);
+            throw new Error('No tasks found for provided IDs');
+        }
+
+        const projectIds = [...new Set(tasks.map(t => t.project.toString()))];
+        
+        // Simple security: Verify user is a member/admin in all projects involved
+        for (const pid of projectIds) {
+            const project = await Project.findById(pid).lean();
+            const isMember = project.members.some(m => m.userId.toString() === req.user._id.toString());
+            if (!isMember && req.user.role !== 'Admin') {
+                res.status(401);
+                throw new Error(`User not authorized for project ${pid}`);
+            }
+        }
+
+        // Perform updates
+        const updatePromises = taskIds.map(id => {
+            const taskUpdate = { ...updates };
+            // Legacy/Mirroring logic if assignees changed
+            if (updates.assignees) {
+                taskUpdate.assignee = updates.assignees.length > 0 ? updates.assignees[0] : null;
+            }
+            return Task.findByIdAndUpdate(id, { $set: taskUpdate }, { new: true }).lean();
+        });
+
+        const updatedTasks = await Promise.all(updatePromises);
+
+        // Audit & Socket events
+        updatedTasks.forEach(task => {
+            socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+        });
+
+        res.status(200).json({ status: 'success', count: updatedTasks.length, data: updatedTasks });
     } catch (error) { next(error); }
 };
 
@@ -283,5 +321,7 @@ module.exports = {
     createTask,
     updateTask,
     deleteTask,
-    getTaskActivity
+    getTaskActivity,
+    bulkUpdateTasks
 };
+
