@@ -30,11 +30,21 @@ const InsightsTab = ({ projectId }) => {
         return (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {[1, 2, 3].map(i => (
-                    <Skeleton key={i} className="h-44 w-full rounded-2xl" />
+                    <div key={i} className="p-8 rounded-[2rem] bg-white/[0.01] border border-white/5 space-y-6">
+                        <Skeleton className="h-2 w-20 rounded-md" opacity={0.15} noBorder />
+                        <div className="flex items-center gap-5">
+                             <Skeleton className="h-16 w-16 rounded-2xl" opacity={0.1} />
+                             <div className="space-y-2">
+                                 <Skeleton className="h-8 w-24 rounded-lg" opacity={0.3} noBorder />
+                                 <Skeleton className="h-2 w-16 rounded-md" opacity={0.1} noBorder />
+                             </div>
+                        </div>
+                    </div>
                 ))}
             </div>
         );
     }
+
 
     if (error) {
         return (

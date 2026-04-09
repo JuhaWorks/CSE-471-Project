@@ -33,7 +33,9 @@ router.route('/:id')
 
 router.post('/:id/image', isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), uploadProjectImage, projectCtrl.uploadProjectImage);
 router.post('/:id/restore', authorizeProjectAccess(['Manager']), projectCtrl.restoreProject);
+router.delete('/:id/purge', authorizeProjectAccess(['Manager']), projectCtrl.purgeProject);
 router.post('/:id/dismiss-alert', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), projectCtrl.dismissDeadlineAlert);
+
 
 // ── MEMBERS DOMAIN (RBAC & Teams) ───────────────────────────────────────────
 router.route('/:id/members')

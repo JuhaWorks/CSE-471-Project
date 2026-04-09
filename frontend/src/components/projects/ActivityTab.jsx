@@ -3,6 +3,7 @@ import { History, User as UserIcon, Calendar, Info, Zap, ChevronRight, Activity 
 import { useProjectActivity } from '../../hooks/projects/useProjectQueries';
 import { motion, AnimatePresence } from 'framer-motion';
 import Card from '../ui/Card';
+import { Skeleton } from '../ui/PremiumLoaders';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -37,9 +38,20 @@ const ActivityTab = ({ projectId }) => {
 
                     <div className="space-y-12 relative">
                         {isLoading ? (
-                            <div className="flex flex-col items-center justify-center py-20 gap-4">
-                                <div className="w-12 h-12 border-4 border-cyan-500/10 border-t-cyan-500 rounded-full animate-spin shadow-[0_0_20px_rgba(34,211,238,0.2)]" />
-                                <span className="text-[10px] font-black text-gray-600 uppercase tracking-widest animate-pulse">Loading Activity...</span>
+                            <div className="space-y-12">
+                                {[1, 2, 3, 4].map(i => (
+                                    <div key={i} className="flex gap-8">
+                                        <Skeleton className="w-12 h-12 rounded-2xl shrink-0" opacity={0.2} noBorder />
+                                        <div className="flex-1 space-y-4">
+                                            <div className="flex items-center gap-3">
+                                                 <Skeleton className="h-4 w-32 rounded-md" opacity={0.3} noBorder />
+                                                 <Skeleton className="h-4 w-24 rounded-md" opacity={0.1} noBorder />
+                                            </div>
+                                            <Skeleton className="h-16 w-full max-w-2xl rounded-2xl" opacity={0.05} />
+                                            <Skeleton className="h-3 w-40 rounded-md" opacity={0.1} noBorder />
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         ) : !activities || activities.length === 0 ? (
                             <div className="text-center py-24 flex flex-col items-center justify-center">

@@ -99,8 +99,14 @@ const projectSchema = new mongoose.Schema(
         boardBackground: {
             type: { type: String, enum: ['color', 'gradient', 'image'], default: 'gradient' },
             value: { type: String, default: 'bg-sunken' }
+        },
+        createdBy: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
         }
+
     },
+
     {
         timestamps: true,
         versionKey: '__v', // Optimistic Concurrency Control enabled

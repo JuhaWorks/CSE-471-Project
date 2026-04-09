@@ -18,6 +18,7 @@ import {
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import Card from '../ui/Card';
+import { Skeleton } from '../ui/PremiumLoaders';
 import { toast } from 'react-hot-toast';
 
 // Modular Components
@@ -290,9 +291,43 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
 
     if (isLoading) {
         return (
-            <div className="flex flex-col items-center justify-center py-40 space-y-6">
-                <div className="w-16 h-16 border-4 border-theme/20 border-t-theme rounded-full animate-spin" />
-                <p className="text-xs font-black uppercase tracking-[0.5em] text-theme animate-pulse">Loading workflow data...</p>
+            <div className="flex-1 flex flex-col min-h-0 space-y-6 h-full p-1">
+                {/* Header Placeholders */}
+                <div className="flex flex-col xl:flex-row items-center justify-between gap-6 bg-sunken/20 p-3 rounded-[2rem] border border-white/5">
+                     <div className="flex gap-2">
+                        <Skeleton className="h-8 w-24 rounded-lg" opacity={0.2} noBorder />
+                        <Skeleton className="h-8 w-24 rounded-lg" opacity={0.1} noBorder />
+                        <Skeleton className="h-8 w-24 rounded-lg" opacity={0.1} noBorder />
+                     </div>
+                     <div className="flex gap-3">
+                        <Skeleton className="h-10 w-32 rounded-xl" opacity={0.1} noBorder />
+                        <Skeleton className="h-10 w-32 rounded-xl" opacity={0.1} noBorder />
+                     </div>
+                </div>
+
+                {/* Stats Grid Placeholder */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 shrink-0">
+                    {[1, 2, 3, 4].map(i => (
+                        <Skeleton key={i} className="h-20 w-full rounded-2xl" opacity={0.1} />
+                    ))}
+                </div>
+
+                {/* Columns Placeholder */}
+                <div className="flex-1 flex gap-6 overflow-hidden">
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="flex flex-col min-w-[320px] max-w-[320px] shrink-0 space-y-4">
+                            <div className="flex items-center justify-between px-2">
+                                <Skeleton className="h-4 w-32 rounded-md" opacity={0.2} noBorder />
+                                <Skeleton className="h-5 w-5 rounded-md" opacity={0.1} noBorder />
+                            </div>
+                            <div className="flex-1 border-2 border-dashed border-white/[0.03] rounded-[2rem] p-3 space-y-4">
+                                <Skeleton className="h-32 w-full rounded-2xl" opacity={0.15} noBorder />
+                                <Skeleton className="h-24 w-full rounded-2xl" opacity={0.1} noBorder />
+                                <Skeleton className="h-40 w-full rounded-2xl" opacity={0.05} noBorder />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             </div>
         );
     }

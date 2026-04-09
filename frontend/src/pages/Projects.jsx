@@ -56,15 +56,20 @@ const Projects = () => {
     });
 
     const restoreMutation = useMutation({
+        onError: () => toast.error('Restoration failed.')
+    });
+
+    const purgeMutation = useMutation({
         mutationFn: async (id) => {
-            await api.post(`/projects/${id}/restore`);
+            await api.delete(`/projects/${id}/purge`);
         },
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['projects'] });
-            toast.success('Project restored to active list.');
+            toast.success('Project permanently deleted.');
         },
-        onError: () => toast.error('Restoration failed.')
+        onError: (err) => toast.error(err.response?.data?.message || 'Failed to purge project.')
     });
+
 
     const respondMutation = useMutation({
         mutationFn: async ({ id, status }) => {
@@ -192,12 +197,16 @@ const Projects = () => {
             ) : filteredProjects.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 gap-8 px-1">
                     <AnimatePresence mode="popLayout">
-                        {filteredProjects.map((project) => (
-                            <Card 
-                                key={project._id} 
-                                className="group h-full flex flex-col rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden border-subtle hover:border-theme/30 transition-all duration-500"
-                                padding="p-0"
-                            >
+                        {filteredProjects.map((project) => {
+                            const isOwner = (project.createdBy ? project.createdBy === user?._id : (project.members?.[0]?.userId?._id === user?._id || project.members?.[0]?.userId === user?._id)) || user?.role === 'Admin';
+                            
+                            return (
+                                <Card 
+                                    key={project._id} 
+                                    className="group h-full flex flex-col rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden border-subtle hover:border-theme/30 transition-all duration-500"
+                                    padding="p-0"
+                                >
+
                                 <div className="p-1.5 flex flex-col h-full">
                                     <div className="relative mb-4 sm:mb-8">
                                         <ProjectImage
@@ -273,15 +282,39 @@ const Projects = () => {
                                                     </Button>
                                                 </>
                                             ) : project.status === 'Archived' ? (
-                                                <Button
-                                                    size="md"
-                                                    variant="secondary"
-                                                    onClick={() => restoreMutation.mutate(project._id)}
-                                                    leftIcon={RefreshCw}
-                                                    className="rounded-xl"
-                                                >
-                                                    Restore
-                                                </Button>
+                                                <div className="flex items-center gap-3">
+                                                    {isOwner && (
+                                                        <>
+                                                            <Button
+                                                                size="md"
+                                                                variant="danger"
+                                                                onClick={() => {
+                                                                    if (window.confirm('IRREVERSIBLE: Are you absolutely sure you want to permanently delete this project and all its data?')) {
+                                                                        purgeMutation.mutate(project._id);
+                                                                    }
+                                                                }}
+                                                                leftIcon={Trash2}
+                                                                isLoading={purgeMutation.isPending}
+                                                                className="w-10 h-10 p-0 flex items-center justify-center rounded-xl bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white border-red-500/20"
+                                                            />
+                                                            <Button
+                                                                size="md"
+                                                                variant="secondary"
+                                                                onClick={() => restoreMutation.mutate(project._id)}
+                                                                leftIcon={RefreshCw}
+                                                                isLoading={restoreMutation.isPending}
+                                                                className="rounded-xl"
+                                                            >
+                                                                Restore
+                                                            </Button>
+                                                        </>
+                                                    )}
+                                                    {!isOwner && (
+                                                        <span className="text-[10px] font-black uppercase tracking-widest text-tertiary/50 italic px-4 py-2 bg-sunken rounded-lg border border-subtle">
+                                                            Archived (ReadOnly)
+                                                        </span>
+                                                    )}
+                                                </div>
                                             ) : (
                                                 <>
                                                     <Button
@@ -308,7 +341,8 @@ const Projects = () => {
                                     </div>
                                 </div>
                             </Card>
-                        ))}
+                        );})}
+
                     </AnimatePresence>
                 </div>
             ) : (

@@ -34,6 +34,12 @@ export const projectService = {
         const response = await api.post(`/projects/${id}/restore`);
         return response.data.data;
     },
+ 
+    purgeProject: async (id) => {
+        const response = await api.delete(`/projects/${id}/purge`);
+        return response.data;
+    },
+
 
     getProjectActivity: async (id) => {
         const response = await api.get(`/projects/${id}/activity`);

@@ -76,8 +76,25 @@ const ApodWidget = () => {
             </div>
 
             {isLoading ? (
-                <Skeleton className="w-full h-full flex-1" />
+                <div className="flex-1 flex flex-col h-full">
+                    <Skeleton className="h-[220px] w-full rounded-none" noBorder />
+                    <div className="flex-1 p-6 flex flex-col gap-4">
+                        <div className="flex items-center gap-2">
+                             <Skeleton className="h-2 w-24" opacity={0.2} noBorder />
+                        </div>
+                        <Skeleton className="h-6 w-3/4 mb-2" opacity={0.4} noBorder />
+                        <div className="space-y-2">
+                            <Skeleton className="h-3 w-full" opacity={0.15} noBorder />
+                            <Skeleton className="h-3 w-full" opacity={0.15} noBorder />
+                            <Skeleton className="h-3 w-[85%]" opacity={0.1} noBorder />
+                        </div>
+                        <div className="mt-auto pt-4">
+                            <Skeleton className="h-2 w-32" opacity={0.1} noBorder />
+                        </div>
+                    </div>
+                </div>
             ) : (
+
                 <>
                     {/* Image Section */}
                     <div className="relative h-[220px] shrink-0 overflow-hidden bg-sunken">

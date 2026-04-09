@@ -208,57 +208,60 @@ export default function AccountStatusTab() {
             </div>
 
             <div className="grid grid-cols-1 gap-8">
+            <div className="grid grid-cols-1 gap-6">
                 {/* Deactivate Option */}
-                <Card padding="p-8" className="relative overflow-hidden border-amber-500/5 transition-all group">
+                <div className="relative overflow-hidden border border-default rounded-xl transition-all group">
                     <div className="absolute inset-0 z-0">
-                        <GlassSurface width="100%" height="100%" borderRadius={24} displace={0.5} distortionScale={-60} backgroundOpacity={0.08} opacity={0.95} />
+                        <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                     </div>
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8 p-8">
                         <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 rounded-[1.5rem] bg-amber-500/10 flex items-center justify-center border border-amber-500/10 group-hover:scale-110 transition-transform">
-                                <LogOut className="w-8 h-8 text-amber-500" />
+                            <div className="w-14 h-14 rounded-xl bg-amber-500/10 flex items-center justify-center border border-amber-500/20 group-hover:scale-110 transition-transform">
+                                <LogOut size={20} className="text-amber-500" />
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-sm font-black text-primary uppercase tracking-widest">Deactivate Account</h3>
-                                <p className="text-[11px] text-gray-500 font-medium max-w-lg leading-relaxed">
+                            <div className="space-y-1.5">
+                                <h3 className="text-[13px] font-black text-primary uppercase tracking-widest">Deactivate Account</h3>
+                                <p className="text-[11px] text-tertiary font-medium max-w-lg leading-relaxed">
                                     Temporarily disable your account. Your data will be preserved for when you decide to return.
                                 </p>
                             </div>
                         </div>
                         <Button
                             onClick={() => setModalConfig({ isOpen: true, actionType: 'deactivate' })}
-                            className="bg-amber-600 hover:bg-amber-500 px-8 py-4 rounded-xl shadow-xl shadow-amber-500/10 text-white"
+                            className="bg-amber-600 hover:bg-amber-500 px-6 py-2.5 rounded-lg shadow-xl shadow-amber-500/10 text-white text-xs font-semibold tracking-wide"
                         >
                             Deactivate Account
                         </Button>
                     </div>
-                </Card>
+                </div>
 
                 {/* Delete Option */}
-                <Card padding="p-8" className="relative overflow-hidden border-rose-500/5 transition-all group">
+                <div className="relative overflow-hidden border border-default rounded-xl transition-all group">
                     <div className="absolute inset-0 z-0">
-                        <GlassSurface width="100%" height="100%" borderRadius={24} displace={0.5} distortionScale={-60} backgroundOpacity={0.08} opacity={0.95} />
+                        <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                     </div>
-                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+                    <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8 p-8">
                         <div className="flex items-center gap-6">
-                            <div className="w-16 h-16 rounded-[1.5rem] bg-rose-500/10 flex items-center justify-center border border-rose-500/10 group-hover:scale-110 transition-transform">
-                                <Trash2 className="w-8 h-8 text-rose-500" />
+                            <div className="w-14 h-14 rounded-xl bg-rose-500/10 flex items-center justify-center border border-rose-500/20 group-hover:scale-110 transition-transform">
+                                <Trash2 size={20} className="text-rose-500" />
                             </div>
-                            <div className="space-y-2">
-                                <h3 className="text-sm font-black text-primary uppercase tracking-widest">Delete Account</h3>
-                                <p className="text-[11px] text-gray-500 font-medium max-w-lg leading-relaxed">
+                            <div className="space-y-1.5">
+                                <h3 className="text-[13px] font-black text-primary uppercase tracking-widest">Delete Account</h3>
+                                <p className="text-[11px] text-tertiary font-medium max-w-lg leading-relaxed">
                                     Permanently delete your account and all associated data. This action is irreversible.
                                 </p>
                             </div>
                         </div>
                         <Button
                             onClick={() => setModalConfig({ isOpen: true, actionType: 'delete' })}
-                            className="bg-rose-600 hover:bg-rose-500 px-8 py-4 rounded-xl shadow-xl shadow-rose-500/10 text-white"
+                            className="bg-rose-600 hover:bg-rose-500 px-6 py-2.5 rounded-lg shadow-xl shadow-rose-500/10 text-white text-xs font-semibold tracking-wide"
                         >
                             Delete Account
                         </Button>
                     </div>
-                </Card>
+                </div>
+            </div>
+
             </div>
 
             {/* Danger Zone Warning */}

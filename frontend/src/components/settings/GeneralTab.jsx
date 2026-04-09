@@ -78,72 +78,75 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                         </div>
                     </div>
 
-                    {/* Form Card with reduced frosting */}
-                    <Card padding="p-0" className="relative overflow-hidden border-default group shadow-2xl">
+                    {/* Profile Section */}
+                    <div className="relative overflow-hidden border border-default rounded-xl group">
                         <div className="absolute inset-0 z-0">
                             <GlassSurface 
                                 width="100%" 
                                 height="100%" 
-                                borderRadius={24} 
-                                displace={0.3} 
-                                distortionScale={-40} 
-                                backgroundOpacity={0.04} 
-                                opacity={0.85} 
+                                borderRadius={12} 
+                                displace={0.5} 
+                                distortionScale={-60} 
+                                backgroundOpacity={0.06} 
+                                opacity={0.93} 
                             />
                         </div>
                         
                         <div className="relative z-10">
-                            <div className="px-10 py-6 border-b border-default bg-sunken/10 backdrop-blur-md">
-                                <div className="flex items-center gap-3">
-                                    <User className="w-4 h-4 text-tertiary" />
-                                    <span className="text-[10px] font-black text-primary uppercase tracking-widest">Account Details</span>
+                            <div className="flex items-center gap-3 px-8 py-5">
+                                <div className="w-7 h-7 rounded-md flex items-center justify-center bg-surface border border-default">
+                                    <User size={13} className="text-tertiary" />
                                 </div>
+                                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-secondary font-semibold">
+                                    Account Details
+                                </span>
                             </div>
+                            <div className="relative h-px bg-surface" />
 
-                            <form onSubmit={handleSubmit(onSubmit)} className="p-10 space-y-10">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                            <form onSubmit={handleSubmit(onSubmit)} className="px-8 py-8 space-y-6">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {/* Name Field */}
-                                    <div className="space-y-3">
-                                        <label className="text-[10px] font-black text-tertiary uppercase tracking-widest ml-1">Full Name</label>
+                                    <div className="space-y-2">
+                                        <label className="block font-mono text-[9px] tracking-[0.16em] uppercase text-tertiary font-semibold mb-2">Full Name</label>
                                         <div className="relative group">
-                                            <User className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-theme transition-colors" />
+                                            <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-disabled pointer-events-none group-focus-within:text-theme transition-colors transition-colors" />
                                             <input
                                                 type="text"
                                                 placeholder="Enter your name"
                                                 {...register('name')}
-                                                className="w-full bg-sunken border border-default rounded-2xl pl-14 pr-6 py-4 text-primary focus:outline-none focus:border-theme/30 transition-all font-medium text-sm placeholder:text-tertiary/50"
+                                                className="w-full bg-surface border border-default rounded-lg pl-9 pr-4 py-2.5 text-primary text-sm font-medium placeholder:text-disabled outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/40"
                                             />
                                         </div>
-                                        {errors.name && <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest ml-1">{errors.name.message}</p>}
+                                        {errors.name && <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-rose-500 font-semibold mt-1.5">{errors.name.message}</p>}
                                     </div>
 
                                     {/* Bio Field */}
-                                    <div className="space-y-3">
-                                        <div className="flex justify-between items-center px-1">
-                                            <label className="text-[10px] font-black text-tertiary uppercase tracking-widest">Bio</label>
+                                    <div className="space-y-2">
+                                        <div className="flex justify-between items-center mb-1">
+                                            <label className="block font-mono text-[9px] tracking-[0.16em] uppercase text-tertiary font-semibold">Bio</label>
                                             <span className={twMerge(clsx(
-                                                "text-[9px] font-black uppercase tracking-widest",
+                                                "font-mono text-[9px] tracking-[0.12em] uppercase font-semibold",
                                                 bioValue.length >= 250 ? 'text-rose-500' : 'text-tertiary'
                                             ))}>
                                                 {bioValue.length} / 250
                                             </span>
                                         </div>
                                         <div className="relative group">
-                                            <FileText className="absolute top-5 left-5 w-4 h-4 text-tertiary group-focus-within:text-theme transition-colors" />
+                                            <FileText size={13} className="absolute top-4 left-3.5 w-4 h-4 text-disabled group-focus-within:text-theme transition-colors" />
                                             <textarea
                                                 rows={1}
                                                 placeholder="Tell us about yourself..."
                                                 {...register('customMessage')}
-                                                className="w-full bg-sunken border border-default rounded-2xl pl-14 pr-6 py-4 text-primary focus:outline-none focus:border-theme/30 transition-all font-medium text-sm resize-none h-[54px] pt-4 placeholder:text-tertiary/50"
+                                                className="w-full bg-surface border border-default rounded-lg pl-9 pr-4 py-3 text-primary text-sm font-medium placeholder:text-disabled outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/40 resize-none h-[46px]"
                                             />
                                         </div>
                                     </div>
                                 </div>
 
-                                <div className="pt-4 flex items-center justify-between border-t border-default">
-                                    <div className="flex items-center gap-3">
-                                        <Info className="w-4 h-4 text-tertiary" />
-                                        <p className="text-[9px] font-black text-tertiary uppercase tracking-widest max-w-[300px] leading-relaxed">
+                                <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-default gap-6">
+                                    <div className="flex items-center gap-2">
+                                        <Info size={12} className="text-disabled shrink-0" />
+                                        <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-disabled max-w-[300px] leading-relaxed">
                                             Updates will be reflected globally across the platform.
                                         </p>
                                     </div>
@@ -151,14 +154,15 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                         type="submit"
                                         isLoading={updateMutation.isPending}
                                         disabled={updateMutation.isPending}
-                                        className="px-12 py-5 rounded-2xl bg-primary text-elevated font-black uppercase tracking-widest hover:bg-theme hover:text-white transition-all shadow-xl shadow-primary/5"
+                                        className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-primary text-elevated text-xs font-semibold tracking-wide hover:bg-theme hover:text-white transition-all shadow-xl shadow-primary/5"
                                     >
                                         Save Changes
                                     </Button>
                                 </div>
                             </form>
                         </div>
-                    </Card>
+                    </div>
+
 
                     {/* Feedback Loops with better visibility */}
                     <div className="relative flex items-center gap-4 p-8 overflow-hidden rounded-[2.5rem] mt-20 border border-theme/20">

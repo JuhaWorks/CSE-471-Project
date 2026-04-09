@@ -374,13 +374,14 @@ export function GlobalLoadingScreen({ letter = 'K', statusText = 'INITIALIZING' 
     );
 }
 
-export function Skeleton({ className, style, ...rest }) {
+export function Skeleton({ className, style, noBorder = false, opacity = 1, ...rest }) {
     return (
         <div
             className={cn('relative overflow-hidden rounded-lg', className)}
             style={{
                 background: tokens.bgSurface,
-                border: `1px solid ${tokens.border}`,
+                border: noBorder ? 'none' : `1px solid ${tokens.border}`,
+                opacity,
                 ...style,
             }}
             {...rest}
@@ -388,14 +389,15 @@ export function Skeleton({ className, style, ...rest }) {
             {/* Shimmer sweep */}
             <motion.div
                 initial={{ x: '-100%' }}
-                animate={{ x: '200%' }}
-                transition={{ repeat: Infinity, duration: 1.8, ease: ease.inOut, repeatDelay: 0.4 }}
+                animate={{ x: '250%' }}
+                transition={{ repeat: Infinity, duration: 2, ease: ease.inOut, repeatDelay: 0.5 }}
                 style={{
                     position: 'absolute',
                     inset: 0,
-                    background: `linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.04) 50%, transparent 70%)`,
+                    background: `linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.05) 50%, transparent 70%)`,
                 }}
             />
         </div>
     );
 }
+

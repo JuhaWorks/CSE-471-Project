@@ -27,7 +27,7 @@ const getProjects = async (req, res, next) => {
 
         const projects = await Project.find(query)
             .populate('members.userId', 'name email avatar')
-            .select('name description status category startDate endDate coverImageUrl members.userId members.status')
+            .select('name description status category startDate endDate coverImageUrl members.userId members.status createdBy')
             .sort('-createdAt')
             .lean();
 
@@ -70,6 +70,7 @@ const createProject = async (req, res, next) => {
         const { name, description, category, startDate, endDate } = req.body;
         const project = await Project.create({
             name, description, category, startDate, endDate,
+            createdBy: req.user._id,
             members: [{ userId: req.user._id, role: 'Manager' }]
         });
         await logActivity(project._id, req.user._id, 'PROJECT_CREATED', { name });
@@ -140,11 +141,48 @@ const deleteProject = async (req, res, next) => {
     try {
         const project = await Project.findById(req.params.id);
         if (!project) { res.status(404); throw new Error('Project not found'); }
+
+        // RBAC: Only the creator (or Admin) can archive/delete the project
+        const creatorId = project.createdBy || project.members?.[0]?.userId;
+        if (creatorId?.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+            res.status(403);
+            throw new Error('Permission Denied: Only the project creator can archive this workspace.');
+        }
+
         project.deletedAt = Date.now();
         project.status = 'Archived';
         await project.save();
         await logActivity(project._id, req.user._id, 'PROJECT_DELETED', { name: project.name, ipAddress: req.ip }, 'Security');
         res.status(200).json({ status: 'success', message: 'Project moved to trash' });
+    } catch (error) { next(error); }
+};
+
+const purgeProject = async (req, res, next) => {
+    try {
+        const project = await Project.findById(req.params.id);
+        if (!project) { res.status(404); throw new Error('Project not found'); }
+
+        // RBAC Verification
+        const creatorId = project.createdBy || project.members?.[0]?.userId;
+        if (creatorId?.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+            res.status(403);
+            throw new Error('Permission Denied: Only the project creator can permanently delete this workspace.');
+        }
+
+        // Project must be archived first (sanity check)
+        if (project.status !== 'Archived' && project.deletedAt === null) {
+            res.status(400);
+            throw new Error('Only archived projects can be purged.');
+        }
+
+        // Recursively clean up associated tasks
+        await Task.deleteMany({ project: project._id });
+
+        // Final Deletion
+        await Project.findByIdAndDelete(project._id);
+
+        await logActivity(project._id, req.user._id, 'PROJECT_PURGED', { name: project.name }, 'Security');
+        res.status(200).json({ status: 'success', message: 'Project permanently purged' });
     } catch (error) { next(error); }
 };
 
@@ -357,5 +395,6 @@ module.exports = {
     getProjects, getProject, createProject, updateProject, deleteProject, restoreProject,
     uploadProjectImage, dismissDeadlineAlert, getProjectActivity, getProjectInsights,
     getWorkspaceStats, addMember, updateMemberRole, removeMember, globalSearch,
-    getProjectInvitations, respondToProjectInvite
+    getProjectInvitations, respondToProjectInvite, purgeProject
 };
+
