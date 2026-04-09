@@ -524,7 +524,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                         project={project}
                         projectMembers={members}
                         onClose={() => setSelectedTask(null)}
-                        onUpdate={(id, data) => id ? updateTaskMutation.mutate({ taskId: id, data }) : createTaskMutation.mutate(data)}
+                        onUpdate={(id, updates) => id ? updateTaskMutation.mutate({ id, updates }) : createTaskMutation.mutate(updates)}
                         onDelete={(id) => deleteTaskMutation.mutate(id)}
                     />
                 )}

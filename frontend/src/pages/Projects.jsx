@@ -56,6 +56,13 @@ const Projects = () => {
     });
 
     const restoreMutation = useMutation({
+        mutationFn: async (id) => {
+            await api.put(`/projects/${id}/restore`);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['projects'] });
+            toast.success('Project restored to active workspace.');
+        },
         onError: () => toast.error('Restoration failed.')
     });
 

@@ -267,6 +267,37 @@ const deleteTask = async (req, res, next) => {
     }
 };
 
+const getTaskActivity = async (req, res, next) => {
+    try {
+        const { page = 1, limit = 20 } = req.query;
+        const skip = (page - 1) * limit;
+
+        const logs = await Audit.find({ 
+            entityId: req.params.id, 
+            entityType: 'Task' 
+        })
+        .populate('user', 'name email avatar')
+        .sort('-createdAt')
+        .skip(skip)
+        .limit(parseInt(limit))
+        .lean();
+
+        const total = await Audit.countDocuments({ 
+            entityId: req.params.id, 
+            entityType: 'Task' 
+        });
+
+        res.status(200).json({ 
+            status: 'success', 
+            results: logs.length, 
+            total, 
+            data: logs 
+        });
+    } catch (error) { 
+        next(error); 
+    }
+};
+
 const bulkUpdateTasks = async (req, res, next) => {
     try {
         const { taskIds, updates } = req.body;

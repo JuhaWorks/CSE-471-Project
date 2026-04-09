@@ -5,7 +5,8 @@ const {
     createTask,
     updateTask,
     deleteTask,
-    getTaskActivity
+    getTaskActivity,
+    bulkUpdateTasks
 } = require('../controllers/task.controller');
 const {
     getTaskComments,

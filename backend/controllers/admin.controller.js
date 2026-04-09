@@ -152,7 +152,9 @@ const getPlatformStats = async (req, res, next) => {
         const activeUsers = await User.countDocuments({ isBanned: false, isActive: true });
         const deactivatedUsers = await User.countDocuments({ isBanned: false, isActive: false });
 
-        const totalProjects = await Project.countDocuments();
+        const totalProjects = await Project.countDocuments({ deletedAt: null });
+        const activeProjects = await Project.countDocuments({ status: 'Active', deletedAt: null });
+        const archivedProjects = await Project.countDocuments({ status: 'Archived', deletedAt: null });
         const totalTasks = await Task.countDocuments();
         const completedTasks = await Task.countDocuments({ status: 'Completed' });
         const pendingTasks = await Task.countDocuments({ status: { $ne: 'Completed' } });
@@ -180,7 +182,9 @@ const getPlatformStats = async (req, res, next) => {
                     deactivated: deactivatedUsers
                 },
                 projects: {
-                    total: totalProjects
+                    total: totalProjects,
+                    active: activeProjects,
+                    archived: archivedProjects
                 },
                 tasks: {
                     total: totalTasks,

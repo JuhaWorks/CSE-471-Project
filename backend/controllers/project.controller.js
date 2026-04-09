@@ -270,7 +270,12 @@ const getProjectInsights = async (req, res, next) => {
 
 const getWorkspaceStats = async (req, res, next) => {
     try {
-        const projects = await Project.find({ 'members.userId': req.user._id, deletedAt: null }).select('_id status').lean();
+        const projects = await Project.find({ 
+            'members.userId': req.user._id, 
+            'members.status': { $in: ['active', null] }, // Only active or legacy null status
+            deletedAt: null 
+        }).select('_id status').lean();
+
         const projectIds = projects.map(p => p._id);
         const taskStats = await Task.aggregate([
             { $match: { project: { $in: projectIds } } },
@@ -289,6 +294,7 @@ const getWorkspaceStats = async (req, res, next) => {
             status: 'success',
             data: {
                 activeProjects: projects.filter(p => p.status === 'Active').length,
+                archivedProjects: projects.filter(p => p.status === 'Archived').length,
                 totalProjects: projects.length,
                 totalTasks: stats.totalTasks,
                 completedTasks: stats.completedTasks,

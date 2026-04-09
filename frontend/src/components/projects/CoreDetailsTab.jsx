@@ -265,7 +265,7 @@ const CoreDetailsTab = ({ project, isAuthorized }) => {
                                         type="date"
                                         {...register('endDate')}
                                         disabled={!isAuthorized || updateMutation.isPending}
-                                        className="w-full bg-surface border border-default rounded-2xl pl-12 pr-5 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:light]"
+                                        className="w-full bg-surface border border-default rounded-2xl pl-12 pr-5 py-4 text-primary focus:outline-none focus:border-cyan-500/30 focus:ring-4 focus:ring-cyan-500/5 disabled:opacity-50 transition-all font-black text-xs [color-scheme:dark]"
                                     />
                                 </div>
                                 {errors.endDate && <p className="text-[10px] text-red-400 ml-1 font-black uppercase tracking-widest mt-1">{errors.endDate.message}</p>}

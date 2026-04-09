@@ -107,19 +107,35 @@ const Home = () => {
         staleTime: 1000 * 60 * 5,
     });
 
-    const statsData = user?.role === 'Admin'
-        ? {
-            activeProjects: platformStatsRes?.data?.projects.total || 0,
-            totalTasks: platformStatsRes?.data?.tasks.total || 0,
-            completedTasks: platformStatsRes?.data?.tasks.completed || 0,
-            pendingTasks: platformStatsRes?.data?.tasks.pending || 0,
-            completionPct: platformStatsRes?.data?.tasks.completionPct || 0,
-            totalProjects: platformStatsRes?.data?.projects.total || 0,
+    const statsData = useMemo(() => {
+        const isAdm = user?.role === 'Admin';
+        if (isAdm) {
+            const p = platformStatsRes?.data?.projects || {};
+            const t = platformStatsRes?.data?.tasks || {};
+            return {
+                activeProjects: p.active || 0,
+                archivedProjects: p.archived || 0,
+                totalProjects: p.total || 0,
+                totalTasks: t.total || 0,
+                completedTasks: t.completed || 0,
+                pendingTasks: t.pending || 0,
+                completionPct: t.completionPct || 0,
+            };
         }
-        : statsRes?.data || { activeProjects: 0, totalTasks: 0, completedTasks: 0, pendingTasks: 0, completionPct: 0 };
+        const s = statsRes?.data || {};
+        return {
+            activeProjects: s.activeProjects || 0,
+            archivedProjects: s.archivedProjects || 0,
+            totalProjects: s.totalProjects || 0,
+            totalTasks: s.totalTasks || 0,
+            completedTasks: s.completedTasks || 0,
+            pendingTasks: s.pendingTasks || 0,
+            completionPct: s.completionPct || 0,
+        };
+    }, [user, platformStatsRes, statsRes]);
 
     const STATS = useMemo(() => [
-        { label: 'Active Projects', value: statsData.activeProjects, sub: `${statsData.totalProjects || 0} total`, icon: FolderKanban, accent: 'var(--accent-500)', glow: 'var(--accent-bg)' },
+        { label: 'Active Projects', value: statsData.activeProjects, sub: `out of ${statsData.totalProjects} total`, icon: FolderKanban, accent: 'var(--accent-500)', glow: 'var(--accent-bg)' },
         { label: 'Total Tasks', value: statsData.totalTasks, sub: `${statsData.pendingTasks} pending`, icon: CheckSquare, accent: 'oklch(0.70 0.15 240)', glow: 'oklch(0.70 0.15 240 / 0.10)' },
         { label: 'Completed Tasks', value: statsData.completedTasks, sub: `${statsData.completionPct}% completion`, icon: TrendingUp, accent: 'oklch(0.72 0.18 142)', glow: 'oklch(0.72 0.18 142 / 0.10)' },
         { label: 'Online Now', value: onlineUsers.filter(u => u.status !== 'Offline').length, sub: 'Active members', icon: Users, accent: 'var(--accent-500)', glow: 'var(--accent-bg)' },
