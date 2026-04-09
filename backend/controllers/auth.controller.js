@@ -344,7 +344,7 @@ const oauthCallback = async (req, res) => {
     options.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
     res.cookie('refreshToken', refreshToken, options);
 
-    res.redirect(`${getFrontendUrl()}/oauth/callback?token=${accessToken}`);
+    res.redirect(`${getFrontendUrl()}/oauth/callback`);
 };
 
 // @desc    Verify email address
@@ -380,8 +380,10 @@ const verifyEmail = async (req, res, next) => {
             return next(new Error('Token has expired. Please request a new one.'));
         }
 
-        // The token will just sit harmlessly until the Garbage Collector wipes it, or it expires.
+        // Explicitly wipe the verification token to prevent dirty state in DB
         user.isEmailVerified = true;
+        user.emailVerificationToken = undefined;
+        user.emailVerificationExpires = undefined;
         await user.save();
 
         await logSecurityEvent(user._id, 'EMAIL_VERIFIED', {

@@ -28,7 +28,12 @@ const getTasks = async (req, res, next) => {
         } else {
             // "All Projects" logic: Find projects user is a member of
             const userProjects = await Project.find({
-                'members.userId': req.user._id,
+                members: { 
+                    $elemMatch: { 
+                        userId: req.user._id, 
+                        status: { $nin: ['pending', 'rejected'] } 
+                    } 
+                },
                 isArchived: false
             }).select('_id').lean();
             
@@ -315,25 +320,52 @@ const bulkUpdateTasks = async (req, res, next) => {
         }
 
         const projectIds = [...new Set(tasks.map(t => t.project.toString()))];
+        const projects = await Project.find({ _id: { $in: projectIds } }).lean();
+        const projectMap = projects.reduce((map, p) => { map[p._id.toString()] = p; return map; }, {});
         
-        // Simple security: Verify user is a member/admin in all projects involved
-        for (const pid of projectIds) {
-            const project = await Project.findById(pid).lean();
-            const isMember = project.members.some(m => m.userId.toString() === req.user._id.toString() && m.status === 'active');
-            if (!isMember && req.user.role !== 'Admin') {
-                res.status(401);
-                throw new Error(`User not authorized for project ${pid}`);
+        // Strict Security Verification per Task
+        for (const task of tasks) {
+            const project = projectMap[task.project.toString()];
+            if (!project) {
+                res.status(404);
+                throw new Error(`Project for task ${task._id} not found`);
             }
+
+            const isAssignee = (task.assignees && task.assignees.some(a => a.toString() === req.user._id.toString())) || 
+                             (task.assignee && task.assignee.toString() === req.user._id.toString());
+
+            const isManagerOrEditor = project.members.some(
+                (m) => m.userId.toString() === req.user._id.toString() && (m.role === 'Manager' || m.role === 'Editor') && m.status === 'active'
+            );
+
+            if (!isAssignee && !isManagerOrEditor && req.user.role !== 'Admin') {
+                res.status(401);
+                throw new Error(`User not authorized to update task ${task._id}`);
+            }
+        }
+
+        // Prevent Mass Assignment: Whitelist allowed fields
+        const allowedFields = ['status', 'priority', 'dueDate', 'assignees', 'title', 'description', 'points', 'type', 'labels', 'estimatedTime', 'startDate'];
+        const safeUpdates = {};
+        for (const key of allowedFields) {
+            if (updates[key] !== undefined) {
+                safeUpdates[key] = updates[key];
+            }
+        }
+
+        if (Object.keys(safeUpdates).length === 0) {
+            res.status(400);
+            throw new Error('No valid fields provided for bulk update');
+        }
+
+        // Legacy/Mirroring logic if assignees changed
+        if (safeUpdates.assignees) {
+            safeUpdates.assignee = safeUpdates.assignees.length > 0 ? safeUpdates.assignees[0] : null;
         }
 
         // Perform updates
         const updatePromises = taskIds.map(id => {
-            const taskUpdate = { ...updates };
-            // Legacy/Mirroring logic if assignees changed
-            if (updates.assignees) {
-                taskUpdate.assignee = updates.assignees.length > 0 ? updates.assignees[0] : null;
-            }
-            return Task.findByIdAndUpdate(id, { $set: taskUpdate }, { new: true }).lean();
+            return Task.findByIdAndUpdate(id, { $set: safeUpdates }, { new: true }).lean();
         });
 
         const updatedTasks = await Promise.all(updatePromises);

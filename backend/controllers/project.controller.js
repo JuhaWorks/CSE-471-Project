@@ -86,6 +86,12 @@ const updateProject = async (req, res, next) => {
             throw new Error('Project not found');
         }
 
+        // Strict Optimistic Concurrency Control
+        if (req.body.__v !== undefined && project.__v !== req.body.__v) {
+            res.status(409);
+            throw new Error('Concurrency Conflict: This project was updated by another user.');
+        }
+
         if (req.body.coverImageUrl !== undefined && req.body.coverImageUrl !== project.coverImageUrl) {
             if (project.coverImageId) {
                 try {

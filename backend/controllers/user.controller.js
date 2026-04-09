@@ -202,7 +202,7 @@ const requestEmailChangeOTP = async (req, res, next) => {
         const user = await User.findById(req.user._id);
 
         // Generate 6-digit OTP
-        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        const otp = crypto.randomInt(100000, 1000000).toString();
 
         // Hash and save
         user.emailChangeOTP = crypto.createHash('sha256').update(otp).digest('hex');

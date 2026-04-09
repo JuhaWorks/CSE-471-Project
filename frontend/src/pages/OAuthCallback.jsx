@@ -12,17 +12,10 @@ const OAuthCallback = () => {
     useEffect(() => {
         const handleOAuthCallback = async () => {
             try {
-                // Extract token from URL parameters
-                const params = new URLSearchParams(location.search);
-                const token = params.get('token');
+                // The backend has securely set the HttpOnly refreshToken cookie before redirecting here.
+                // We call checkAuth() which will attempt to hit /api/auth/me.
+                // This triggers the Axios interceptor to securely fetch the short-lived accessToken via the refresh endpoint.
 
-                if (!token) {
-                    throw new Error('Authentication failed: No token received from provider.');
-                }
-
-                // 1. Save the short-lived access token directly to the Zustand store
-                // The HttpOnly refresh token is already safely stored in cookies by the backend redirect
-                setAccessToken(token);
 
                 // 2. Fetch the user profile from the backend to populate the UI
                 await checkAuth(true);
