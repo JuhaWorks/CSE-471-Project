@@ -148,14 +148,14 @@ class ProjectMemberService {
         let result;
 
         await session.withTransaction(async () => {
-            const project = await Project.findById(projectId).session(session);
+            const project = await Project.findById(projectId).populate('members.userId', 'name email').session(session);
             if (!project) {
                 const error = new Error('Project not found');
                 error.statusCode = 404;
                 throw error;
             }
 
-            const memberIndex = project.members.findIndex(m => m.userId.toString() === userId);
+            const memberIndex = project.members.findIndex(m => m.userId._id.toString() === userId);
             if (memberIndex === -1) {
                 const error = new Error('Member not found');
                 error.statusCode = 404;
@@ -176,7 +176,7 @@ class ProjectMemberService {
 
             await logActivity(project._id, actorId, 'MEMBER_ROLE_UPDATED', {
                 targetUserId: userId,
-                targetUserName: project.members[memberIndex].userId.name || 'User', // May need populating if name not directly on member subdoc
+                targetUserName: project.members[memberIndex].userId.name || 'User',
                 projectName: project.name,
                 newRole: role
             }, 'Security', { session });
@@ -214,14 +214,14 @@ class ProjectMemberService {
         let result;
 
         await session.withTransaction(async () => {
-            const project = await Project.findById(projectId).session(session);
+            const project = await Project.findById(projectId).populate('members.userId', 'name email').session(session);
             if (!project) {
                 const error = new Error('Project not found');
                 error.statusCode = 404;
                 throw error;
             }
 
-            const member = project.members.find(m => m.userId.toString() === userId);
+            const member = project.members.find(m => m.userId._id.toString() === userId);
             if (!member) {
                 const error = new Error('Member not found');
                 error.statusCode = 404;
@@ -237,7 +237,7 @@ class ProjectMemberService {
                 }
             }
 
-            project.members = project.members.filter(m => m.userId.toString() !== userId);
+            project.members = project.members.filter(m => m.userId._id.toString() !== userId);
             await project.save({ session });
 
             await logActivity(project._id, actorId, 'MEMBER_REMOVED', {

@@ -17,7 +17,7 @@ const getTasks = async (req, res, next) => {
 
             // Verify user is in project
             const isMember = project.members.some(
-                (member) => member.userId.toString() === req.user._id.toString()
+                (member) => member.userId.toString() === req.user._id.toString() && member.status === 'active'
             );
 
             if (!isMember && req.user.role !== 'Admin') {
@@ -97,7 +97,7 @@ const createTask = async (req, res, next) => {
         }
 
         const isMember = project.members.some(
-            (m) => m.userId.toString() === req.user._id.toString()
+            (m) => m.userId.toString() === req.user._id.toString() && m.status === 'active'
         );
 
         if (!isMember && req.user.role !== 'Admin') {
@@ -166,12 +166,12 @@ const updateTask = async (req, res, next) => {
 
         const project = await Project.findById(task.project).lean();
 
-        // Check if user is assigned to this task, or is a manager in the project
+        // Check if user is assigned to this task, or is an active manager in the project
         const isAssignee = (task.assignees && task.assignees.some(a => a.toString() === req.user._id.toString())) || 
                          (task.assignee && task.assignee.toString() === req.user._id.toString());
         
         const isManager = project.members.some(
-            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager'
+            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager' && m.status === 'active'
         );
 
         if (!isAssignee && !isManager && req.user.role !== 'Admin') {
@@ -248,7 +248,7 @@ const deleteTask = async (req, res, next) => {
 
         const project = await Project.findById(task.project).lean();
         const isManager = project.members.some(
-            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager'
+            (m) => m.userId.toString() === req.user._id.toString() && m.role === 'Manager' && m.status === 'active'
         );
 
         if (!isManager && req.user.role !== 'Admin') {
@@ -319,7 +319,7 @@ const bulkUpdateTasks = async (req, res, next) => {
         // Simple security: Verify user is a member/admin in all projects involved
         for (const pid of projectIds) {
             const project = await Project.findById(pid).lean();
-            const isMember = project.members.some(m => m.userId.toString() === req.user._id.toString());
+            const isMember = project.members.some(m => m.userId.toString() === req.user._id.toString() && m.status === 'active');
             if (!isMember && req.user.role !== 'Admin') {
                 res.status(401);
                 throw new Error(`User not authorized for project ${pid}`);

@@ -138,7 +138,7 @@ projectSchema.methods.isMember = function (userId) {
  * Instance method to get total managers in project
  */
 projectSchema.methods.getManagerCount = function () {
-    return this.members.filter(m => m.role === 'Manager').length;
+    return this.members.filter(m => m.role === 'Manager' && m.status === 'active').length;
 };
 
 module.exports = mongoose.model('Project', projectSchema);

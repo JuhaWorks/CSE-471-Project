@@ -117,6 +117,14 @@ const toggleBanUser = async (req, res, next) => {
 
         user.isBanned = !user.isBanned;
 
+        if (user.isBanned) {
+            // Automatically reject all pending invites for banned users
+            await Project.updateMany(
+                { 'members': { $elemMatch: { userId: user._id, status: 'pending' } } },
+                { $set: { 'members.$.status': 'rejected' } }
+            );
+        }
+
         // Optionally, if unbanning, you might want to ensure isActive is true 
         // if it was deactivated, but we'll stick strictly to isBanned flag here.
         await user.save({ validateBeforeSave: false });

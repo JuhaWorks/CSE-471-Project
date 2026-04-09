@@ -149,9 +149,12 @@ const deleteProject = async (req, res, next) => {
             throw new Error('Permission Denied: Only the project creator can archive this workspace.');
         }
 
-        project.deletedAt = Date.now();
+        project.deletedAt = new Date();
         project.status = 'Archived';
         await project.save();
+
+        // Hard Delete tasks associated with the project as requested by user
+        await Task.deleteMany({ project: req.params.id });
         await logActivity(project._id, req.user._id, 'PROJECT_DELETED', { name: project.name, ipAddress: req.ip }, 'Security');
         res.status(200).json({ status: 'success', message: 'Project moved to trash' });
     } catch (error) { next(error); }
@@ -336,7 +339,10 @@ const globalSearch = async (req, res, next) => {
             .sort({ score: { $meta: "textScore" } }).populate('project', 'name').limit(10).lean();
 
         const projectsPromise = Project.find(
-            req.user.role === 'Admin' ? { $text: { $search: query } } : { $text: { $search: query }, "members.userId": req.user._id },
+            req.user.role === 'Admin' ? { $text: { $search: query } } : { 
+                $text: { $search: query }, 
+                members: { $elemMatch: { userId: req.user._id, status: 'active' } } 
+            },
             { score: { $meta: "textScore" } }
         ).populate('members.userId', 'name email avatar').sort({ score: { $meta: "textScore" } }).limit(5).lean();
     
