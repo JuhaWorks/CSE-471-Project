@@ -30,31 +30,41 @@ const ApodWidget = () => {
                 return d.toISOString().split('T')[0];
             };
 
-            // NASA API frequently fails or hasn't updated its default endpoint
-            // for the new day. We must gracefully fall back to the newest working APOD.
+            const fetchApod = (offset) => {
+                return axios.get('https://api.nasa.gov/planetary/apod', {
+                    params: {
+                        api_key: apiKey,
+                        thumbs: true,
+                        date: offset ? getDateStr(offset) : undefined,
+                    },
+                    timeout: 10000,
+                });
+            };
+
             for (let i = 0; i <= 3; i++) {
                 try {
-                    const dateQuery = i === 0 ? '' : `&date=${getDateStr(i)}`;
-                    const res = await axios.get(`https://api.nasa.gov/planetary/apod?api_key=${apiKey}&thumbs=true${dateQuery}`);
-                    if (res.data) {
+                    const res = await fetchApod(i);
+                    if (res?.data) {
                         return formatData(res.data);
                     }
                 } catch (err) {
-                    console.warn(`NASA API unavailable for offset ${i} - falling back...`);
+                    const status = err?.response?.status || 'network error';
+                    console.warn(`NASA APOD request failed (${status}) for offset ${i} - trying fallback...`);
                 }
             }
 
-            // Ultimate fallback if API is completely unavailable
+            // Ultimate fallback if NASA is unavailable
             return {
                 title: 'System Insight',
                 explanation: 'Waiting for NASA telemetry...',
                 author: 'System',
-                url: `https://picsum.photos/seed/system/600/400`,
+                url: 'https://picsum.photos/seed/system/600/400',
                 date: new Date().toISOString().split('T')[0],
             };
         },
         staleTime: 1000 * 60 * 5, // cache for 5 minutes instead of 24h so we don't get stuck on old images
-        retry: 1,
+        retry: 0,
+        refetchOnWindowFocus: false,
     });
 
     const display = isError || !apodData ? {

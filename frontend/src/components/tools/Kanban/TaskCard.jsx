@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
     Layers, 
     Calendar as CalendarIcon, 
@@ -10,6 +10,10 @@ import {
     ChevronDown,
     CheckCircle2
 } from 'lucide-react';
+import { twMerge } from 'tailwind-merge';
+import { clsx } from 'clsx';
+import Card from '../../ui/Card';
+import { getOptimizedAvatar } from '../../../utils/avatar';
 
 /**
  * Professional TaskCard

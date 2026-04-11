@@ -48,7 +48,7 @@ const TaskBoardSkeleton = () => (
 );
 
 // ── Main Task Content ──
-const TasksContent = ({ projectId, searchQuery, viewMode, activeProject, triggerQuickAdd }) => {
+const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activeProject, triggerQuickAdd }) => {
     // Relying on useSuspenseQuery for React 19 integration.
     // Removes the need for explicit loading states.
 
@@ -348,6 +348,7 @@ export default function Tasks() {
                     <TasksContent 
                         projectId={projectId} 
                         searchQuery={searchQuery} 
+                        quickFilter={quickFilter}
                         viewMode={optimisticView} 
                         activeProject={activeProject} 
                         triggerQuickAdd={triggerQuickAdd}

@@ -73,8 +73,30 @@ const cacheMiddleware = (keyPrefix, ttlSeconds = 300) => {
     };
 };
 
+/**
+ * Programmatically clear all cache keys for a specific user and prefix
+ * Useful when mutations occur and cached lists become stale.
+ */
+const clearUserCache = async (keyPrefix, userId) => {
+    try {
+        if (!redisClient || !redisClient.isReady) return;
+
+        // Pattern depends on how keys are structured in cacheMiddleware
+        const pattern = `${keyPrefix}:${userId}:*`;
+        const keys = await redisClient.keys(pattern);
+
+        if (keys.length > 0) {
+            await redisClient.del(keys);
+            console.log(`[Redis] Cleared ${keys.length} cache keys for user ${userId} with prefix ${keyPrefix}`);
+        }
+    } catch (err) {
+        console.error('Redis Clear Cache Error:', err);
+    }
+};
+
 module.exports = {
     initRedis,
     getRedisClient,
-    cacheMiddleware
+    cacheMiddleware,
+    clearUserCache
 };

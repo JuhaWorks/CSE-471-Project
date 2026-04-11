@@ -142,6 +142,18 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     });
 
     // Board Configuration
+    const allColumns = useMemo(() => {
+        const customCols = project?.kanbanConfig?.columns;
+        if (customCols && customCols.length > 0) return customCols;
+
+        return [
+            { id: 'Pending', name: 'Backlog', title: 'Backlog', color: '#6B7280', wipLimit: 0 },
+            { id: 'In Progress', name: 'In Progress', title: 'In Progress', color: '#1B73E8', wipLimit: 5 },
+            { id: 'Completed', name: 'Done', title: 'Done', color: '#10B981', wipLimit: 0 },
+            { id: 'Canceled', name: 'Canceled', title: 'Canceled', color: '#EF4444', wipLimit: 0 }
+        ];
+    }, [project]);
+
     const filteredTasksByView = useMemo(() => {
         let filtered = rawTasks;
         if (searchQuery) {
@@ -176,13 +188,31 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
 
         // Grouping by columns
         const grouped = {};
-        const colIds = project?.kanbanConfig?.columns?.map(c => c.name) || ['Pending', 'In Progress', 'Completed'];
+        const colIds = allColumns.map(c => c.id || c._id?.toString());
         colIds.forEach(id => grouped[id] = []);
+
         filtered.forEach(task => {
+            // Priority 1: Match exactly on current task status
             if (grouped[task.status]) {
                 grouped[task.status].push(task);
-            } else if (colIds.length > 0) {
-                grouped[colIds[0]].push(task);
+            } 
+            // Priority 2: Match by some common status mappings if not perfectly aligned
+            else {
+                const normalizedStatus = task.status?.toLowerCase().trim();
+                const matchedId = colIds.find(id => {
+                    const idLower = String(id).toLowerCase().trim();
+                    return idLower === normalizedStatus || 
+                           (idLower === 'pending' && normalizedStatus === 'backlog') ||
+                           (idLower === 'backlog' && normalizedStatus === 'pending');
+                });
+
+                if (matchedId && grouped[matchedId]) {
+                    grouped[matchedId].push(task);
+                } 
+                // Priority 3: Fallback to the first available column so it's visible somewhere
+                else if (colIds.length > 0) {
+                    grouped[colIds[0]].push(task);
+                }
             }
         });
 
@@ -218,24 +248,15 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
         }
 
         return { type: 'standard', data: grouped };
-    }, [rawTasks, searchQuery, filterPriority, filterAssignee, filterDeadline, swimlane, project, quickFilter]);
+    }, [rawTasks, searchQuery, filterPriority, filterAssignee, filterDeadline, swimlane, project, quickFilter, allColumns]);
 
     const boardColumns = useMemo(() => {
-        const baseCols = project?.kanbanConfig?.columns?.length > 0 
-            ? project.kanbanConfig.columns 
-            : [
-                { id: 'Pending', name: 'Backlog', color: '#6B7280', wipLimit: 0 },
-                { id: 'In Progress', name: 'In Progress', color: '#1B73E8', wipLimit: 5 },
-                { id: 'Completed', name: 'Done', color: '#10B981', wipLimit: 0 },
-                { id: 'Canceled', name: 'Canceled', color: '#EF4444', wipLimit: 0 }
-            ];
-            
-        return baseCols.map(col => ({
+        return allColumns.map(col => ({
             ...col,
             taskCount: filteredTasksByView.data[col.id]?.length || 0,
             isOverLimit: col.wipLimit > 0 && (filteredTasksByView.data[col.id]?.length || 0) > col.wipLimit
         }));
-    }, [project, filteredTasksByView.data]);
+    }, [allColumns, filteredTasksByView.data]);
 
     const handleDragStart = (e, taskId, currentStatus) => {
         // Multi-select drag logic
@@ -414,7 +435,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-xl bg-sunken border border-subtle flex items-center justify-center" style={{ color: col.color }}><Activity className="w-5 h-5" /></div>
                                     <div className="flex flex-col">
-                                        <span className="text-[9px] font-black text-tertiary uppercase tracking-widest leading-none">{col.name}</span>
+                                        <span className="text-[9px] font-black text-tertiary uppercase tracking-widest leading-none">{col.title || col.name}</span>
                                         <span className="text-xl font-black text-primary font-mono">{col.taskCount}</span>
                                     </div>
                                 </div>
@@ -430,7 +451,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                                         <div className="flex items-center justify-between px-3 py-2 mb-2">
                                             <div className="flex items-center gap-2">
                                                 <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: col.color }} />
-                                                <h3 className="text-[10px] font-black text-primary uppercase tracking-widest">{col.name}</h3>
+                                                <h3 className="text-[10px] font-black text-primary uppercase tracking-widest">{col.title || col.name}</h3>
                                                 <span className={twMerge(clsx(
                                                     "px-1.5 py-0.5 rounded bg-sunken border border-subtle text-[8px] font-black text-tertiary",
                                                     col.isOverLimit && "bg-danger/20 text-danger border-danger/40 animate-pulse"

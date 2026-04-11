@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const ProjectMemberService = require('../services/projectMember.service');
 const catchAsync = require('../utils/catchAsync');
 const { checkSingleProject } = require('../cron/deadlineCheck');
+const { clearUserCache } = require('../utils/redis');
 
 // --- Core Project Operations ---
 
@@ -67,12 +68,16 @@ const getProject = async (req, res, next) => {
 
 const createProject = async (req, res, next) => {
     try {
-        const { name, description, category, startDate, endDate } = req.body;
+        const { name, description, category, startDate, endDate, coverImageUrl } = req.body;
         const project = await Project.create({
-            name, description, category, startDate, endDate,
+            name, description, category, startDate, endDate, coverImageUrl,
             createdBy: req.user._id,
-            members: [{ userId: req.user._id, role: 'Manager' }]
+            members: [{ userId: req.user._id, role: 'Manager', status: 'active' }]
         });
+        
+        // Invalidate cache so user sees new project immediately
+        await clearUserCache('projects_list', req.user._id);
+        
         await logActivity(project._id, req.user._id, 'PROJECT_CREATED', { name });
         res.status(201).json({ status: 'success', data: project });
     } catch (error) { next(error); }
@@ -139,6 +144,11 @@ const updateProject = async (req, res, next) => {
         }
 
         await project.populate('members.userId', 'name email avatar');
+        
+        // Clear cache for all active members (or just current user if specific)
+        // Since it's an update, mostly the current user or teammates need fresh list
+        await clearUserCache('projects_list', req.user._id);
+
         res.status(200).json({ status: 'success', data: project });
     } catch (error) { next(error); }
 };
@@ -162,6 +172,10 @@ const deleteProject = async (req, res, next) => {
         // Hard Delete tasks associated with the project as requested by user
         await Task.deleteMany({ project: req.params.id });
         await logActivity(project._id, req.user._id, 'PROJECT_DELETED', { name: project.name, ipAddress: req.ip }, 'Security');
+
+        // Clear cache
+        await clearUserCache('projects_list', req.user._id);
+
         res.status(200).json({ status: 'success', message: 'Project moved to trash' });
     } catch (error) { next(error); }
 };
@@ -191,6 +205,10 @@ const purgeProject = async (req, res, next) => {
         await Project.findByIdAndDelete(project._id);
 
         await logActivity(project._id, req.user._id, 'PROJECT_PURGED', { name: project.name }, 'Security');
+        
+        // Clear cache
+        await clearUserCache('projects_list', req.user._id);
+
         res.status(200).json({ status: 'success', message: 'Project permanently purged' });
     } catch (error) { next(error); }
 };
@@ -203,6 +221,10 @@ const restoreProject = async (req, res, next) => {
         project.status = 'Active';
         await project.save();
         await logActivity(project._id, req.user._id, 'PROJECT_RESTORED');
+
+        // Clear cache
+        await clearUserCache('projects_list', req.user._id);
+
         res.status(200).json({ status: 'success', data: project });
     } catch (error) { next(error); }
 };

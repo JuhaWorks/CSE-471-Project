@@ -15,8 +15,8 @@ import { twMerge } from 'tailwind-merge';
 
 
 const projectSchema = z.object({
-    name: z.string().min(3, 'Project name must be at least 3 characters').max(100),
-    description: z.string().min(10, 'Description must be at least 10 characters').max(500),
+    name: z.string().min(2, 'Project name must be at least 2 characters').max(100),
+    description: z.string().min(5, 'Description must be at least 5 characters').max(500),
     category: z.string().min(2, 'Please select or enter a category'),
     startDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid start date' }),
     endDate: z.string().refine((date) => !isNaN(Date.parse(date)), { message: 'Invalid end date' }),
@@ -93,7 +93,11 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
         if (step === 2) fieldsToValidate = ['category'];
 
         const isStepValid = await trigger(fieldsToValidate);
-        if (isStepValid) setStep(s => s + 1);
+        if (isStepValid) {
+            setStep(s => s + 1);
+        } else {
+            toast.error('Please fix the errors before proceeding.');
+        }
     };
     
     const prevStep = () => setStep(s => s - 1);
@@ -102,7 +106,8 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
         <Dialog.Root open={open} onOpenChange={onOpenChange}>
             <Dialog.Portal>
                 <Dialog.Overlay className="fixed inset-0 bg-black/60 backdrop-blur-md z-[60] animate-in fade-in duration-300" />
-                <Dialog.Content className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xl glass-2 border-white/10 bg-[#09090b]/90 rounded-[2.5rem] shadow-2xl z-[70] overflow-hidden focus:outline-none animate-in zoom-in-95 duration-200">
+                <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 sm:p-6 pointer-events-none">
+                    <Dialog.Content className="w-full max-w-xl max-h-[95vh] overflow-y-auto glass-2 border-white/10 bg-[#09090b]/98 rounded-[2.5rem] shadow-2xl focus:outline-none animate-in zoom-in-95 duration-200 scrollbar-thin pointer-events-auto">
                     
                     {/* Header with Visual Indicator */}
                     <div className="absolute top-0 left-0 w-full h-1 bg-white/5">
@@ -290,7 +295,8 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                             </footer>
                         </form>
                     </div>
-                </Dialog.Content>
+                    </Dialog.Content>
+                </div>
             </Dialog.Portal>
         </Dialog.Root >
     );
