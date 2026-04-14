@@ -3,6 +3,7 @@ const Project = require('../models/project.model');
 const User = require('../models/user.model');
 const sendEmail = require('../utils/sendEmail');
 const logger = require('../utils/logger');
+const notificationService = require('../services/notification.service');
 
 // ── Shared core logic ────────────────────────────────────────────────────────
 // Evaluates a single project and sends emails if deadlines are triggered.
@@ -32,19 +33,19 @@ const checkProjectDeadline = async (project) => {
     // 1. Exceeded Deadline
     if (timeDiff < 0 && !project.deadlineNotified?.exceeded) {
         for (const manager of managers) {
-            await sendEmail({
-                to: manager.email,
-                subject: `🚨 Deadline Exceeded: Project "${project.name}"`,
-                html: `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #ef4444;">Project Deadline Exceeded</h2>
-                    <p>Hi ${manager.name},</p>
-                    <p>This is a critical alert to inform you that the deadline for <strong>${project.name}</strong> has officially been exceeded.</p>
-                    <p>Please log in to your dashboard immediately to either <strong>Extend the Deadline</strong> or <strong>Archive the Project</strong>.</p>
-                    <br/>
-                    <a href="${process.env.FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #ef4444; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to Dashboard</a>
-                </div>
-                `
+            // notificationService.notify handles both in-app and email delivery
+            await notificationService.notify({
+                recipientId: manager._id || manager,
+                type: 'Deadline',
+                priority: 'Urgent',
+                title: 'Deadline Exceeded',
+                message: `Critical: The deadline for project "${project.name}" has officially been exceeded. Please log in to take action.`,
+                link: `/projects/${project._id}/settings`,
+                metadata: { 
+                    projectId: project._id,
+                    projectName: project.name,
+                    priority: 'Urgent'
+                }
             });
             emailsSent++;
         }
@@ -57,19 +58,19 @@ const checkProjectDeadline = async (project) => {
     if (timeDiff > 0 && timeDiff <= threeDaysMs && !project.deadlineNotified?.approaching) {
         const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
         for (const manager of managers) {
-            await sendEmail({
-                to: manager.email,
-                subject: `⏳ Deadline Approaching: Project "${project.name}"`,
-                html: `
-                <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto;">
-                    <h2 style="color: #f59e0b;">Project Deadline Approaching</h2>
-                    <p>Hi ${manager.name},</p>
-                    <p>This is a friendly reminder that the deadline for <strong>${project.name}</strong> is in <strong>${daysLeft} day${daysLeft !== 1 ? 's' : ''}</strong>.</p>
-                    <p>Log in to your dashboard to review its status.</p>
-                    <br/>
-                    <a href="${process.env.FRONTEND_URL}/dashboard" style="display: inline-block; padding: 12px 24px; background-color: #f59e0b; color: white; text-decoration: none; border-radius: 6px; font-weight: bold;">Go to Dashboard</a>
-                </div>
-                `
+            // centralized logic now handles email dispatch
+            await notificationService.notify({
+                recipientId: manager._id || manager,
+                type: 'Deadline',
+                priority: 'High',
+                title: 'Deadline Approaching',
+                message: `Friendly Reminder: Project "${project.name}" is due in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}.`,
+                link: `/projects/${project._id}/settings`,
+                metadata: { 
+                    projectId: project._id,
+                    projectName: project.name,
+                    priority: 'High'
+                }
             });
             emailsSent++;
         }

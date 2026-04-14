@@ -273,7 +273,8 @@ const getProjectActivity = async (req, res, next) => {
             .populate('user', 'name email avatar')
             .sort('-createdAt')
             .skip((page - 1) * limit)
-            .limit(parseInt(limit));
+            .limit(parseInt(limit))
+            .lean();
         const total = await Audit.countDocuments({ entityId: req.params.id, entityType: 'Project' });
         res.status(200).json({ status: 'success', results: logs.length, total, data: logs });
     } catch (error) { next(error); }

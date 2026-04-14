@@ -142,7 +142,7 @@ const GlobalClockWidget = () => {
     }
 
     return (
-        <section className="mb-10">
+        <section className="">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
                 <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-xl bg-theme/10 border border-theme/20 flex items-center justify-center">

@@ -56,7 +56,7 @@ const DEFAULT_COLUMNS = [
 /* ─────────────────────────────────────────────
    Stat card
 ───────────────────────────────────────────── */
-function StatCard({ label, value, accent, isFirst }) {
+const StatCard = React.memo(({ label, value, accent, isFirst }) => {
     return (
         <div className={twMerge(clsx(
             'relative flex items-center gap-3.5 px-5 py-3.5 rounded-2xl',
@@ -88,12 +88,12 @@ function StatCard({ label, value, accent, isFirst }) {
             </div>
         </div>
     );
-}
+});
 
 /* ─────────────────────────────────────────────
    Column header
 ───────────────────────────────────────────── */
-function ColumnHeader({ col, onQuickAdd, isCompact, onToggleCompact }) {
+const ColumnHeader = React.memo(({ col, onQuickAdd, isCompact, onToggleCompact }) => {
     return (
         <div className="flex items-center justify-between px-1 mb-2 shrink-0">
             <div className="flex items-center gap-2">
@@ -131,52 +131,52 @@ function ColumnHeader({ col, onQuickAdd, isCompact, onToggleCompact }) {
             </div>
         </div>
     );
-}
+});
 
 /* ─────────────────────────────────────────────
    Quick-add form
 ───────────────────────────────────────────── */
-function QuickAddForm({ onSubmit, onCancel, value, onChange }) {
+const QuickAddForm = React.memo(({ onSubmit, onCancel, value, onChange }) => {
     return (
         <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.97 }}
+            initial={{ opacity: 0, y: -4, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.97 }}
-            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-            className="rounded-2xl bg-[#141416] border border-white/10 shadow-xl overflow-hidden"
+            exit={{ opacity: 0, y: -4, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="rounded-xl bg-[#1a1a1e] border border-white/10 shadow-lg overflow-hidden mb-2 shadow-2xl"
         >
-            <form onSubmit={onSubmit} className="p-3 flex flex-col gap-3">
+            <form onSubmit={onSubmit} className="p-2 flex flex-col gap-2">
                 <input
                     autoFocus
                     value={value}
                     onChange={onChange}
                     placeholder="Task title…"
-                    className="w-full bg-transparent text-[12px] font-medium text-white placeholder-zinc-600 focus:outline-none"
+                    className="w-full bg-transparent text-[11px] font-medium text-white placeholder-zinc-600 focus:outline-none px-1"
                 />
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-1.5">
                     <button
                         type="button"
                         onClick={onCancel}
-                        className="px-2.5 py-1.5 rounded-lg text-[10px] font-semibold text-zinc-500 hover:text-zinc-300 transition-colors"
+                        className="px-2 py-1 rounded-lg text-[9px] font-black text-zinc-500 hover:text-zinc-300 transition-colors uppercase"
                     >
                         Cancel
                     </button>
                     <button
                         type="submit"
-                        className="px-3 py-1.5 rounded-lg text-[10px] font-semibold bg-blue-600 hover:bg-blue-500 text-white transition-colors"
+                        className="px-2.5 py-1 rounded-lg text-[9px] font-black bg-blue-600 hover:bg-blue-500 text-white transition-colors uppercase"
                     >
-                        Add task
+                        Add Task
                     </button>
                 </div>
             </form>
         </motion.div>
     );
-}
+});
 
 /* ─────────────────────────────────────────────
    Column drop zone
 ───────────────────────────────────────────── */
-function KanbanColumn({
+const KanbanColumn = React.memo(({
     col, tasks, isCompact, isDragOver,
     onDragOver, onDragLeave, onDrop,
     onDragStart, onOpenTask, onSelectTask,
@@ -184,7 +184,7 @@ function KanbanColumn({
     quickAddCol, quickAddTitle, onQuickAddTitle,
     onQuickAddSubmit, onQuickAddOpen, onQuickAddCancel,
     onToggleCompact,
-}) {
+}) => {
     return (
         <div className="flex flex-col h-full" style={{ minWidth: 280, flex: 1 }}>
             <ColumnHeader 
@@ -214,6 +214,18 @@ function KanbanColumn({
                         isCompact ? 'flex flex-col pt-4' : 'flex flex-col gap-2.5',
                     ))}
                 >
+                    {/* Quick-add form moved to TOP as requested */}
+                    <AnimatePresence>
+                        {quickAddCol && (
+                            <QuickAddForm
+                                value={quickAddTitle}
+                                onChange={(e) => onQuickAddTitle(e.target.value)}
+                                onSubmit={onQuickAddSubmit}
+                                onCancel={onQuickAddCancel}
+                            />
+                        )}
+                    </AnimatePresence>
+
                     <AnimatePresence mode="popLayout">
                         {tasks.map((task, idx) => (
                             <div
@@ -238,18 +250,6 @@ function KanbanColumn({
                         ))}
                     </AnimatePresence>
 
-                    {/* Quick-add form */}
-                    <AnimatePresence>
-                        {quickAddCol && (
-                            <QuickAddForm
-                                value={quickAddTitle}
-                                onChange={(e) => onQuickAddTitle(e.target.value)}
-                                onSubmit={onQuickAddSubmit}
-                                onCancel={onQuickAddCancel}
-                            />
-                        )}
-                    </AnimatePresence>
-
                     {/* Empty state */}
                     {tasks.length === 0 && !quickAddCol && (
                         <div className="flex-1 flex items-center justify-center py-8">
@@ -262,7 +262,7 @@ function KanbanColumn({
             </div>
         </div>
     );
-}
+});
 
 /* ─────────────────────────────────────────────
    SelectControl — inline styled select
@@ -355,19 +355,24 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     });
     const members = useMemo(() => project?.members || [], [project]);
 
-    const { data: rawTasks = [], isLoading } = useQuery({
+    const { data: rawTasks = [], isLoading, isFetching } = useQuery({
         queryKey: ['tasks', projectId],
         queryFn: async () => {
             const url = projectId ? `/projects/${projectId}/tasks` : '/tasks';
             return (await api.get(url)).data.data;
         },
+        placeholderData: (previousData) => previousData,
     });
 
     const blockedTaskIds = useMemo(() => {
         const set = new Set();
+        // O(N) lookup optimization
+        const taskMap = new Map(rawTasks.map(t => [t._id.toString(), t]));
+        
         rawTasks.forEach(task => {
             const blocked = task.dependencies?.blockedBy?.some(depId => {
-                const dep = rawTasks.find(t => t._id === (depId._id || depId));
+                const idStr = (depId._id || depId).toString();
+                const dep = taskMap.get(idStr);
                 return dep && dep.status !== 'Completed';
             });
             if (blocked) set.add(task._id);
@@ -392,15 +397,35 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     const updateTaskMutation = useMutation({
         mutationFn: async ({ id, updates }) => (await api.put(`/tasks/${id}`, updates)).data,
         onMutate: async ({ id, updates }) => {
+            // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
             await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
+
+            // Snapshot the previous value
             const snapshot = queryClient.getQueryData(['tasks', projectId]);
+
+            // Optimistically update to the new value
             queryClient.setQueryData(['tasks', projectId], (old = []) =>
-                old.map(t => t._id === id ? { ...t, ...updates } : t)
+                old.map(t => (t._id === id || t.id === id) ? { ...t, ...updates } : t)
             );
+
             return { snapshot };
         },
-        onError: (_e, _v, ctx) => { if (ctx?.snapshot) queryClient.setQueryData(['tasks', projectId], ctx.snapshot); },
-        onSettled: invalidate,
+        onSuccess: (res, { id }) => {
+            const updatedTask = res.data;
+            // Manually update the cache with the server response to avoid another "skeleton" flash from full invalidation
+            queryClient.setQueryData(['tasks', projectId], (old = []) =>
+                old.map(t => (t._id === id || t.id === id) ? updatedTask : t)
+            );
+            // We still invalidate other stats in the background, but tasks are now "handled"
+            queryClient.invalidateQueries({ queryKey: ['project-analytics', projectId] });
+            queryClient.invalidateQueries({ queryKey: ['workspace-stats'] });
+        },
+        onError: (_e, _v, ctx) => { 
+            if (ctx?.snapshot) {
+                queryClient.setQueryData(['tasks', projectId], ctx.snapshot); 
+            }
+            toast.error('Failed to update task');
+        },
     });
 
     const bulkUpdateTaskMutation = useMutation({
@@ -576,7 +601,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     };
 
     /* ── Loading skeleton ── */
-    if (isLoading) {
+    if (isLoading && rawTasks.length === 0) {
         return (
             <div className="flex-1 flex flex-col gap-5 h-full p-1 animate-pulse">
                 <div className="h-12 rounded-2xl bg-white/[0.03] border border-white/[0.04]" />

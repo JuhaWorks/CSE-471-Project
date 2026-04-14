@@ -153,6 +153,53 @@ const userSchema = new mongoose.Schema(
         emailChangeToken: String,
         emailChangeTokenExpires: Date,
 
+        // --- Notification Management ---
+        notificationPrefs: {
+            email: { type: Boolean, default: true },
+            inApp: { type: Boolean, default: true },
+            categories: {
+                assignments: {
+                    email: { type: Boolean, default: true },
+                    inApp: { type: Boolean, default: true }
+                },
+                mentions: {
+                    email: { type: Boolean, default: true },
+                    inApp: { type: Boolean, default: true }
+                },
+                deadlines: {
+                    email: { type: Boolean, default: true },
+                    inApp: { type: Boolean, default: true }
+                },
+                statusUpdates: {
+                    email: { type: Boolean, default: true },
+                    inApp: { type: Boolean, default: true }
+                },
+                comments: {
+                    email: { type: Boolean, default: true },
+                    inApp: { type: Boolean, default: true }
+                },
+                security: {
+                    email: { type: Boolean, default: true },
+                    inApp: { type: Boolean, default: true }
+                },
+                updates: {
+                    email: { type: Boolean, default: true },
+                    inApp: { type: Boolean, default: true }
+                }
+            },
+            frequency: { 
+                type: String, 
+                enum: ['instant', 'digest'], 
+                default: 'instant' 
+            },
+            quietHours: {
+                enabled: { type: Boolean, default: false },
+                start: { type: String, default: '22:00' }, // HH:mm format
+                end: { type: String, default: '08:00' },
+                timezone: { type: String, default: 'UTC' }
+            }
+        },
+
         // --- Multi-device Session Management ---
         refreshTokens: [
             {

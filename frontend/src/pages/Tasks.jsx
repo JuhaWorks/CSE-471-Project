@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useTransition, useOptimistic, Suspense } from 'react';
+import React, { useState, useEffect, useTransition, useOptimistic, Suspense, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useSuspenseQuery, useQuery } from '@tanstack/react-query';
 import { useSocketStore } from '../store/useSocketStore';
 import { api } from '../store/useAuthStore';
 import KanbanBoard from '../components/Kanban';
-import { 
+import {
     CheckSquare, Filter, Search, Plus, LayoutGrid, List, ChevronDown, Target, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,7 +56,7 @@ const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activePro
         <section className="relative flex-1 flex flex-col min-h-0 w-full mt-2 perspective-1000" aria-label="Task Board">
             <AnimatePresence mode="wait">
                 {!projectId ? (
-                    <motion.article 
+                    <motion.article
                         key="unselected"
                         initial={{ opacity: 0, rotateX: 5, y: 20 }}
                         animate={{ opacity: 1, rotateX: 0, y: 0 }}
@@ -76,7 +76,7 @@ const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activePro
                         </div>
                     </motion.article>
                 ) : (
-                    <motion.div 
+                    <motion.div
                         key="initialized"
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
@@ -85,9 +85,9 @@ const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activePro
                         className="w-full flex-1 flex flex-col min-h-0"
                     >
                         {viewMode === 'kanban' ? (
-                            <KanbanBoard 
-                                projectId={projectId} 
-                                searchQuery={searchQuery} 
+                            <KanbanBoard
+                                projectId={projectId}
+                                searchQuery={searchQuery}
                                 quickFilter={quickFilter}
                                 triggerQuickAdd={triggerQuickAdd}
                             />
@@ -144,15 +144,20 @@ export default function Tasks() {
     };
 
     // Fetch projects for filter
-    const { data: projects = [] } = useSuspenseQuery({
+    const { data: projects = [] } = useQuery({
         queryKey: ['projects'],
         queryFn: async ({ signal }) => {
             const res = await api.get('/projects', { signal });
             return res.data.data;
-        }
+        },
+        staleTime: 300000 // Cache projects for 5 mins
     });
 
-    const activeProject = Array.isArray(projects) ? projects.find(p => p._id === projectId) : null;
+    const activeProject = useMemo(() => {
+        if (!projectId || !Array.isArray(projects)) return null;
+        return projects.find(p => String(p._id) === String(projectId));
+    }, [projects, projectId]);
+
     const { joinProject, leaveProject } = useSocketStore();
 
     useEffect(() => {
@@ -183,20 +188,20 @@ export default function Tasks() {
     });
 
     // Compute Metrics: Use project-specific rawTasks if projectId exists, otherwise use workspaceStats
-    const activeTasksCount = projectId 
+    const activeTasksCount = projectId
         ? rawTasks.filter(t => t.status !== 'Completed' && t.status !== 'Canceled').length
         : (workspaceStats?.activeTasks || 0);
 
     const riskTasksCount = projectId
-        ? rawTasks.filter(t => 
-            (t.status !== 'Completed' && t.status !== 'Canceled') && 
+        ? rawTasks.filter(t =>
+            (t.status !== 'Completed' && t.status !== 'Canceled') &&
             (t.priority === 'Urgent' || t.priority === 'High' || (t.dueDate && new Date(t.dueDate) < new Date()))
-          ).length
+        ).length
         : (workspaceStats?.atRiskTasks || 0);
 
 
     return (
-        <article 
+        <article
             className="min-h-screen flex flex-col pb-8 pt-4 px-1 space-y-4 sm:space-y-6 w-full max-w-[2000px] mx-auto @container overflow-x-hidden"
         >
             <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 z-20 relative">
@@ -221,14 +226,14 @@ export default function Tasks() {
                     {/* View Switcher Morphing */}
                     <div className="flex p-1.5 bg-sunken/50 backdrop-blur-xl rounded-[1.75rem] border border-subtle relative shadow-2xl">
                         {['kanban', 'list'].map((mode) => (
-                            <button 
+                            <button
                                 key={mode}
                                 onClick={() => handleViewChange(mode)}
                                 className={`relative z-10 px-5 py-3 rounded-2xl transition-all duration-500 uppercase text-[10px] font-black tracking-widest ${optimisticView === mode ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}
                                 aria-label={`${mode} view`}
                             >
                                 {optimisticView === mode && (
-                                    <motion.div 
+                                    <motion.div
                                         layoutId="view-highlight"
                                         className="absolute inset-0 bg-surface border border-subtle rounded-2xl shadow-xl -z-10"
                                         transition={LIQUID_SPRING}
@@ -259,7 +264,7 @@ export default function Tasks() {
                 {/* Search Bar */}
                 <div className="relative flex-1 group w-full">
                     <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-5 h-5 text-tertiary transition-colors group-within:text-theme" />
-                    <input 
+                    <input
                         type="text"
                         placeholder="Search for tasks..."
                         value={searchQuery}
@@ -270,7 +275,7 @@ export default function Tasks() {
 
                 {/* Project Filter */}
                 <div className="relative shrink-0 w-full md:w-auto">
-                    <button 
+                    <button
                         onClick={() => setIsFilterOpen(!isFilterOpen)}
                         className="w-full h-10 sm:h-12 flex items-center justify-between md:justify-start gap-4 px-5 bg-sunken rounded-xl sm:rounded-2xl border border-subtle hover:border-theme/50 transition-all group active:scale-95 shadow-inner"
                         aria-haspopup="listbox"
@@ -288,14 +293,14 @@ export default function Tasks() {
                         {isFilterOpen && (
                             <>
                                 <div className="fixed inset-0 z-30" onClick={() => setIsFilterOpen(false)} />
-                                <motion.div 
+                                <motion.div
                                     initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                     animate={{ opacity: 1, y: 0, scale: 1 }}
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                     className="absolute top-full left-0 right-0 mt-3 p-2 bg-surface/95 backdrop-blur-3xl border border-subtle rounded-3xl shadow-2xl z-40 min-w-[240px]"
                                 >
                                     <div className="max-h-[300px] overflow-y-auto custom-scrollbar p-1">
-                                        <button 
+                                        <button
                                             onClick={() => selectProject(null)}
                                             className={cn(
                                                 "w-full px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-left flex items-center gap-3 transition-all",
@@ -307,7 +312,7 @@ export default function Tasks() {
                                         </button>
                                         <div className="h-px bg-subtle/50 my-2 mx-2" />
                                         {Array.isArray(projects) && projects.map(p => (
-                                            <button 
+                                            <button
                                                 key={p._id}
                                                 onClick={() => selectProject(p._id)}
                                                 className={cn(
@@ -328,7 +333,7 @@ export default function Tasks() {
 
                 {/* Statistics Shaper / Quick Filters */}
                 <div className="hidden lg:flex items-center gap-2 px-6">
-                    <button 
+                    <button
                         onClick={() => setQuickFilter(quickFilter === 'Active' ? 'All' : 'Active')}
                         className={cn(
                             "flex flex-col items-center py-1.5 px-3 rounded-2xl transition-all border-2 group",
@@ -342,7 +347,7 @@ export default function Tasks() {
                         </span>
                     </button>
                     <div className="w-px h-10 bg-subtle/50 shadow-sm mx-2" />
-                    <button 
+                    <button
                         onClick={() => setQuickFilter(quickFilter === 'Risk' ? 'All' : 'Risk')}
                         className={cn(
                             "flex flex-col items-center py-1.5 px-3 rounded-xl transition-all border-2 group",
@@ -360,12 +365,12 @@ export default function Tasks() {
 
             <TaskErrorBoundary>
                 <Suspense fallback={<TaskBoardSkeleton />}>
-                    <TasksContent 
-                        projectId={projectId} 
-                        searchQuery={searchQuery} 
+                    <TasksContent
+                        projectId={projectId}
+                        searchQuery={searchQuery}
                         quickFilter={quickFilter}
-                        viewMode={optimisticView} 
-                        activeProject={activeProject} 
+                        viewMode={optimisticView}
+                        activeProject={activeProject}
                         triggerQuickAdd={triggerQuickAdd}
                     />
                 </Suspense>

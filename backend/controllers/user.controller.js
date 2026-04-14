@@ -491,44 +491,65 @@ const getPublicProfile = async (req, res, next) => {
 const getHeatmap = async (req, res, next) => {
     try {
         const Audit = require('../models/audit.model');
-        const ninetyEightDaysAgo = new Date();
-        ninetyEightDaysAgo.setDate(ninetyEightDaysAgo.getDate() - 98);
+        const start = new Date();
+        start.setDate(start.getDate() - 364);
+        start.setHours(0, 0, 0, 0);
 
-        // Fetch all Audit logs where this exact user triggered an update on a Task
-        const completionLogs = await Audit.find({
-            user: req.user._id,
-            entityType: 'Task',
-            createdAt: { $gte: ninetyEightDaysAgo }
-        }).lean();
-
-        // Look for exact transitions to Completed
-        const validCompletions = completionLogs.filter(log => {
-             if (log.action === 'EntityUpdate' && log.details?.summary?.includes('to Completed')) return true;
-             if (log.action === 'StatusChange' && log.details?.newStatus === 'Completed') return true;
-             return false;
-        });
-
-        // Group by day of week and week
-        const heatmap = Array(14).fill(0).map(() => Array(7).fill(0));
-        
-        const now = new Date();
-        now.setHours(23, 59, 59, 999);
-
-        // Populate heatmap based on EXACT time of completion
-        validCompletions.forEach(log => {
-            const date = new Date(log.createdAt);
-            const diffTime = Math.abs(now - date);
-            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-            
-            if (diffDays < 98) {
-                const weekIndex = 13 - Math.floor(diffDays / 7);
-                const dayIndex = 6 - (diffDays % 7);
-                
-                if (weekIndex >= 0 && weekIndex < 14 && dayIndex >= 0 && dayIndex < 7) {
-                    heatmap[weekIndex][dayIndex] += 1;
+        // Deep Aggregation: Extract categories and calculate dynamic weighting
+        const heatmap = await Audit.aggregate([
+            { 
+                $match: { 
+                    user: req.user._id, 
+                    createdAt: { $gte: start } 
+                } 
+            },
+            {
+                $addFields: {
+                    // Weighted impact for professional growth
+                    weight: {
+                        $cond: [
+                            { $or: [
+                                { $eq: ["$action", "StatusChange"] },
+                                { $regexMatch: { input: { $ifNull: ["$details.summary", ""] }, regex: /to Completed/i } }
+                            ]},
+                            5, // Completion is a major milestone
+                            { $cond: [{ $in: ["$action", ["CommentAdded", "TimerStop", "SubtaskToggle"]]}, 2, 1] }
+                        ]
+                    },
+                    // Map backend telemetry to frontend categories
+                    category: {
+                        $switch: {
+                            branches: [
+                                { 
+                                    case: { $regexMatch: { input: { $ifNull: ["$details.summary", ""] }, regex: /bug/i } }, 
+                                    then: "Bug" 
+                                },
+                                { case: { $eq: ["$entityType", "Task"] }, then: "Task" },
+                                { case: { $eq: ["$entityType", "Project"] }, then: "Feature" },
+                                { case: { $in: ["$entityType", ["Security", "Settings", "System"]] }, then: "Maintenance" }
+                            ],
+                            default: "Task"
+                        }
+                    }
                 }
-            }
-        });
+            },
+            { 
+                $group: {
+                    _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+                    count: { $sum: "$weight" },
+                    items: { $addToSet: "$category" }
+                } 
+            },
+            { 
+                $project: { 
+                    date: "$_id", 
+                    count: 1, 
+                    items: { $filter: { input: "$items", as: "i", cond: { $ne: ["$$i", "Other"] } } }, 
+                    _id: 0 
+                } 
+            },
+            { $sort: { date: 1 } }
+        ]);
 
         res.status(200).json({
             status: 'success',

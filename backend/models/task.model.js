@@ -69,6 +69,7 @@ const taskSchema = new mongoose.Schema(
             nextOccurrence: { type: Date }
         },
         isArchived: { type: Boolean, default: false },
+        reminderSent: { type: Boolean, default: false },
         // Reference to the project the task belongs to
         project: {
             type: mongoose.Schema.Types.ObjectId,
@@ -92,7 +93,7 @@ const taskSchema = new mongoose.Schema(
 );
 
 // Optimize queries for finding tasks inside a project or assigned to a specific user
-taskSchema.index({ project: 1, assignee: 1 });
+taskSchema.index({ project: 1, assignees: 1 });
 taskSchema.index({ status: 1, priority: 1 });
 taskSchema.index({ project: 1, status: 1 });
 taskSchema.index({ project: 1, priority: 1 });

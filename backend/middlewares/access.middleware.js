@@ -133,6 +133,11 @@ const authorizeProjectAccess = (roles = []) => async (req, res, next) => {
             return next(new Error('You do not have the required permissions for this action.'));
         }
 
+        if (isMember && req.user.role !== 'Admin' && roles.length > 0 && !roles.includes(member.role)) {
+            res.status(403);
+            return next(new Error(`Access denied. Requires one of the following roles: ${roles.join(', ')}`));
+        }
+
         next();
     } catch (error) {
         next(error);

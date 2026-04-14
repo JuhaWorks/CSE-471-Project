@@ -82,16 +82,16 @@ const Layout = ({ checkingAuth }) => {
 
         // Global Notification Listeners
         if (socket) {
-            const handleMention = (data) => {
+            const handleNotification = (data) => {
                 toast((t) => (
                     <div className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-xl bg-theme/10 flex items-center justify-center shrink-0">
                             <Bell className="w-5 h-5 text-theme" />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <span className="text-xs font-black uppercase text-primary">New Mention</span>
+                            <span className="text-xs font-black uppercase text-primary">{data.type || 'Notification'}</span>
                             <span className="text-[11px] text-tertiary leading-tight">
-                                <span className="font-bold text-white">{data.fromUser}</span> mentioned you in <span className="font-bold text-theme">{data.taskTitle}</span>
+                                <span className="font-bold text-white">{data.title}</span>: {data.message}
                             </span>
                         </div>
                     </div>
@@ -102,8 +102,8 @@ const Layout = ({ checkingAuth }) => {
                 });
             };
 
-            socket.on('newMention', handleMention);
-            return () => socket.off('newMention', handleMention);
+            socket.on('newNotification', handleNotification);
+            return () => socket.off('newNotification', handleNotification);
         }
     }, [accessToken, socket, connect, disconnect]);
 

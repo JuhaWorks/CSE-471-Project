@@ -126,7 +126,9 @@ const sendRequest = async (req, res, next) => {
                 request: await Connection.findById(connection._id).populate('requester', 'name email avatar role status customMessage').lean(),
                 message: `${req.user.name} sent you a connection request.`
             });
-        } catch (err) { /* Socket fail shouldn't break DB ops */ }
+        } catch (err) { 
+            logger.error(`Socket notification failed in sendRequest: ${err.message}`);
+        }
 
         res.status(201).json({
             status: 'success',
@@ -215,7 +217,9 @@ const respondToRequest = async (req, res, next) => {
                 responderName: req.user.name,
                 message: action === 'accept' ? `${req.user.name} accepted your connection request!` : `${req.user.name} declined your connection request.`
             });
-        } catch (err) { /* Socket fail shouldn't break DB ops */ }
+        } catch (err) { 
+            logger.error(`Socket notification failed in respondToRequest: ${err.message}`);
+        }
 
         res.status(200).json({
             status: 'success',
@@ -260,7 +264,9 @@ const withdrawRequest = async (req, res, next) => {
         // Notify recipient that request was withdrawn
         try {
             getIO().to(connection.recipient.toString()).emit('connection:withdrawn', { connectionId });
-        } catch (err) { /* Socket fail shouldn't break DB ops */ }
+        } catch (err) { 
+            logger.error(`Socket notification failed in withdrawRequest: ${err.message}`);
+        }
 
         res.status(200).json({
             status: 'success',
@@ -309,7 +315,9 @@ const removeConnection = async (req, res, next) => {
         try {
             const otherId = connection.requester.toString() === userId ? connection.recipient.toString() : connection.requester.toString();
             getIO().to(otherId).emit('connection:removed', { connectionId });
-        } catch (err) { /* Socket fail shouldn't break DB ops */ }
+        } catch (err) { 
+            logger.error(`Socket notification failed in removeConnection: ${err.message}`);
+        }
 
         res.status(200).json({
             status: 'success',
@@ -520,7 +528,8 @@ const getStats = async (req, res, next) => {
 
         // Silently sync the User model's denormalized totalConnections in the background
         // to ensure other components (like profile pages) are eventually consistent.
-        User.findByIdAndUpdate(userId, { totalConnections: acceptedCount }).catch(() => {});
+        User.findByIdAndUpdate(userId, { totalConnections: acceptedCount })
+            .catch(err => logger.error(`Background connection count sync failed: ${err.message}`));
 
         // Update Layer 1 (Memory Cache)
         statsCache.set(userId.toString(), { data: stats, expires: now + STATS_TTL });

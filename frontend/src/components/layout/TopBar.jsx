@@ -13,6 +13,9 @@ import { twMerge } from 'tailwind-merge';
 import GlassSurface from '../ui/GlassSurface';
 import { API_BASE } from '../auth/AuthLayout';
 import { getOptimizedAvatar } from '../../utils/avatar';
+import NotificationInbox from '../notifications/NotificationInbox';
+import api from '../../utils/api';
+import { useSocketStore } from '../../store/useSocketStore';
 
 const STATUS_COLOR = {
     Online: 'text-success',
@@ -28,7 +31,28 @@ const TopBar = () => {
     const { mode } = useTheme();
     const isDark = mode === MODES.DARK;
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [notificationsOpen, setNotificationsOpen] = useState(false);
+    const [unreadCount, setUnreadCount] = useState(0);
     const dropdownRef = useRef(null);
+    const { socket } = useSocketStore();
+
+    useEffect(() => {
+        const fetchInitialUnread = async () => {
+            try {
+                const { data } = await api.get('/notifications?unread=true&limit=1');
+                setUnreadCount(data.unreadCount);
+            } catch (err) { /* silent */ }
+        };
+        fetchInitialUnread();
+    }, []);
+
+    useEffect(() => {
+        if (socket) {
+            const handleNew = () => setUnreadCount(prev => prev + 1);
+            socket.on('newNotification', handleNew);
+            return () => socket.off('newNotification', handleNew);
+        }
+    }, [socket]);
     
     // Responsive Detection
     const isMobile = useMediaQuery('(max-width: 1024px)');
@@ -88,10 +112,21 @@ const TopBar = () => {
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                    <button className="relative p-2.5 text-tertiary hover:text-primary hover:bg-sunken rounded-2xl transition-all group">
+                    <button 
+                        onClick={() => setNotificationsOpen(true)}
+                        className="relative p-2.5 text-tertiary hover:text-primary hover:bg-sunken rounded-2xl transition-all group"
+                    >
                         <Bell className="w-5 h-5" />
-                        <span className="absolute top-2 right-2 w-2 h-2 bg-theme rounded-full border-2 border-base shadow-theme" />
+                        {unreadCount > 0 && (
+                            <span className="absolute top-2 right-2 w-2 h-2 bg-theme rounded-full border-2 border-base shadow-theme" />
+                        )}
                     </button>
+
+                    <NotificationInbox 
+                        isOpen={notificationsOpen} 
+                        onClose={() => setNotificationsOpen(false)} 
+                        onUnreadCountChange={setUnreadCount}
+                    />
 
                     <div className="w-px h-6 bg-default mx-1 hidden sm:block" />
 

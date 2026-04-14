@@ -3,6 +3,7 @@ const Project = require('../models/project.model');
 const Audit = require('../models/audit.model');
 const socket = require('../utils/socket');
 const { logActivity } = require('../utils/activityLogger');
+const notificationService = require('../services/notification.service');
 
 /**
  * Helper to detect circular dependencies
@@ -196,11 +197,45 @@ const createTask = async (req, res, next) => {
         const room = task.project?._id?.toString() || task.project?.toString();
         socket.getIO().to(room).emit('taskUpdated', populatedTask);
 
+        // --- Notification Logic ---
+        // Notify all assignees about new task
+        if (taskAssignees.length > 0) {
+            for (const recipientId of taskAssignees) {
+                // Don't notify self (creator)
+                if (recipientId.toString() === req.user._id.toString()) continue;
+
+                await notificationService.notify({
+                    recipientId,
+                    senderId: req.user._id,
+                    type: 'Assignment',
+                    title: 'New Task Assigned',
+                    message: `${req.user.name} assigned you to "${task.title}"`,
+                    link: `/tasks?project=${task.project._id || task.project}`,
+                    metadata: { 
+                        taskId: task._id, 
+                        projectId: task.project._id || task.project,
+                        taskName: task.title,
+                        projectName: populatedTask.project?.name || 'Project'
+                    }
+                });
+            }
+        }
+
+        // --- Gamification Hook for Created "Completed" tasks ---
+        if (task.status === 'Completed') {
+            const { calculateTaskXP, awardXP } = require('../services/gamification.service');
+            const xp = calculateTaskXP(task, { wasBlocked: false });
+            const assigneesToReward = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : [req.user._id]);
+            for (const u of assigneesToReward) {
+                awardXP(u._id || u, xp, task).catch(err => console.error("Gamification Error:", err));
+            }
+        }
+
         res.status(201).json({ status: 'success', data: populatedTask });
     } catch (error) {
         next(error);
     }
-};
+}
 
 // @desc    Update a task
 // @route   PUT /api/tasks/:id
@@ -373,12 +408,76 @@ const updateTask = async (req, res, next) => {
         const projectRoom = task.project?._id?.toString() || task.project?.toString();
         socket.getIO().to(projectRoom).emit('taskUpdated', task);
 
+        // --- Notification Logic (Update) ---
+        if (req.body.status && oldStatus !== req.body.status) {
+            const isCompleted = req.body.status === 'Completed';
+            
+            // 1. Notify Assignees
+            const assignees = task.assignees?.map(a => a._id || a) || [];
+            
+            // 2. If completed, also notify Managers
+            let managers = [];
+            if (isCompleted && project) {
+                managers = project.members
+                    .filter(m => m.role === 'Manager' && m.status === 'active')
+                    .map(m => (m.userId?._id || m.userId).toString());
+            }
+
+            // Fix: ObjectId de-duplication requires string conversion for Set to identify matches
+            const recipients = [...new Set([
+                ...assignees.map(id => id.toString()), 
+                ...managers
+            ])];
+            
+            console.log(`[NOTIFY] Status update for task "${task.title}". Identified recipients: ${JSON.stringify(recipients)}`);
+
+            for (const recipientId of recipients) {
+                if (recipientId?.toString() === req.user._id.toString()) {
+                    console.log(`[NOTIFY] Skipping self-notification for ${recipientId}`);
+                    continue;
+                }
+                
+                await notificationService.notify({
+                    recipientId,
+                    senderId: req.user._id,
+                    type: isCompleted ? 'StatusUpdate' : 'StatusUpdate',
+                    priority: (isCompleted || task.priority === 'Urgent') ? 'Urgent' : 'Medium',
+                    title: isCompleted ? 'Task Completed' : 'Task Status Updated',
+                    message: isCompleted 
+                        ? `Task "${task.title}" has been completed by ${req.user.name}`
+                        : `Status of "${task.title}" changed to ${req.body.status} by ${req.user.name}`,
+                    link: `/tasks?project=${task.project._id || task.project}`,
+                    metadata: { 
+                        taskId: task._id, 
+                        projectId: task.project._id || task.project,
+                        taskName: task.title,
+                        projectName: project.name || 'Project'
+                    }
+                });
+            }
+        }
+
         // --- Gamification Engine Hook ---
+        
+        // 1. Subtask completion XP
+        if (req.body.subtasks && Array.isArray(req.body.subtasks)) {
+            const oldCompleted = task.subtasks?.filter(s => s.completed).length || 0;
+            const newCompleted = req.body.subtasks.filter(s => s.completed).length || 0;
+            if (newCompleted > oldCompleted) {
+                const { awardXP } = require('../services/gamification.service');
+                const subtaskXP = (newCompleted - oldCompleted) * 15;
+                awardXP(req.user._id, subtaskXP, task).catch(err => console.error("Subtask XP Error:", err));
+            }
+        }
+
+        // 2. Main Task status change XP
         if (oldStatus !== 'Completed' && req.body.status === 'Completed') {
             console.log(`[GAMIFICATION] Task ${task._id} marked COMPLETED. Starting award flow.`);
             const gamification = require('../services/gamification.service');
-            const xpToAward = gamification.calculateTaskXP(task);
-            console.log(`[GAMIFICATION] Calculated XP: ${xpToAward}`);
+            
+            const wasBlocked = task.dependencies?.blockedBy?.length > 0;
+            const xpToAward = gamification.calculateTaskXP(task, { wasBlocked });
+            console.log(`[GAMIFICATION] Calculated XP: ${xpToAward} (Was Blocked: ${wasBlocked})`);
             
             // Award to all assignees if multiple, or the single legacy assignee
             let usersToReward = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
@@ -392,8 +491,8 @@ const updateTask = async (req, res, next) => {
 
             for (const assignedUser of usersToReward) {
                 const userId = assignedUser._id || assignedUser;
-                // Run gamification async so it doesn't block the API response
-                gamification.awardXP(userId, xpToAward, task).catch(err => console.error("Gamification Error:", err));
+                // Pass context to awardXP for tiered roll and milestones
+                gamification.awardXP(userId, xpToAward, task, { wasBlocked }).catch(err => console.error("Gamification Error:", err));
             }
         } 
         // Hook for Un-completing tasks
@@ -556,18 +655,51 @@ const bulkUpdateTasks = async (req, res, next) => {
 
         const updatedTasks = await Promise.all(updatePromises);
 
-        // Audit & Socket events
+        // Audit, Socket & Notification events
         const { calculateTaskXP, awardXP } = require('../services/gamification.service');
         
-        updatedTasks.forEach(task => {
+        for (const task of updatedTasks) {
             socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
             
-            // --- Gamification Engine Hook for Bulk ---
             const originalTask = tasks.find(t => t._id.toString() === task._id.toString());
-            if (originalTask && originalTask.status !== 'Completed' && task.status === 'Completed') {
+            const isNowCompleted = originalTask && originalTask.status !== 'Completed' && task.status === 'Completed';
+
+            // --- Notification Hook for Bulk Completion ---
+            if (isNowCompleted) {
+                const project = projectMap[task.project.toString()];
+                const assignees = task.assignees?.map(a => a._id || a) || [];
+                const managers = project.members
+                    .filter(m => m.role === 'Manager' && m.status === 'active')
+                    .map(m => m.userId?._id || m.userId);
+                
+                const recipients = [...new Set([...assignees, ...managers])];
+
+                for (const recipientId of recipients) {
+                    if (recipientId.toString() === req.user._id.toString()) continue;
+                    
+                    await notificationService.notify({
+                        recipientId,
+                        senderId: req.user._id,
+                        type: 'StatusUpdate',
+                        priority: 'Urgent',
+                        title: 'Task Completed (Bulk)',
+                        message: `Task "${task.title}" was marked as completed during a bulk update by ${req.user.name}.`,
+                        link: `/tasks?project=${task.project}`,
+                        metadata: { 
+                            taskId: task._id, 
+                            projectId: task.project,
+                            taskName: task.title,
+                            projectName: project.name || 'Project',
+                            priority: 'Urgent'
+                        }
+                    }).catch(err => console.error("Bulk Notify Error:", err));
+                }
+            }
+
+            // --- Gamification Engine Hook for Bulk ---
+            if (isNowCompleted) {
                 console.log(`[GAMIFICATION-BULK] Task ${task._id} marked COMPLETED. Starting award flow.`);
                 const xpToAward = calculateTaskXP(task);
-                console.log(`[GAMIFICATION-BULK] Calculated XP: ${xpToAward}`);
                 let usersToReward = task.assignees?.length > 0 ? [...task.assignees] : (task.assignee ? [task.assignee] : []);
                 
                 const completerId = req.user._id.toString();
@@ -578,11 +710,10 @@ const bulkUpdateTasks = async (req, res, next) => {
 
                 for (const assignedUser of usersToReward) {
                     const userId = assignedUser._id || assignedUser;
-                    console.log(`[GAMIFICATION-BULK] Calling awardXP for User ${userId}`);
                     awardXP(userId, xpToAward, task).catch(err => console.error("Bulk Gamification Error:", err));
                 }
             }
-        });
+        }
 
         res.status(200).json({ status: 'success', count: updatedTasks.length, data: updatedTasks });
     } catch (error) { next(error); }

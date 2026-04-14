@@ -159,7 +159,7 @@ module.exports = {
                 }
                 broadcastGlobalPresence();
                 io.to(userId).emit('statusUpdated', status);
-                await User.findByIdAndUpdate(userId, { status }).catch(() => {});
+                await User.findByIdAndUpdate(userId, { status }).catch(err => logger.error(`Socket state update error: ${err.message}`));
             });
 
             socket.on('acquireFieldLock', async ({ projectId, fieldId }) => {
@@ -236,7 +236,7 @@ module.exports = {
                                 memUserProjects.delete(userId);
                             }
                             broadcastGlobalPresence();
-                            await User.findByIdAndUpdate(userId, { status: 'Offline' }).catch(() => {});
+                            await User.findByIdAndUpdate(userId, { status: 'Offline' }).catch(err => logger.error(`Socket disconnect error: ${err.message}`));
                         }
                     }, 5000);
                 }

@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    Plus, Trash2, LayoutGrid, MousePointer2, 
+import {
+    Plus, Trash2, LayoutGrid, MousePointer2,
     Layers, Download, Share2, Target, Filter, ChevronDown,
     Zap, Save, Sparkles, Wand2
 } from 'lucide-react';
@@ -41,8 +41,8 @@ const ProjectWhiteboard = () => {
     });
     const projects = projectsRes?.data || [];
 
-    const activeProject = Array.isArray(projects) 
-        ? projects.find(p => p._id === projectId || String(p._id) === String(projectId)) 
+    const activeProject = Array.isArray(projects)
+        ? projects.find(p => p._id === projectId || String(p._id) === String(projectId))
         : null;
 
     // ── Fetch Notes ──
@@ -70,15 +70,15 @@ const ProjectWhiteboard = () => {
         onMutate: async (newNote) => {
             await queryClient.cancelQueries({ queryKey: ['whiteboard-notes', projectId] });
             const previousNotes = queryClient.getQueryData(['whiteboard-notes', projectId]);
-            
+
             // Generate temporary note for instant feedback
-            const tempNote = { 
-                ...newNote, 
-                _id: `temp-${Date.now()}`, 
-                votes: [], 
-                zIndex: Math.max(0, ...(previousNotes?.map(n => n.zIndex) || [0])) + 1 
+            const tempNote = {
+                ...newNote,
+                _id: `temp-${Date.now()}`,
+                votes: [],
+                zIndex: Math.max(0, ...(previousNotes?.map(n => n.zIndex) || [0])) + 1
             };
-            
+
             queryClient.setQueryData(['whiteboard-notes', projectId], (old) => [...(old || []), tempNote]);
             return { previousNotes };
         },
@@ -99,8 +99,8 @@ const ProjectWhiteboard = () => {
         onMutate: async ({ id, data }) => {
             await queryClient.cancelQueries({ queryKey: ['whiteboard-notes', projectId] });
             const previousNotes = queryClient.getQueryData(['whiteboard-notes', projectId]);
-            
-            queryClient.setQueryData(['whiteboard-notes', projectId], (old) => 
+
+            queryClient.setQueryData(['whiteboard-notes', projectId], (old) =>
                 old?.map(n => n._id === id ? { ...n, ...data } : n)
             );
             return { previousNotes };
@@ -136,7 +136,7 @@ const ProjectWhiteboard = () => {
         onMutate: async (id) => {
             await queryClient.cancelQueries({ queryKey: ['whiteboard-notes', projectId] });
             const previousNotes = queryClient.getQueryData(['whiteboard-notes', projectId]);
-            queryClient.setQueryData(['whiteboard-notes', projectId], (old) => 
+            queryClient.setQueryData(['whiteboard-notes', projectId], (old) =>
                 old?.map(n => {
                     if (n._id !== id) return n;
                     const votes = [...(n.votes || [])];
@@ -153,7 +153,7 @@ const ProjectWhiteboard = () => {
     // ── Handlers ──
     const handleAddNote = () => {
         if (!projectId) return toast.error("Select a project first");
-        
+
         const container = workspaceRef.current;
         if (!container) return;
 
@@ -168,13 +168,13 @@ const ProjectWhiteboard = () => {
         // Random slight offset from center
         const x = centerX + (Math.random() * 60 - 30);
         const y = centerY + (Math.random() * 60 - 30);
-        
-        createMutation.mutate({ 
-            x: Math.round(x), 
-            y: Math.round(y), 
-            content: '', 
+
+        createMutation.mutate({
+            x: Math.round(x),
+            y: Math.round(y),
+            content: '',
             color: 'yellow', // Using semantic keys
-            zIndex: maxZ 
+            zIndex: maxZ
         });
     };
 
@@ -182,7 +182,7 @@ const ProjectWhiteboard = () => {
         const previousNotes = queryClient.getQueryData(['whiteboard-notes', projectId]);
         const maxZ = Math.max(0, ...(previousNotes?.map(n => n.zIndex) || [0])) + 1;
         const note = previousNotes?.find(n => n._id === id);
-        
+
         if (note && note.zIndex < maxZ) {
             updateMutation.mutate({ id, data: { zIndex: maxZ } });
         }
@@ -190,7 +190,7 @@ const ProjectWhiteboard = () => {
 
     const handleUpdateNote = (id, data) => {
         // First update local cache for zero-lag
-        queryClient.setQueryData(['whiteboard-notes', projectId], (old) => 
+        queryClient.setQueryData(['whiteboard-notes', projectId], (old) =>
             old?.map(n => n._id === id ? { ...n, ...data } : n)
         );
 
@@ -245,7 +245,7 @@ const ProjectWhiteboard = () => {
         if (!workspaceRef.current || !activeProject) return;
         try {
             toast.loading("Rendering blueprint...", { id: 'export' });
-            
+
             // Wait a tiny bit for any layout shifts
             await new Promise(r => setTimeout(r, 100));
 
@@ -256,13 +256,13 @@ const ProjectWhiteboard = () => {
                 allowTaint: true,
                 logging: false, // Set to true if debugging locally
                 ignoreElements: (el) => {
-                    return el.classList.contains('no-export') || 
-                           el.tagName === 'NAV' || 
-                           el.tagName === 'HEADER' ||
-                           el.classList.contains('animate-bounce'); // Hide syncing indicators
+                    return el.classList.contains('no-export') ||
+                        el.tagName === 'NAV' ||
+                        el.tagName === 'HEADER' ||
+                        el.classList.contains('animate-bounce'); // Hide syncing indicators
                 }
             });
-            
+
             const link = document.createElement('a');
             link.download = `klivra-brainstorm-${activeProject.name.toLowerCase().replace(/\s+/g, '-')}.png`;
             link.href = canvas.toDataURL('image/png', 1.0);
@@ -282,7 +282,7 @@ const ProjectWhiteboard = () => {
         // Generate a clean permalink
         const baseUrl = window.location.origin + window.location.pathname;
         const shareUrl = `${baseUrl}?project=${projectId}`;
-        
+
         navigator.clipboard.writeText(shareUrl).then(() => {
             toast.success("Workspace link copied!");
         }).catch(() => {
@@ -319,7 +319,7 @@ const ProjectWhiteboard = () => {
 
                     {/* Project Selector */}
                     <div className="relative">
-                        <button 
+                        <button
                             onClick={() => setIsFilterOpen(!isFilterOpen)}
                             className="h-12 flex items-center gap-3 px-5 bg-white/5 rounded-2xl border border-white/10 hover:border-theme/40 transition-all group active:scale-95 shadow-2xl"
                         >
@@ -334,7 +334,7 @@ const ProjectWhiteboard = () => {
                             {isFilterOpen && (
                                 <>
                                     <div className="fixed inset-0 z-30" onClick={() => setIsFilterOpen(false)} />
-                                    <motion.div 
+                                    <motion.div
                                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                                         animate={{ opacity: 1, y: 0, scale: 1 }}
                                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
@@ -355,7 +355,7 @@ const ProjectWhiteboard = () => {
                                                 </div>
                                             ) : (
                                                 projects.map(p => (
-                                                    <button 
+                                                    <button
                                                         key={p._id}
                                                         onClick={() => selectProject(p._id)}
                                                         className={cn(
@@ -404,7 +404,7 @@ const ProjectWhiteboard = () => {
             </header>
 
             {/* Main Canvas Workspace */}
-            <main 
+            <main
                 ref={workspaceRef}
                 className="flex-1 relative overflow-hidden cursor-crosshair group"
             >
@@ -413,17 +413,17 @@ const ProjectWhiteboard = () => {
                 <AnimatePresence>
                     {isGridActive && (
                         <>
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:32px_32px]" 
+                                className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:32px_32px]"
                             />
-                            <motion.div 
+                            <motion.div
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[length:128px_128px]" 
+                                className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[length:128px_128px]"
                             />
                         </>
                     )}
@@ -445,7 +445,7 @@ const ProjectWhiteboard = () => {
                 ) : (
                     <AnimatePresence>
                         {notes.map(note => (
-                            <StickyNote 
+                            <StickyNote
                                 key={note._id}
                                 note={note}
                                 currentUserId={user?._id}
@@ -470,13 +470,13 @@ const ProjectWhiteboard = () => {
 
             {/* Floating Toolbar */}
             {projectId && (
-                <motion.nav 
+                <motion.nav
                     initial={{ y: 50, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     className="absolute bottom-10 left-1/2 -translate-x-1/2 z-[150] flex items-center gap-4 p-2.5 bg-[#121214]/90 backdrop-blur-2xl border border-white/10 rounded-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)]"
                 >
                     <Tooltip content="Add Spark">
-                        <button 
+                        <button
                             onClick={handleAddNote}
                             className="w-14 h-14 rounded-2xl bg-theme text-black flex items-center justify-center shadow-lg shadow-theme/30 active:scale-90 transition-all group"
                         >
@@ -488,16 +488,16 @@ const ProjectWhiteboard = () => {
 
                     <div className="flex gap-1.5 px-2">
                         <Tooltip content="Precision Select">
-                            <button 
+                            <button
                                 onClick={() => setActiveTool('select')}
                                 className={cn("p-3 rounded-xl transition-all", activeTool === 'select' ? "text-theme bg-theme/10 border border-theme/20 shadow-sm" : "text-gray-500 hover:text-white hover:bg-white/5")}
                             >
                                 <MousePointer2 className="w-5 h-5" />
                             </button>
                         </Tooltip>
-                        
+
                         <Tooltip content={isGridActive ? "Disable Grid" : "Enable Grid"}>
-                            <button 
+                            <button
                                 onClick={() => setIsGridActive(!isGridActive)}
                                 className={cn("p-3 rounded-xl transition-all", isGridActive ? "text-theme bg-theme/10 border border-theme/20 shadow-sm" : "text-gray-500 hover:text-white hover:bg-white/5")}
                             >
@@ -506,7 +506,7 @@ const ProjectWhiteboard = () => {
                         </Tooltip>
 
                         <Tooltip content="Smart Stack">
-                            <button 
+                            <button
                                 onClick={handleSmartStack}
                                 className={cn("p-3 rounded-xl transition-all", activeTool === 'layers' ? "text-theme bg-theme/10 border border-theme/20 shadow-sm" : "text-gray-500 hover:text-white hover:bg-white/5")}
                             >
@@ -518,7 +518,7 @@ const ProjectWhiteboard = () => {
                     <div className="w-px h-8 bg-white/10 mx-1" />
 
                     <Tooltip content="Pulse Sync">
-                        <button 
+                        <button
                             onClick={handleSync}
                             className="flex items-center gap-2 px-5 py-3 rounded-xl text-gray-500 hover:text-white hover:bg-white/5 transition-all active:scale-95"
                         >
@@ -536,10 +536,10 @@ export default ProjectWhiteboard;
 
 // Helper icons
 const RefreshCw = (props) => (
-    <svg 
+    <svg
         {...props}
         xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
     >
-        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>
+        <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" /><path d="M3 21v-5h5" />
     </svg>
 );

@@ -3,6 +3,7 @@ const Task = require('../models/task.model');
 const Audit = require('../models/audit.model');
 const { logActivity } = require('../utils/activityLogger');
 const socketUtil = require('../utils/socket');
+const notificationService = require('../services/notification.service');
 
 // @desc    Get all comments for a task
 // @route   GET /api/tasks/:taskId/comments
@@ -57,6 +58,28 @@ const addTaskComment = async (req, res, next) => {
             summary: `Added a comment: "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
             content: content
         }, 'Task', taskId);
+
+        // --- Notification Logic ---
+        if (mentions && mentions.length > 0) {
+            for (const recipientId of mentions) {
+                // Don't notify self
+                if (recipientId.toString() === req.user._id.toString()) continue;
+
+                await notificationService.notify({
+                    recipientId,
+                    senderId: req.user._id,
+                    type: 'Mention',
+                    title: 'New Mention',
+                    message: `${req.user.name} mentioned you in a comment on "${task.title}"`,
+                    link: `/tasks?project=${task.project}`,
+                    metadata: { taskId: task._id, projectId: task.project }
+                });
+            }
+        }
+
+        // --- Gamification Hook for Commenting ---
+        const { awardXP } = require('../services/gamification.service');
+        awardXP(req.user._id, 10, task).catch(err => console.error("Comment XP Error:", err));
 
         res.status(201).json({ status: 'success', data: populatedComment });
     } catch (error) { next(error); }
@@ -113,6 +136,15 @@ const toggleReaction = async (req, res, next) => {
         }
 
         await comment.save();
+
+        // --- Gamification Hook for Reactions ---
+        // Only award if it was an ADD (users array got longer)
+        const isAdd = existingReaction ? comment.reactions.find(r => r.emoji === emoji).users.length > (existingReaction.users.length - 1) : true;
+        if (isAdd) {
+            const { awardXP } = require('../services/gamification.service');
+            const task = await Task.findById(comment.task); // Need task for specialty context
+            awardXP(req.user._id, 5, task).catch(err => console.error("Reaction XP Error:", err));
+        }
 
         // Emit real-time update via socket
         if (req.io) {

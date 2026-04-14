@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    CheckSquare, 
-    Trash2, 
-    ShieldCheck, 
-    Clock, 
+import {
+    CheckSquare,
+    Trash2,
+    ShieldCheck,
+    Clock,
     Plus,
     X,
     AlertCircle,
@@ -54,12 +54,12 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
         const d = new Date(task.startDate);
         return isNaN(d.getTime()) ? '' : d.toISOString().slice(0, 16);
     });
-    
+
     const [subtasks, setSubtasks] = useState(task.subtasks || []);
     const [commentContent, setCommentContent] = useState('');
     const [mentionedIds, setMentionedIds] = useState([]);
     const [comments, setComments] = useState([]);
-    
+
     // Dependencies State
     const [blockedBy, setBlockedBy] = useState(task.dependencies?.blockedBy || []);
     const [blocking, setBlocking] = useState(task.dependencies?.blocking || []);
@@ -136,7 +136,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
             return;
         }
 
-        onUpdate(isNew ? null : task._id, { 
+        onUpdate(isNew ? null : task._id, {
             title, description, status, priority, type,
             assignees: assigneeIds,
             labels,
@@ -152,16 +152,16 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
         e.preventDefault();
         if (!commentContent.trim()) return;
         try {
-            const res = await api.post(`/tasks/${task._id}/comments`, { 
+            const res = await api.post(`/tasks/${task._id}/comments`, {
                 content: commentContent,
                 mentions: mentionedIds
             });
-            
+
             // Immediate optimistic UI update resolves the 'instantaneous' issue
             if (res.data && res.data.data) {
                 setComments(prev => [res.data.data, ...prev]);
             }
-            
+
             if (mentionedIds.length > 0 && socket) {
                 socket.emit('mentionUsers', { mentionedUserIds: mentionedIds, taskId: task._id, taskTitle: title });
             }
@@ -185,7 +185,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
     const modalContent = (
         <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/80 backdrop-blur-md p-4 sm:p-10 lg:p-20 custom-scrollbar"
+            className="fixed inset-0 z-[9999] flex justify-center items-start overflow-y-auto bg-black/40 backdrop-blur-md p-2 sm:p-6 custom-scrollbar"
             onClick={onClose}
         >
             <motion.div
@@ -194,15 +194,15 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                 exit={{ scale: 0.95, opacity: 0, y: 30 }}
                 transition={{ type: "spring", damping: 25, stiffness: 350 }}
                 onClick={(e) => e.stopPropagation()}
-                className="w-full max-w-2xl bg-surface border border-glass rounded-[2rem] shadow-2xl relative my-auto"
+                className="w-full max-w-3xl bg-base border border-glass rounded-2xl sm:rounded-[2rem] shadow-2xl relative"
             >
-                <div className="p-4 lg:p-8 space-y-6">
+                <div className="p-4 lg:p-6 space-y-4">
                     <header className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-xl bg-theme/10 border border-theme/20 flex items-center justify-center">
                                 <CheckSquare className="w-5 h-5 text-theme" />
                             </div>
-                             <div>
+                            <div>
                                 <h3 className="text-base font-black text-primary tracking-tight uppercase">
                                     {isNew ? "New Task" : "Task Details"}
                                 </h3>
@@ -216,13 +216,13 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                         </button>
                     </header>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-8">
-                        <div className="lg:col-span-4 space-y-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
+                        <div className="lg:col-span-4 space-y-4">
                             {/* Basic Info */}
                             <div className="space-y-5">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] ml-1.5">Task Title</label>
-                                    <input 
+                                    <input
                                         value={title} onChange={(e) => setTitle(e.target.value)}
                                         placeholder="Enter task name..."
                                         className="w-full bg-surface border border-glass focus:border-theme/40 rounded-xl px-5 py-3 text-sm text-primary font-black transition-all outline-none"
@@ -230,7 +230,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                 </div>
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] ml-1.5">Description</label>
-                                    <textarea 
+                                    <textarea
                                         value={description} onChange={(e) => setDescription(e.target.value)}
                                         rows={4}
                                         className="w-full bg-surface border border-glass focus:border-theme/40 rounded-2xl px-5 py-4 text-primary font-medium text-xs transition-all outline-none resize-none leading-relaxed"
@@ -239,13 +239,13 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                 </div>
                             </div>
 
-                            <TaskSubtasks 
-                                subtasks={subtasks} 
-                                setSubtasks={setSubtasks} 
-                                isAuthorized={isAuthorized} 
+                            <TaskSubtasks
+                                subtasks={subtasks}
+                                setSubtasks={setSubtasks}
+                                isAuthorized={isAuthorized}
                             />
 
-                            <TaskDependencies 
+                            <TaskDependencies
                                 blockedBy={blockedBy} setBlockedBy={setBlockedBy}
                                 blocking={blocking} setBlocking={setBlocking}
                                 availableTasks={availableTasks}
@@ -253,7 +253,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                 isNew={isNew}
                             />
 
-                             <div className="pt-8 border-t border-glass space-y-6">
+                            <div className="pt-8 border-t border-glass space-y-6">
                                 <div className="flex items-center gap-3 ml-1">
                                     <Activity className="w-4 h-4 text-theme" />
                                     <h4 className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em]">Operational History</h4>
@@ -272,43 +272,43 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                 </motion.div>
                             )}
 
-                            <TaskMetadata 
+                            <TaskMetadata
                                 status={status} setStatus={setStatus}
                                 priority={priority} setPriority={setPriority}
                                 type={type} setType={setType}
                                 isAuthorized={isAuthorized}
                             />
 
-                            <TaskAssignees 
+                            <TaskAssignees
                                 assigneeIds={assigneeIds} setAssigneeIds={setAssigneeIds}
                                 projectMembers={projectMembers}
                                 isAuthorized={isAuthorized}
                             />
 
-                             <div className="p-5 bg-glass border border-glass rounded-2xl space-y-5">
-                                 <div className="space-y-3">
+                            <div className="p-5 bg-glass border border-glass rounded-2xl space-y-5">
+                                <div className="space-y-3">
                                     <label className="text-[10px] font-black text-tertiary uppercase tracking-[0.3em] ml-1.5">Schedule</label>
                                     <div className="grid grid-cols-1 gap-3">
-                                         <div className="flex flex-col gap-1.5">
+                                        <div className="flex flex-col gap-1.5">
                                             <span className="text-[8px] font-black text-tertiary uppercase ml-1">Start Date & Time</span>
-                                            <input 
-                                                type="datetime-local" 
+                                            <input
+                                                type="datetime-local"
                                                 min={projectStart}
                                                 max={projectEnd}
-                                                value={startDate} 
-                                                onChange={(e) => setStartDate(e.target.value)} 
-                                                className="w-full bg-surface border border-glass rounded-xl px-4 py-2.5 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30" 
+                                                value={startDate}
+                                                onChange={(e) => setStartDate(e.target.value)}
+                                                className="w-full bg-surface border border-glass rounded-xl px-4 py-2.5 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30"
                                             />
                                         </div>
                                         <div className="flex flex-col gap-1.5">
                                             <span className="text-[8px] font-black text-tertiary uppercase ml-1">Due Date & Time</span>
-                                            <input 
-                                                type="datetime-local" 
+                                            <input
+                                                type="datetime-local"
                                                 min={projectStart}
                                                 max={projectEnd}
-                                                value={dueDate} 
-                                                onChange={(e) => setDueDate(e.target.value)} 
-                                                className="w-full bg-surface border border-glass rounded-xl px-4 py-2.5 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30" 
+                                                value={dueDate}
+                                                onChange={(e) => setDueDate(e.target.value)}
+                                                className="w-full bg-surface border border-glass rounded-xl px-4 py-2.5 text-primary font-black text-[10px] uppercase outline-none focus:border-theme/30"
                                             />
                                         </div>
                                     </div>
@@ -317,7 +317,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
 
                             {/* Actions */}
                             <div className="flex flex-col gap-3 pt-6">
-                                 <button 
+                                <button
                                     onClick={handleSave}
                                     className="w-full py-4 bg-theme hover:bg-theme-highlight rounded-2xl text-[11px] font-black uppercase tracking-widest text-white flex items-center justify-center gap-3 shadow-theme-slight transition-all active:scale-95"
                                 >
@@ -325,7 +325,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                                     {isNew ? 'Initialize Task' : 'Update Record'}
                                 </button>
                                 {!isNew && (
-                                    <button 
+                                    <button
                                         onClick={() => onDelete(task._id)}
                                         className="w-full py-4 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-2xl text-[11px] font-black uppercase tracking-widest text-rose-500 flex items-center justify-center gap-3 transition-all"
                                     >
@@ -337,7 +337,7 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                         </div>
                     </div>
 
-                    <TaskComments 
+                    <TaskComments
                         comments={comments}
                         members={projectMembers}
                         commentContent={commentContent} setCommentContent={setCommentContent}
@@ -355,5 +355,3 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
 };
 
 export default TaskDetailModal;
-
-

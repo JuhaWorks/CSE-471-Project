@@ -131,15 +131,15 @@ const ProjectSettingsDashboard = () => {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#09090b] via-[#09090b]/40 to-transparent pointer-events-none" />
                     
-                    {/* Floating Navigation Controls */}
-                    <div className="absolute top-8 left-8 flex gap-4">
-                        <Button
-                            variant="secondary"
+                    {/* Navigation Control */}
+                    <div className="absolute top-6 left-6 z-20">
+                        <button 
                             onClick={() => navigate('/projects')}
-                            className="p-3 bg-black/40 backdrop-blur-xl border-white/10 rounded-2xl hover:scale-110 active:scale-95"
+                            className="group flex items-center gap-3 px-4 py-2 bg-black/40 backdrop-blur-xl border border-white/10 rounded-xl hover:bg-black/60 transition-all duration-300"
                         >
-                            <ArrowLeft className="w-5 h-5 text-white" />
-                        </Button>
+                            <ArrowLeft className="w-4 h-4 text-cyan-400 group-hover:-translate-x-1 transition-transform" />
+                            <span className="text-[10px] font-black text-white/60 group-hover:text-white uppercase tracking-widest">Back to Projects</span>
+                        </button>
                     </div>
 
                     <div className="absolute bottom-10 left-10 right-10 flex flex-col md:flex-row md:items-end justify-between gap-6">

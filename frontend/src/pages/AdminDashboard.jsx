@@ -10,6 +10,7 @@ import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from
 import { AreaChart, Area, ResponsiveContainer, Tooltip as ReTooltip } from 'recharts';
 import toast from 'react-hot-toast';
 import GlassSurface from '../components/ui/GlassSurface';
+import NotificationHistoryWidget from '../components/notifications/NotificationHistoryWidget';
 
 /* ─────────────────────────────── helpers ─── */
 const fmtDTLocal = (date) => {
@@ -588,16 +589,12 @@ const AdminDashboard = () => {
                         </div>
                     </motion.div>
 
-                    {/* ── STAT CARDS ── */}
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14, marginBottom: 28 }}>
-                        <StatCard label="Total Users" value={stats.users.total} color="var(--green)" sub="Registered accounts" delay={0} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0" /></svg>} spark />
-                        <StatCard label="Active Users" value={stats.users.active} color="var(--green)" sub="Verified & operational" delay={.07} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>} spark />
-                        <StatCard label="Restricted" value={stats.users.restricted} color="var(--red)" sub="Suspended access" delay={.14} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>} spark />
                         <StatCard label="Projects" value={stats.projects?.total ?? 0} color="var(--blue)" sub="Across all workspaces" delay={.21} icon={<svg width="14" height="14" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" /></svg>} spark />
                     </div>
 
-                    {/* ── TABLE PANEL ── */}
-                    <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 28, marginBottom: 28 }}>
+                        {/* LEFT: TABLE PANEL */}
+                        <div style={{ position: 'relative', borderRadius: 22, overflow: 'hidden' }}>
                         <div className="absolute inset-0 z-0">
                             <GlassSurface width="100%" height="100%" borderRadius={22} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                         </div>
@@ -802,6 +799,10 @@ const AdminDashboard = () => {
                                 </AnimatePresence>
                             </div>
                         </div>
+
+                        {/* RIGHT: NOTIFICATION FEED */}
+                        <NotificationHistoryWidget limit={8} />
+                    </div>
 
                     {/* bottom status bar */}
                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: .6 }}

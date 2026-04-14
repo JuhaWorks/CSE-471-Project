@@ -13,6 +13,7 @@ import {
 import ApodWidget from '../components/tools/Widgets/ApodWidget';
 import WeatherWidget from '../components/tools/Widgets/WeatherWidget';
 import GlobalClockWidget from '../components/tools/Widgets/GlobalClockWidget';
+import NotificationHistoryWidget from '../components/notifications/NotificationHistoryWidget';
 import { useSocketStore } from '../store/useSocketStore';
 import Button from '../components/ui/Button';
 import DeadlinePopup from '../components/projects/DeadlinePopup';
@@ -47,6 +48,7 @@ const Home = () => {
     const [selectedTask, setSelectedTask] = useState(null);
     const [expandedTaskId, setExpandedTaskId] = useState(null);
     const [feedFilter, setFeedFilter] = useState('All');
+    const [intelMode, setIntelMode] = useState('workspace'); // 'workspace' or 'personal'
 
     useEffect(() => {
         if (!socket) return;
@@ -202,7 +204,14 @@ const Home = () => {
                 </div>
             </header>
 
-            <GlobalClockWidget />
+            <section className="mb-12 relative z-10">
+                <div className="flex items-center gap-3 mb-6 opacity-80">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border-strong to-transparent" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-tertiary">Tactical Status Network</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border-strong to-transparent" />
+                </div>
+                <GlobalClockWidget />
+            </section>
 
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10 relative z-10">
                 {STATS.map((s, i) => (
@@ -334,77 +343,105 @@ const Home = () => {
                     </div>
 
                     <Card variant="glass" padding="p-0" className="rounded-[2.5rem] overflow-hidden flex flex-col">
-                        <div className="p-8 border-b border-glass flex flex-col md:flex-row md:items-center justify-between gap-6">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-xl bg-theme/5 border border-theme/10 flex items-center justify-center">
-                                    <Activity className="w-5 h-5 text-theme" />
+                        <div className="p-8 border-b border-glass flex flex-col md:flex-row md:items-center justify-between gap-6 bg-surface/30">
+                            <div className="flex items-center gap-6">
+                                <div className="flex flex-col">
+                                    <h3 className="text-xl font-black text-primary tracking-tighter uppercase">Intelligence Center</h3>
+                                    <p className="text-[9px] font-black text-tertiary uppercase tracking-widest mt-1 opacity-60">Strategic Data Consolidation</p>
                                 </div>
-                                <div>
-                                    <h3 className="text-xl font-black text-primary tracking-tighter uppercase">Intelligence Feed</h3>
-                                    <p className="text-[9px] font-black text-tertiary uppercase tracking-widest mt-1 opacity-60">Real-time telemetry</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-1 bg-sunken p-1 rounded-xl border border-glass">
-                                {['All', 'Tasks', 'Projects', 'Security'].map(f => (
-                                    <button key={f} onClick={() => setFeedFilter(f)}
+                                <div className="h-8 w-px bg-glass mx-2 hidden sm:block" />
+                                <div className="flex items-center gap-1 bg-sunken p-1 rounded-xl border border-glass">
+                                    <button onClick={() => setIntelMode('workspace')}
                                         className={cn(
-                                            "px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all",
-                                            feedFilter === f ? "bg-theme text-primary shadow-lg shadow-theme/20" : "text-tertiary hover:text-primary"
+                                            "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                                            intelMode === 'workspace' ? "bg-theme text-primary shadow-lg shadow-theme/20" : "text-tertiary hover:text-primary"
                                         )}>
-                                        {f}
+                                        Workspace
                                     </button>
-                                ))}
+                                    <button onClick={() => setIntelMode('personal')}
+                                        className={cn(
+                                            "px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all",
+                                            intelMode === 'personal' ? "bg-theme text-primary shadow-lg shadow-theme/20" : "text-tertiary hover:text-primary"
+                                        )}>
+                                        Personal
+                                    </button>
+                                </div>
                             </div>
+                            
+                            {intelMode === 'workspace' && (
+                                <div className="flex items-center gap-1 bg-sunken p-1 rounded-xl border border-glass">
+                                    {['All', 'Tasks', 'Projects', 'Security'].map(f => (
+                                        <button key={f} onClick={() => setFeedFilter(f)}
+                                            className={cn(
+                                                "px-3 py-1 rounded-lg text-[8px] font-black uppercase tracking-widest transition-all",
+                                                feedFilter === f ? "bg-surface text-theme border border-theme/20" : "text-tertiary hover:text-primary"
+                                            )}>
+                                            {f}
+                                        </button>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                        <div className="h-[500px] overflow-y-auto custom-scrollbar p-6 space-y-8 relative">
-                            <div className="absolute left-[44px] top-8 bottom-8 w-px bg-default opacity-20" />
-                            {actLoading ? (
-                                <div className="space-y-4">{[0, .1, .2].map(d => <ActivitySkeleton key={d} delay={d} />)}</div>
-                            ) : activity.length > 0 ? (
-                                activity.map((a, i) => {
-                                    const isTask = a.action?.startsWith('TASK_');
-                                    const isSecurity = a.action?.includes('BANNED') || a.action?.includes('LOGIN') || a.action?.includes('ROLE');
-                                    const isSignificant = ws.bottlenecks?.some(b => b._id === a.details?._id);
+                        
+                        <div className="h-[520px] overflow-y-auto custom-scrollbar p-6 relative">
+                            {intelMode === 'workspace' ? (
+                                <>
+                                    <div className="absolute left-[44px] top-8 bottom-8 w-px bg-default opacity-20" />
+                                    <div className="space-y-8">
+                                        {actLoading ? (
+                                            <div className="space-y-4">{[0, .1, .2].map(d => <ActivitySkeleton key={d} delay={d} />)}</div>
+                                        ) : activity.length > 0 ? (
+                                            activity.map((a, i) => {
+                                                const isTask = a.action?.startsWith('TASK_');
+                                                const isSecurity = a.action?.includes('BANNED') || a.action?.includes('LOGIN') || a.action?.includes('ROLE');
+                                                const isSignificant = ws.bottlenecks?.some(b => b._id === a.details?._id);
 
-                                    return (
-                                        <motion.div key={a._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
-                                            className={cn("flex items-start gap-4 group cursor-pointer transition-all p-2 rounded-2xl", isSignificant ? "bg-danger/5 border border-danger/10" : "hover:bg-sunken")}
-                                            onClick={() => {
-                                                if (isTask && a.details?._id) {
-                                                    const taskObj = allTasks.find(t => t._id === a.details._id);
-                                                    if (taskObj) setSelectedTask(taskObj);
-                                                }
-                                            }}>
-                                            <div className="relative z-10">
-                                                <div className={cn(
-                                                    "w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-black border transition-all",
-                                                    isSecurity ? "bg-danger/10 border-danger/20 text-danger" : 
-                                                    (isSignificant ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-surface border-glass text-theme group-hover:border-theme/40")
-                                                )}>
-                                                    {a.user?.name?.charAt(0) || 'S'}
-                                                </div>
-                                                <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-base border border-glass flex items-center justify-center">
-                                                    <div className={cn("w-1.5 h-1.5 rounded-full", isSecurity ? "bg-danger" : (isSignificant ? "bg-amber-500" : "bg-theme"))} />
-                                                </div>
+                                                return (
+                                                    <motion.div key={a._id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.02 }}
+                                                        className={cn("flex items-start gap-4 group cursor-pointer transition-all p-2 rounded-2xl", isSignificant ? "bg-danger/5 border border-danger/10" : "hover:bg-sunken")}
+                                                        onClick={() => {
+                                                            if (isTask && a.details?._id) {
+                                                                const taskObj = allTasks.find(t => t._id === a.details._id);
+                                                                if (taskObj) setSelectedTask(taskObj);
+                                                            }
+                                                        }}>
+                                                        <div className="relative z-10">
+                                                            <div className={cn(
+                                                                "w-10 h-10 rounded-xl flex items-center justify-center text-[10px] font-black border transition-all",
+                                                                isSecurity ? "bg-danger/10 border-danger/20 text-danger" : 
+                                                                (isSignificant ? "bg-amber-500/10 border-amber-500/20 text-amber-500" : "bg-surface border-glass text-theme group-hover:border-theme/40")
+                                                            )}>
+                                                                {a.user?.name?.charAt(0) || 'S'}
+                                                            </div>
+                                                            <div className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-base border border-glass flex items-center justify-center">
+                                                                <div className={cn("w-1.5 h-1.5 rounded-full", isSecurity ? "bg-danger" : (isSignificant ? "bg-amber-500" : "bg-theme"))} />
+                                                            </div>
+                                                        </div>
+                                                        <div className="flex-1 min-w-0 pt-1">
+                                                            <div className="flex items-center justify-between mb-1">
+                                                                <div className="flex items-center gap-2 text-[10px] font-black text-tertiary uppercase tracking-widest opacity-40">
+                                                                    {new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                                    {isSignificant && <span className="text-[7px] text-danger bg-danger/10 px-1.5 py-0.5 rounded border border-danger/20 animate-pulse">Impact Alert</span>}
+                                                                </div>
+                                                            </div>
+                                                            <p className={cn("text-[13px] leading-relaxed transition-colors", isSecurity ? "text-danger/80" : (isSignificant ? "text-amber-500/90" : "text-secondary group-hover:text-primary"))}>
+                                                                {renderActivityNarrative(a)}
+                                                            </p>
+                                                        </div>
+                                                    </motion.div>
+                                                );
+                                            })
+                                        ) : (
+                                            <div className="h-full flex flex-col items-center justify-center text-center py-20 opacity-20">
+                                                <Activity className="w-12 h-12 mb-4" />
+                                                <p className="text-xs font-black uppercase tracking-widest">No activities detected</p>
                                             </div>
-                                            <div className="flex-1 min-w-0 pt-1">
-                                                <div className="flex items-center justify-between mb-1">
-                                                    <div className="flex items-center gap-2 text-[10px] font-black text-tertiary uppercase tracking-widest opacity-40">
-                                                        {new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                                                        {isSignificant && <span className="text-[7px] text-danger bg-danger/10 px-1.5 py-0.5 rounded border border-danger/20 animate-pulse">Impact Alert</span>}
-                                                    </div>
-                                                </div>
-                                                <p className={cn("text-[13px] leading-relaxed transition-colors", isSecurity ? "text-danger/80" : (isSignificant ? "text-amber-500/90" : "text-secondary group-hover:text-primary"))}>
-                                                    {renderActivityNarrative(a)}
-                                                </p>
-                                            </div>
-                                        </motion.div>
-                                    );
-                                })
+                                        )}
+                                    </div>
+                                </>
                             ) : (
-                                <div className="h-full flex flex-col items-center justify-center text-center opacity-20">
-                                    <Activity className="w-12 h-12 mb-4" />
-                                    <p className="text-xs font-black uppercase tracking-widest">No activities</p>
+                                <div className="px-2">
+                                    <NotificationHistoryWidget variant="plain" limit={15} />
                                 </div>
                             )}
                         </div>
@@ -431,9 +468,6 @@ const Home = () => {
                         </div>
                     </Card>
 
-                    <WeatherWidget />
-                    <ApodWidget />
-                    
                     <Card variant="glass" padding="p-8" className="rounded-[2.5rem]">
                         <div className="flex items-center gap-3 mb-8">
                             <TrendingUp className="w-5 h-5 text-theme" />
@@ -475,6 +509,11 @@ const Home = () => {
                             <span className="text-[10px] font-black text-primary uppercase tracking-[0.2em]">Liquid Calibration</span>
                         </div>
                     </Card>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-6">
+                        <WeatherWidget />
+                        <ApodWidget />
+                    </div>
                 </aside>
             </section>
 

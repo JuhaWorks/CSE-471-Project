@@ -23,6 +23,8 @@ const startDeadlineChecker = require('./cron/deadlineCheck');
 const startSocialCleanup = require('./cron/socialCleanup');
 const startRedundancyCleanup = require('./cron/redundancyCleanup');
 const { captureGlobalSnapshots, startSnapshotCron } = require('./cron/projectSnapshotter');
+const startDigestCron = require('./cron/digest.cron');
+const startTaskDeadlineChecker = require('./cron/taskDeadlineCheck');
 
 // 1. Redis Initialization (Optional performance enhancement)
 const { initRedis } = require('./utils/redis');
@@ -146,6 +148,7 @@ app.use('/api/admin', require('./routes/admin.routes'));
 app.use('/api/connections', require('./routes/connection.routes'));
 app.use('/api/endorsements', require('./routes/endorsement.routes'));
 app.use('/api/tools', require('./routes/tool.routes'));
+app.use('/api/notifications', require('./routes/notification.routes'));
 
 const cluster = require('cluster');
 const os = require('os');
@@ -189,6 +192,8 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
       startRedundancyCleanup();
       startSocialCleanup(); 
       startSnapshotCron();
+      startDigestCron();
+      startTaskDeadlineChecker();
       
       // Trigger an immediate capture for development reality
       captureGlobalSnapshots().catch(err => logger.error(`Initial Snapshot Error: ${err.message}`));

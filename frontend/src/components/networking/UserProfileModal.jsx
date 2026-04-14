@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { api } from '../../store/useAuthStore';
 import { getOptimizedAvatar } from '../../utils/avatar';
+import { cn } from '../../utils/cn';
 
 const getLevelProgress = (xp, level) => {
     // Mirror the thresholds from backend
@@ -195,20 +196,30 @@ export default function UserProfileModal({ isOpen, onClose, userId }) {
                             <div className="w-full md:w-1/2 aspect-square max-w-[200px]">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
-                                        { subject: 'Bug', A: user.gamification?.specialties?.Bug || 0 },
-                                        { subject: 'Feature', A: user.gamification?.specialties?.Feature || 0 },
-                                        { subject: 'Maint', A: user.gamification?.specialties?.Maintenance || 0 },
-                                        { subject: 'Res', A: user.gamification?.specialties?.Research || 0 },
-                                        { subject: 'Task', A: user.gamification?.specialties?.Task || 0 },
+                                        { subject: 'Bug', A: user.gamification?.specialties?.Bug || 0, fullMark: 1000 },
+                                        { subject: 'Feature', A: user.gamification?.specialties?.Feature || 0, fullMark: 1000 },
+                                        { subject: 'Maint', A: user.gamification?.specialties?.Maintenance || 0, fullMark: 1000 },
+                                        { subject: 'Res', A: user.gamification?.specialties?.Research || 0, fullMark: 1000 },
+                                        { subject: 'Task', A: user.gamification?.specialties?.Task || 0, fullMark: 1000 },
                                     ]}>
-                                        <PolarGrid stroke="var(--border-subtle)" />
-                                        <PolarAngleAxis dataKey="subject" tick={{ fontSize: 9, fontWeight: 800, fill: 'var(--text-tertiary)' }} />
+                                        <defs>
+                                            <linearGradient id="modalRadarGradient" x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor="var(--accent-500)" stopOpacity={0.8}/>
+                                                <stop offset="95%" stopColor="var(--accent-500)" stopOpacity={0.2}/>
+                                            </linearGradient>
+                                        </defs>
+                                        <PolarGrid stroke="var(--border-strong)" strokeOpacity={0.5} />
+                                        <PolarAngleAxis 
+                                            dataKey="subject" 
+                                            tick={{ fontSize: 9, fontWeight: 800, fill: 'var(--text-primary)' }} 
+                                        />
                                         <Radar
                                             name="Skill"
                                             dataKey="A"
-                                            stroke="var(--theme-color)"
-                                            fill="var(--theme-color)"
-                                            fillOpacity={0.4}
+                                            stroke="var(--accent-500)"
+                                            strokeWidth={2}
+                                            fill="url(#modalRadarGradient)"
+                                            fillOpacity={1}
                                         />
                                     </RadarChart>
                                 </ResponsiveContainer>

@@ -4,13 +4,14 @@ import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
 import { getOptimizedAvatar } from '../../../utils/avatar';
 
-const TaskAssignees = ({ assigneeIds, setAssigneeIds, projectMembers, isAuthorized }) => {
+const TaskAssignees = ({ assigneeIds = [], setAssigneeIds, projectMembers = [], isAuthorized }) => {
     const [memberSearchQuery, setMemberSearchQuery] = useState('');
 
     const filteredMembers = useMemo(() => {
-        if (!memberSearchQuery.trim()) return projectMembers;
+        const members = projectMembers || [];
+        if (!memberSearchQuery.trim()) return members;
         const q = memberSearchQuery.toLowerCase();
-        return projectMembers.filter(m => 
+        return members.filter(m => 
             m.userId?.name?.toLowerCase().includes(q) || 
             m.userId?.email?.toLowerCase().includes(q)
         );
@@ -21,7 +22,7 @@ const TaskAssignees = ({ assigneeIds, setAssigneeIds, projectMembers, isAuthoriz
             <div className="space-y-2">
                 <label className="text-[8px] font-black text-gray-500 uppercase tracking-[0.3em] ml-1.5 flex items-center justify-between">
                     <span>Assignees</span>
-                    <span className="text-theme/40 lowercase font-mono">{assigneeIds.length} members</span>
+                    <span className="text-theme/40 lowercase font-mono">{(assigneeIds || []).length} members</span>
                 </label>
                 
                 <div className="bg-white/[0.01] border border-white/5 rounded-xl flex flex-col focus-within:border-theme/40 transition-all overflow-hidden shadow-inner">
