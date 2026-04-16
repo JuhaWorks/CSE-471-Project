@@ -95,7 +95,7 @@ app.use(helmet({
       scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'", "blob:", "data:", "https://cdnjs.cloudflare.com", "https://cdn.jsdelivr.net"],
       styleSrc: ["'self'", "'unsafe-inline'", "blob:", "https://fonts.googleapis.com", "https://api.fontshare.com", "https://cdn.fontshare.com", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "blob:", "*"],
-      connectSrc: ["'self'", "http://localhost:*", "https://localhost:*", "ws://localhost:*", "wss://localhost:*", "http://127.0.0.1:*", "https://127.0.0.1:*", "wss://syncforge-io.onrender.com", "https://syncforge-io.onrender.com", "*.vercel.app", "https://*.sentry.io", "https://sentry.io", "https://api.nasa.gov"],
+      connectSrc: ["'self'", "http://localhost:*", "https://localhost:*", "ws://localhost:*", "wss://localhost:*", "http://127.0.0.1:*", "https://127.0.0.1:*", "wss://syncforge-io.onrender.com", "https://syncforge-io.onrender.com", "*.vercel.app", "https://*.sentry.io", "https://sentry.io", "https://api.nasa.gov", "https://favqs.com"],
       fontSrc: ["'self'", "data:", "https://fonts.gstatic.com", "https://api.fontshare.com", "https://cdn.fontshare.com", "https://cdnjs.cloudflare.com"],
       workerSrc: ["'self'", "blob:", "data:"],
       objectSrc: ["'none'"],
@@ -116,11 +116,17 @@ app.use(sanitizationMiddleware);
 app.use(passport.initialize());
 
 // Strict Payload Limit to prevent Buffer Exhaustion DoS
-app.use(express.json({ limit: 32768 }));
-app.use(express.urlencoded({ extended: true, limit: 32768 }));
+// Increased Payload Limits for file metadata and large messages
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 
 app.use(express.static('public'));
+app.use('/uploads', (req, res, next) => {
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    next();
+}, express.static('uploads'));
+
 
 // HTTP Request Logging
 app.use(morganMiddleware);
@@ -149,6 +155,11 @@ app.use('/api/connections', require('./routes/connection.routes'));
 app.use('/api/endorsements', require('./routes/endorsement.routes'));
 app.use('/api/tools', require('./routes/tool.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
+app.use('/api/analytics', require('./routes/analytics.routes'));
+app.use('/api/chats', require('./routes/chat.routes'));
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api/dev', require('./routes/dev.routes'));
+}
 
 const cluster = require('cluster');
 const os = require('os');

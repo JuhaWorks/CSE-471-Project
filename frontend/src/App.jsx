@@ -12,6 +12,7 @@ import Login from './pages/Login';
 import RequireVerification from './components/auth/RequireVerification';
 import { Toaster } from 'react-hot-toast';
 import TaskTimer from './components/tools/Widgets/TaskTimer';
+import ChatTray from './components/networking/ChatTray';
 
 // Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
@@ -72,6 +73,7 @@ function App() {
       <Toaster position="top-right" toastOptions={{ style: { background: '#09090b', color: '#fff', border: '1px solid rgba(255,255,255,0.1)' } }} />
       <CommandPalette />
       <TaskTimer />
+      <ChatTray />
       <MaintenanceNotice />
       <Suspense fallback={<PageLoader />}>
         <Routes>

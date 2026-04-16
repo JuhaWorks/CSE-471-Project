@@ -125,6 +125,27 @@ const updatePreferences = catchAsync(async (req, res) => {
     res.status(200).json({ status: 'success', data: user.notificationPrefs });
 });
 
+// @desc    Send test notification
+// @route   POST /api/notifications/test
+// @access  Private
+const sendTestNotification = catchAsync(async (req, res) => {
+    const notificationService = require('../services/notification.service');
+    const { type } = req.body; // 'toast' or 'email'
+
+    await notificationService.notify({
+        recipientId: req.user._id,
+        senderId: req.user._id, // System usually, but self-test is fine
+        type: 'Mention', // Hardcoded for test
+        priority: 'Medium',
+        title: 'Command Center Diagnostic',
+        message: `This is a successful test of your ${type} notification system. Your current matrix settings are working as intended.`,
+        link: '/settings/notifications',
+        metadata: { projectName: 'System Diagnostic' }
+    });
+
+    res.status(200).json({ status: 'success', message: `Test ${type} dispatched` });
+});
+
 module.exports = {
     getNotifications,
     markAsRead,
@@ -132,5 +153,6 @@ module.exports = {
     archiveNotification,
     archiveAll,
     deleteNotification,
-    updatePreferences
+    updatePreferences,
+    sendTestNotification
 };

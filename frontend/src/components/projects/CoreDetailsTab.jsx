@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { useUpdateProject, useUploadProjectImage } from '../../hooks/projects/useProjectQueries';
 import { Save, Loader2, Layout, Upload, Image as ImageIcon, X, Trash2, Calendar, Target } from 'lucide-react';
 import toast from 'react-hot-toast';
-import LockedInput from './LockedInput';
+import { LockedInput } from './ProjectShared';
 import { useSocketStore } from '../../store/useSocketStore';
 import Card from '../ui/Card';
 import Button from '../ui/Button';

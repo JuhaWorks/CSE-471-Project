@@ -215,6 +215,7 @@ const createTask = async (req, res, next) => {
                         taskId: task._id, 
                         projectId: task.project._id || task.project,
                         taskName: task.title,
+                        taskType: task.type, // Required for Emergency Command Bypass
                         projectName: populatedTask.project?.name || 'Project'
                     }
                 });
@@ -286,6 +287,8 @@ const updateTask = async (req, res, next) => {
         }
 
         const oldStatus = task.status;
+        const oldPriority = task.priority;
+        const oldType = task.type || 'Task';
         const oldBlockedBy = task.dependencies?.blockedBy?.map(id => id.toString()) || [];
         const oldBlocking = task.dependencies?.blocking?.map(id => id.toString()) || [];
         
@@ -408,52 +411,68 @@ const updateTask = async (req, res, next) => {
         const projectRoom = task.project?._id?.toString() || task.project?.toString();
         socket.getIO().to(projectRoom).emit('taskUpdated', task);
 
-        // --- Notification Logic (Update) ---
-        if (req.body.status && oldStatus !== req.body.status) {
+        // --- Notification Logic (Matured Metadata Tracking) ---
+        const statusChanged = req.body.status && oldStatus !== req.body.status;
+        const priorityChanged = req.body.priority && oldPriority !== req.body.priority;
+        const typeChanged = req.body.type && oldType !== req.body.type;
+
+        if (statusChanged || priorityChanged || typeChanged) {
             const isCompleted = req.body.status === 'Completed';
-            
-            // 1. Notify Assignees
             const assignees = task.assignees?.map(a => a._id || a) || [];
             
-            // 2. If completed, also notify Managers
             let managers = [];
-            if (isCompleted && project) {
+            if ((isCompleted || priorityChanged) && project) {
                 managers = project.members
                     .filter(m => m.role === 'Manager' && m.status === 'active')
                     .map(m => (m.userId?._id || m.userId).toString());
             }
 
-            // Fix: ObjectId de-duplication requires string conversion for Set to identify matches
             const recipients = [...new Set([
                 ...assignees.map(id => id.toString()), 
                 ...managers
             ])];
             
-            console.log(`[NOTIFY] Status update for task "${task.title}". Identified recipients: ${JSON.stringify(recipients)}`);
+            // Build Contextual Message
+            let title = 'Task Updated';
+            let message = `${req.user.name} updated "${task.title}": `;
+            const changeLog = [];
 
-            for (const recipientId of recipients) {
-                if (recipientId?.toString() === req.user._id.toString()) {
-                    console.log(`[NOTIFY] Skipping self-notification for ${recipientId}`);
-                    continue;
+            if (statusChanged) {
+                changeLog.push(`status to ${req.body.status}`);
+                if (isCompleted) title = 'Task Completed';
+            }
+            if (priorityChanged) {
+                changeLog.push(`priority to ${req.body.priority}`);
+                if (req.body.priority === 'Urgent') title = 'Urgent Priority Escalation';
+            }
+            if (typeChanged) {
+                changeLog.push(`classification to ${req.body.type}`);
+            }
+
+            message += changeLog.join(', ');
+
+            try {
+                for (const recipientId of recipients) {
+                    // Self-suppression logic is handled within NotificationService.notify if implemented there, 
+                    // but we ensured history is still recorded for the sender in the service logic previously.
+                    await notificationService.notify({
+                        recipientId,
+                        senderId: req.user._id,
+                        type: isCompleted ? 'StatusUpdate' : 'MetadataUpdate',
+                        priority: (isCompleted || req.body.priority === 'Urgent' || task.priority === 'Urgent') ? 'Urgent' : 'Medium',
+                        title,
+                        message,
+                        link: `/tasks?project=${task.project._id || task.project}`,
+                        metadata: { 
+                            taskId: task._id, 
+                            projectId: task.project._id || task.project,
+                            taskName: task.title,
+                            projectName: project.name || 'Project'
+                        }
+                    });
                 }
-                
-                await notificationService.notify({
-                    recipientId,
-                    senderId: req.user._id,
-                    type: isCompleted ? 'StatusUpdate' : 'StatusUpdate',
-                    priority: (isCompleted || task.priority === 'Urgent') ? 'Urgent' : 'Medium',
-                    title: isCompleted ? 'Task Completed' : 'Task Status Updated',
-                    message: isCompleted 
-                        ? `Task "${task.title}" has been completed by ${req.user.name}`
-                        : `Status of "${task.title}" changed to ${req.body.status} by ${req.user.name}`,
-                    link: `/tasks?project=${task.project._id || task.project}`,
-                    metadata: { 
-                        taskId: task._id, 
-                        projectId: task.project._id || task.project,
-                        taskName: task.title,
-                        projectName: project.name || 'Project'
-                    }
-                });
+            } catch (notifyErr) {
+                logger.error(`[NOTIFICATION_CRASH] Resiliency bypass triggered: ${notifyErr.message}`);
             }
         }
 
@@ -650,7 +669,10 @@ const bulkUpdateTasks = async (req, res, next) => {
 
         // Perform updates
         const updatePromises = taskIds.map(id => {
-            return Task.findByIdAndUpdate(id, { $set: safeUpdates }, { returnDocument: 'after' }).lean();
+            return Task.findByIdAndUpdate(id, { $set: safeUpdates }, { returnDocument: 'after' })
+                .populate('assignees', 'name email avatar')
+                .populate('project', 'name color')
+                .lean();
         });
 
         const updatedTasks = await Promise.all(updatePromises);
@@ -663,6 +685,7 @@ const bulkUpdateTasks = async (req, res, next) => {
             
             const originalTask = tasks.find(t => t._id.toString() === task._id.toString());
             const isNowCompleted = originalTask && originalTask.status !== 'Completed' && task.status === 'Completed';
+            const isNowUncompleted = originalTask && originalTask.status === 'Completed' && task.status !== 'Completed';
 
             // --- Notification Hook for Bulk Completion ---
             if (isNowCompleted) {
@@ -711,6 +734,22 @@ const bulkUpdateTasks = async (req, res, next) => {
                 for (const assignedUser of usersToReward) {
                     const userId = assignedUser._id || assignedUser;
                     awardXP(userId, xpToAward, task).catch(err => console.error("Bulk Gamification Error:", err));
+                }
+            }
+
+            // --- Gamification Revocation for Bulk ---
+            if (isNowUncompleted) {
+                const { revokeXP } = require('../services/gamification.service');
+                let usersToRevoke = task.assignees?.length > 0 ? [...task.assignees] : (task.assignee ? [task.assignee] : []);
+                const completerId = req.user._id.toString();
+                const hasCompleter = usersToRevoke.some(u => (u._id?.toString() || u.toString()) === completerId);
+                if (!hasCompleter) {
+                    usersToRevoke.push(req.user._id);
+                }
+
+                for (const assignedUser of usersToRevoke) {
+                    const userId = assignedUser._id || assignedUser;
+                    revokeXP(userId, task).catch(err => console.error("Bulk Revocation Error:", err));
                 }
             }
         }

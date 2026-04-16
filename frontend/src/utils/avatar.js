@@ -1,11 +1,11 @@
-import { API_BASE } from '../components/auth/AuthLayout';
+import { API_BASE } from '../store/useAuthStore';
 
 /**
  * Standard utility to normalize and optimize avatar URLs.
  * Handles relative paths, placeholders, and Cloudinary-style optimization strings.
  */
-export const getOptimizedAvatar = (url, size = 'md') => {
-    if (!url) return `https://ui-avatars.com/api/?name=User&background=0D8ABC&color=fff&format=webp&size=${size === 'sm' ? 64 : 128}`;
+export const getOptimizedAvatar = (url, size = 'md', name = 'User') => {
+    if (!url) return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=0D8ABC&color=fff&format=webp&size=${size === 'sm' ? 64 : 128}`;
     
     let processedUrl = url;
     // If it's a relative path, prefix it with API_BASE

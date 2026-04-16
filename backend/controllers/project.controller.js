@@ -6,10 +6,12 @@ const { cloudinary } = require('../config/cloudinary');
 const logger = require('../utils/logger');
 const mongoose = require('mongoose');
 const ProjectMemberService = require('../services/projectMember.service');
+const { ensureProjectChat } = require('./chat.controller');
 const catchAsync = require('../utils/catchAsync');
 const { checkSingleProject } = require('../cron/deadlineCheck');
 const { clearUserCache } = require('../utils/redis');
 const { getFrontendUrl } = require('../utils/helpers');
+const notificationService = require('../services/notification.service');
 
 // --- Core Project Operations ---
 
@@ -83,6 +85,10 @@ const createProject = async (req, res, next) => {
         await clearUserCache('projects_list', req.user._id);
         
         await logActivity(project._id, req.user._id, 'EntityCreate', { name });
+
+        // Automated Chat Sync
+        await ensureProjectChat(project).catch(err => logger.error(`Chat creation error: ${err.message}`));
+
         res.status(201).json({ status: 'success', data: project });
     } catch (error) { next(error); }
 };
@@ -140,18 +146,38 @@ const updateProject = async (req, res, next) => {
         req.io.to(`project_${project._id}`).emit('projectActivity', { userName: req.user.name, action: 'updated the project details' });
 
         // Instantly trigger deadline check if endDate or status was part of this update.
-        // Fire-and-forget (no await) so the API response is never delayed.
+        // Also notify managers about the strategic schedule adjustment immediately.
         if (req.body.endDate !== undefined || req.body.status !== undefined) {
             checkSingleProject(project._id).catch(err =>
                 logger.error(`Instant deadline check error: ${err.message}`)
             );
+
+            if (req.body.endDate !== undefined) {
+                const managers = project.members.filter(m => m.role === 'Manager');
+                for (const manager of managers) {
+                    notificationService.notify({
+                        recipientId: manager.userId._id || manager.userId,
+                        type: 'Deadline',
+                        priority: 'High',
+                        title: 'Strategic Schedule Adjustment',
+                        message: `Notice: The deadline for project "${project.name}" has been synchronized to ${new Date(req.body.endDate).toLocaleDateString()}.`,
+                        link: `/projects/${project._id}/settings`,
+                        metadata: { projectId: project._id, projectName: project.name }
+                    }).catch(err => logger.error(`Deadline update notification failed: ${err.message}`));
+                }
+            }
         }
 
         await project.populate('members.userId', 'name email avatar');
         
-        // Clear cache for all active members (or just current user if specific)
-        // Since it's an update, mostly the current user or teammates need fresh list
-        await clearUserCache('projects_list', req.user._id);
+        // Clear cache for all active members
+        const allMemberIds = project.members.map(m => (m.userId?._id || m.userId).toString());
+        for (const uid of allMemberIds) {
+            await clearUserCache('projects_list', uid);
+        }
+
+        // Animated Chat Sync (Update participants/details)
+        await ensureProjectChat(project).catch(err => logger.error(`Chat sync error: ${err.message}`));
 
         res.status(200).json({ status: 'success', data: project });
     } catch (error) { next(error); }
@@ -175,12 +201,15 @@ const deleteProject = async (req, res, next) => {
 
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, status: 'Archived', deletedAt: project.deletedAt });
 
-        // Hard Delete tasks associated with the project as requested by user
-        await Task.deleteMany({ project: req.params.id });
+        // ARCHIVE tasks instead of deleting them to support Restoration
+        await Task.updateMany({ project: req.params.id }, { $set: { isArchived: true } });
         await logActivity(project._id, req.user._id, 'EntityDelete', { name: project.name, ipAddress: req.ip }, 'Security');
 
-        // Clear cache
-        await clearUserCache('projects_list', req.user._id);
+        // Clear cache for all members so the project moves to "Archived" view for everyone
+        const memberIds = project.members.map(m => (m.userId?._id || m.userId).toString());
+        for (const uid of memberIds) {
+            await clearUserCache('projects_list', uid);
+        }
 
         res.status(200).json({ status: 'success', message: 'Project moved to trash' });
     } catch (error) { next(error); }
@@ -227,11 +256,17 @@ const restoreProject = async (req, res, next) => {
         project.status = 'Active';
         await project.save();
 
+        // Restore tasks associated with the project
+        await Task.updateMany({ project: req.params.id }, { $set: { isArchived: false } });
+
         req.io.to(`project_${project._id}`).emit('projectUpdated', { id: project._id, status: 'Active', deletedAt: null });
         await logActivity(project._id, req.user._id, 'EntityRestore');
 
-        // Clear cache
-        await clearUserCache('projects_list', req.user._id);
+        // Clear cache for all members
+        const memberIds = project.members.map(m => (m.userId?._id || m.userId).toString());
+        for (const uid of memberIds) {
+            await clearUserCache('projects_list', uid);
+        }
 
         res.status(200).json({ status: 'success', data: project });
     } catch (error) { next(error); }

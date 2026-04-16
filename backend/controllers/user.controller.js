@@ -19,6 +19,11 @@ const updateProfileSchema = z.object({
     bio: z.string().max(1000, 'Bio must be 1000 characters or fewer').optional(),
     skills: z.array(z.string()).optional(),
     coverImage: z.string().optional(),
+    interfacePrefs: z.object({
+        showTeamClock: z.boolean().optional(),
+        showWeather: z.boolean().optional(),
+        showApod: z.boolean().optional()
+    }).optional(),
 });
 
 const changePasswordSchema = z.object({
@@ -167,6 +172,18 @@ const updateProfile = async (req, res, next) => {
         if (req.body.bio !== undefined) updates.bio = req.body.bio;
         if (req.body.skills !== undefined) updates.skills = req.body.skills;
         if (req.body.coverImage !== undefined) updates.coverImage = req.body.coverImage;
+
+        if (req.body.interfacePrefs) {
+            if (req.body.interfacePrefs.showTeamClock !== undefined) {
+                updates['interfacePrefs.showTeamClock'] = req.body.interfacePrefs.showTeamClock;
+            }
+            if (req.body.interfacePrefs.showWeather !== undefined) {
+                updates['interfacePrefs.showWeather'] = req.body.interfacePrefs.showWeather;
+            }
+            if (req.body.interfacePrefs.showApod !== undefined) {
+                updates['interfacePrefs.showApod'] = req.body.interfacePrefs.showApod;
+            }
+        }
 
         if (Object.keys(updates).length === 0) {
             res.status(400);
@@ -491,11 +508,12 @@ const getPublicProfile = async (req, res, next) => {
 const getHeatmap = async (req, res, next) => {
     try {
         const Audit = require('../models/audit.model');
-        const start = new Date();
-        start.setDate(start.getDate() - 364);
-        start.setHours(0, 0, 0, 0);
+        // Fix: Use UTC-aligned date range to prevent gaps due to timezone shifting
+        const now = new Date();
+        const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+        start.setUTCDate(start.getUTCDate() - 730); // 2 years as requested for "all previous data"
 
-        // Deep Aggregation: Extract categories and calculate dynamic weighting
+        // Deep Aggregation: High-fidelity contribution recovery
         const heatmap = await Audit.aggregate([
             { 
                 $match: { 
@@ -505,30 +523,57 @@ const getHeatmap = async (req, res, next) => {
             },
             {
                 $addFields: {
-                    // Weighted impact for professional growth
+                    // Extract status and type from metadata for more robust matching
+                    taskStatus: { $ifNull: ["$details.status", ""] },
+                    taskType: { $ifNull: ["$details.type", "Task"] },
+                    summary: { $ifNull: ["$details.summary", ""] },
+                }
+            },
+            {
+                $addFields: {
+                    // Weighted impact: Captures both transitions AND direct completions
+                    isCompletion: {
+                        $or: [
+                            { $regexMatch: { input: "$summary", regex: /to Completed/i } },
+                            { $and: [
+                                { $eq: ["$action", "EntityCreate"] },
+                                { $eq: ["$taskStatus", "Completed"] }
+                            ]}
+                        ]
+                    }
+                }
+            },
+            {
+                $addFields: {
                     weight: {
                         $cond: [
-                            { $or: [
-                                { $eq: ["$action", "StatusChange"] },
-                                { $regexMatch: { input: { $ifNull: ["$details.summary", ""] }, regex: /to Completed/i } }
-                            ]},
-                            5, // Completion is a major milestone
+                            "$isCompletion",
+                            5, // Milestone weight
                             { $cond: [{ $in: ["$action", ["CommentAdded", "TimerStop", "SubtaskToggle"]]}, 2, 1] }
                         ]
                     },
-                    // Map backend telemetry to frontend categories
-                    category: {
+                    // Strategic Cohort Mapping (Must stay synced with task.model.js & gamification.service.js)
+                    cohort: {
                         $switch: {
                             branches: [
                                 { 
-                                    case: { $regexMatch: { input: { $ifNull: ["$details.summary", ""] }, regex: /bug/i } }, 
-                                    then: "Bug" 
+                                    case: { $in: ["$taskType", ["Epic", "Feature", "Research", "Discovery", "Story"]] }, 
+                                    then: "Strategic" 
                                 },
-                                { case: { $eq: ["$entityType", "Task"] }, then: "Task" },
-                                { case: { $eq: ["$entityType", "Project"] }, then: "Feature" },
-                                { case: { $in: ["$entityType", ["Security", "Settings", "System"]] }, then: "Maintenance" }
+                                { 
+                                    case: { $in: ["$taskType", ["Refactor", "DevOps", "Technical Debt", "QA", "Performance"]] }, 
+                                    then: "Engineering" 
+                                },
+                                { 
+                                    case: { $in: ["$taskType", ["Maintenance", "Hygiene", "Task"]] }, 
+                                    then: "Sustainability" 
+                                },
+                                { 
+                                    case: { $in: ["$taskType", ["Bug", "Security", "Compliance", "Meeting", "Review", "Support"]] }, 
+                                    then: "Operations" 
+                                }
                             ],
-                            default: "Task"
+                            default: "Operations"
                         }
                     }
                 }
@@ -537,14 +582,14 @@ const getHeatmap = async (req, res, next) => {
                 $group: {
                     _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
                     count: { $sum: "$weight" },
-                    items: { $addToSet: "$category" }
+                    items: { $addToSet: "$cohort" }
                 } 
             },
             { 
                 $project: { 
                     date: "$_id", 
                     count: 1, 
-                    items: { $filter: { input: "$items", as: "i", cond: { $ne: ["$$i", "Other"] } } }, 
+                    items: 1,
                     _id: 0 
                 } 
             },
@@ -560,6 +605,37 @@ const getHeatmap = async (req, res, next) => {
     }
 };
 
+// @desc    Search all workspace members (for new conversation)
+// @route   GET /api/users/workspace
+// @access  Private
+const getWorkspaceMembers = async (req, res, next) => {
+    try {
+        const { q = '' } = req.query;
+        const query = q.trim();
+        const searchFilter = query
+            ? { $or: [
+                { name: { $regex: query, $options: 'i' } },
+                { email: { $regex: query, $options: 'i' } }
+              ]}
+            : {};
+
+        const members = await User.find({
+            _id: { $ne: req.user._id },
+            role: { $ne: 'Admin' },
+            isActive: true,
+            isBanned: false,
+            ...searchFilter
+        })
+        .select('name avatar status role')
+        .limit(20)
+        .lean();
+
+        res.status(200).json({ status: 'success', data: members });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     uploadAvatar,
     uploadCoverImage,
@@ -570,5 +646,6 @@ module.exports = {
     verifyEmailChangeOTP,
     confirmEmailChange,
     getPublicProfile,
-    getHeatmap
+    getHeatmap,
+    getWorkspaceMembers
 };

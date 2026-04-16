@@ -264,8 +264,21 @@ const TaskCard = React.memo(({
                         {task.priority && (
                             <Pill icon={Layers} className={P.badge}>{task.priority}</Pill>
                         )}
-                        {task.type && task.type !== 'Task' && (
-                            <Pill className="bg-white/[0.03] border-white/[0.07] text-zinc-500">{task.type}</Pill>
+                        {task.type && (
+                            (() => {
+                                const type = task.type;
+                                // Professional Cohort Mapping
+                                const isStrategic = ['Epic', 'Feature', 'Story', 'Research', 'Discovery'].includes(type);
+                                const isEngineering = ['Refactor', 'DevOps', 'Technical Debt', 'QA', 'Performance'].includes(type);
+                                const isSustainability = ['Bug', 'Security', 'Maintenance', 'Hygiene', 'Compliance'].includes(type);
+                                
+                                let cohortClass = 'bg-white/[0.03] border-white/[0.07] text-zinc-500'; // Default (Operational)
+                                if (isStrategic) cohortClass = 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400';
+                                if (isEngineering) cohortClass = 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400';
+                                if (isSustainability) cohortClass = 'bg-rose-500/10 border-rose-500/20 text-rose-400';
+
+                                return <Pill className={cohortClass}>{type}</Pill>;
+                            })()
                         )}
                         {dateLabel && (
                             <Pill

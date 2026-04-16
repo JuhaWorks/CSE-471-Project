@@ -202,7 +202,7 @@ export default function Tasks() {
 
     return (
         <article
-            className="min-h-screen flex flex-col pb-8 pt-4 px-1 space-y-4 sm:space-y-6 w-full max-w-[2000px] mx-auto @container overflow-x-hidden"
+            className="min-h-screen flex flex-col pb-8 pt-4 px-4 sm:px-6 space-y-4 sm:space-y-6 w-full max-w-[2000px] mx-auto @container overflow-x-hidden"
         >
             <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 z-20 relative">
                 <div className="space-y-2">
@@ -213,10 +213,10 @@ export default function Tasks() {
                         <span>Task Management Dashboard</span>
                     </div>
                     <div className="space-y-2">
-                        <h1 className="text-4xl sm:text-6xl font-black text-primary tracking-tighter leading-[0.85]">
+                        <h1 className="text-3xl sm:text-6xl font-black text-primary tracking-tighter leading-[0.85]">
                             Task <span className="text-theme">Management.</span>
                         </h1>
-                        <p className="text-secondary font-medium text-sm sm:text-xl max-w-xl leading-relaxed opacity-80">
+                        <p className="text-secondary font-medium text-xs sm:text-xl max-w-xl leading-relaxed opacity-80">
                             Manage and track project tasks with real-time status updates and team synchronization.
                         </p>
                     </div>

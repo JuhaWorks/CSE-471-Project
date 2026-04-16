@@ -20,8 +20,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import ProjectCreationModal from '../components/projects/ProjectCreationModal';
-import ProjectImage from '../components/projects/ProjectImage';
-import DeadlinePopup from '../components/projects/DeadlinePopup';
+import { ProjectImage, DeadlinePopup } from '../components/projects/ProjectShared';
 import { toast } from 'react-hot-toast';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';

@@ -136,7 +136,14 @@ const ColumnHeader = React.memo(({ col, onQuickAdd, isCompact, onToggleCompact }
 /* ─────────────────────────────────────────────
    Quick-add form
 ───────────────────────────────────────────── */
-const QuickAddForm = React.memo(({ onSubmit, onCancel, value, onChange }) => {
+const QuickAddForm = React.memo(({ onSubmit, onCancel, value, onChange, type, onTypeChange }) => {
+    const types = [
+        { id: 'Task', color: 'text-slate-500' },
+        { id: 'Story', color: 'text-indigo-500' },
+        { id: 'Bug', color: 'text-rose-500' },
+        { id: 'Security', color: 'text-rose-600' }
+    ];
+
     return (
         <motion.div
             initial={{ opacity: 0, y: -4, scale: 0.98 }}
@@ -145,28 +152,39 @@ const QuickAddForm = React.memo(({ onSubmit, onCancel, value, onChange }) => {
             transition={{ duration: 0.15, ease: "easeOut" }}
             className="rounded-xl bg-[#1a1a1e] border border-white/10 shadow-lg overflow-hidden mb-2 shadow-2xl"
         >
-            <form onSubmit={onSubmit} className="p-2 flex flex-col gap-2">
+            <form onSubmit={onSubmit} className="p-2.5 flex flex-col gap-2.5">
                 <input
                     autoFocus
                     value={value}
                     onChange={onChange}
                     placeholder="Task title…"
-                    className="w-full bg-transparent text-[11px] font-medium text-white placeholder-zinc-600 focus:outline-none px-1"
+                    className="w-full bg-transparent text-[11px] font-bold text-white placeholder-zinc-600 focus:outline-none px-1 uppercase tracking-tight"
                 />
-                <div className="flex items-center justify-end gap-1.5">
-                    <button
-                        type="button"
-                        onClick={onCancel}
-                        className="px-2 py-1 rounded-lg text-[9px] font-black text-zinc-500 hover:text-zinc-300 transition-colors uppercase"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        type="submit"
-                        className="px-2.5 py-1 rounded-lg text-[9px] font-black bg-blue-600 hover:bg-blue-500 text-white transition-colors uppercase"
-                    >
-                        Add Task
-                    </button>
+                <div className="flex items-center justify-between gap-1.5 px-0.5">
+                    <div className="flex items-center gap-1.5">
+                        {types.map(t => (
+                            <button
+                                key={t.id}
+                                type="button"
+                                onClick={() => onTypeChange(t.id)}
+                                className={twMerge(clsx(
+                                    "px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest transition-all",
+                                    type === t.id ? `bg-theme/20 ${t.color}` : "text-zinc-600 hover:text-zinc-400"
+                                ))}
+                            >
+                                {t.id}
+                            </button>
+                        ))}
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <button
+                            type="button"
+                            onClick={onCancel}
+                            className="p-1 rounded-lg text-zinc-600 hover:text-zinc-400 transition-colors"
+                        >
+                            <X className="w-3.5 h-3.5" />
+                        </button>
+                    </div>
                 </div>
             </form>
         </motion.div>
@@ -182,6 +200,7 @@ const KanbanColumn = React.memo(({
     onDragStart, onOpenTask, onSelectTask,
     onToggleSubtask, blockedTaskIds, selectedTaskIds,
     quickAddCol, quickAddTitle, onQuickAddTitle,
+    quickAddType, onQuickAddType,
     onQuickAddSubmit, onQuickAddOpen, onQuickAddCancel,
     onToggleCompact,
 }) => {
@@ -220,6 +239,8 @@ const KanbanColumn = React.memo(({
                             <QuickAddForm
                                 value={quickAddTitle}
                                 onChange={(e) => onQuickAddTitle(e.target.value)}
+                                type={quickAddType}
+                                onTypeChange={onQuickAddType}
                                 onSubmit={onQuickAddSubmit}
                                 onCancel={onQuickAddCancel}
                             />
@@ -305,6 +326,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
     const [dragOverCol, setDragOverCol] = useState(null);
     const [quickAddCol, setQuickAddCol] = useState(null);
     const [quickAddTitle, setQuickAddTitle] = useState('');
+    const [quickAddType, setQuickAddType] = useState('Task');
     const [selectedTaskIds, setSelectedTaskIds] = useState([]);
     const [isOffline, setIsOffline] = useState(!navigator.onLine);
     const [filterPriority, setFilterPriority] = useState('All');
@@ -590,12 +612,18 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
         });
     };
 
-    const handleQuickAdd = async (e, status) => {
-        e.preventDefault();
+    const handleQuickAdd = async (e) => {
+        if (e) e.preventDefault();
         if (!projectId) { toast.error('Select a project first'); return; }
         if (project?.endDate && new Date() > new Date(project.endDate)) { toast.error('Project deadline has passed'); return; }
         if (!quickAddTitle.trim()) return;
-        await createTaskMutation.mutateAsync({ title: quickAddTitle, status });
+        
+        await createTaskMutation.mutateAsync({ 
+            title: quickAddTitle, 
+            status: quickAddCol, 
+            type: quickAddType 
+        });
+        
         setQuickAddTitle('');
         setQuickAddCol(null);
     };

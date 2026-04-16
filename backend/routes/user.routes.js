@@ -3,7 +3,7 @@ const router = express.Router();
 
 const { protect } = require('../middlewares/access.middleware');
 const { uploadSingle } = require('../middlewares/upload.middleware');
-const { uploadAvatar, updateProfile, changePassword, removeAvatar, requestEmailChangeOTP, verifyEmailChangeOTP, confirmEmailChange, getPublicProfile, getHeatmap } = require('../controllers/user.controller');
+const { uploadAvatar, updateProfile, changePassword, removeAvatar, requestEmailChangeOTP, verifyEmailChangeOTP, confirmEmailChange, getPublicProfile, getHeatmap, getWorkspaceMembers } = require('../controllers/user.controller');
 
 // POST   /api/users/profile/avatar  — upload / replace profile picture
 router.post('/profile/avatar', protect, uploadSingle, uploadAvatar);
@@ -22,6 +22,9 @@ router.put('/profile/password', protect, changePassword);
 
 // GET    /api/users/public/:id       — get public profile for networking
 router.get('/public/:id', protect, getPublicProfile);
+
+// GET    /api/users/workspace        — search all workspace members
+router.get('/workspace', protect, getWorkspaceMembers);
 
 // ─── Secure Email Change Flow ────────────────────────────────────────────────
 

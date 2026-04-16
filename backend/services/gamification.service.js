@@ -16,152 +16,162 @@ const LEVEL_THRESHOLDS = {
     10: 4500     // +900
 };
 
+// Strategic Domain Mapping (Executive Standard)
+const DOMAIN_MAPPING = {
+    Strategic: ['Epic', 'Feature', 'Story', 'Discovery', 'Research'],
+    Engineering: ['DevOps', 'Refactor', 'Technical Debt', 'QA', 'Performance', 'Engineering'],
+    Sustainability: ['Maintenance', 'Hygiene', 'Task', 'Sustainability'],
+    Operations: ['Bug', 'Security', 'Compliance', 'Meeting', 'Review', 'Support', 'Operations']
+};
+
 /**
- * Growing Curve: Requirement grows by (Level * 500) after level 10
+ * "Hard Mode" Exponential Scaling formula.
+ * XP Required = Math.floor(100 * Math.pow(Level, 2.2))
  */
 const getRequiredXP = (level) => {
-    if (level <= 10) return LEVEL_THRESHOLDS[level] || 0;
-    
-    // Recursive-like growth formula for 10+
-    // L11: 4500 + 11*500 = 10,000
-    // L12: 10000 + 12*500 = 16,000
-    let total = LEVEL_THRESHOLDS[10];
-    for (let i = 11; i <= level; i++) {
-        total += (i * 500);
-    }
-    return total;
+    if (level <= 1) return 0;
+    return Math.floor(100 * Math.pow(level, 2.2));
 };
 
 const calculateTaskXP = (task, context = {}) => {
-    let xp = 100; // Boosted Base XP
+    let baseXP = 60; // Standard Base XP
+    let qualityXP = 0;
+    let velocityXP = 0;
+    let collabXP = 0;
 
-    // 1. Priority Bonus
+    // 1. Quality Calculation (Priority & Complexity)
+    let priorityBonus = 0;
     switch (task.priority) {
-        case 'Medium': xp += 20; break;
-        case 'High': xp += 50; break;
-        case 'Urgent': xp += 100; break;
+        case 'Medium': priorityBonus = 15; break;
+        case 'High': priorityBonus = 40; break;
+        case 'Urgent': priorityBonus = 85; break;
     }
-
-    // 2. Complexity & Type Multipliers
-    const typeMultipliers = {
-        'Bug': 1.25,
-        'Feature': 1.15,
-        'Maintenance': 1.05,
-        'Task': 1.0
+    
+    // Professional Multipliers: Higher stakes for Strategic and Architecture
+    const typeMultipliers = { 
+        'Epic': 1.8, 'Feature': 1.5, 'Discovery': 1.4, 'Research': 1.35, 'Story': 1.2,
+        'Refactor': 1.6, 'DevOps': 1.5, 'QA': 1.2, 'Performance': 1.4, 'Technical Debt': 1.1,
+        'Security': 1.7, 'Compliance': 1.4, 'Bug': 1.3, 'Maintenance': 1.1, 'Hygiene': 1.0,
+        'Review': 1.3, 'Meeting': 1.0, 'Support': 1.1, 'Admin': 0.8, 'Task': 1.0
     };
-    xp *= (typeMultipliers[task.type] || 1.0);
 
-    // 3. Breadth Bonus (Subtask weight)
-    if (task.subtasks && task.subtasks.length > 0) {
-        xp += (task.subtasks.length * 10);
-    }
+    qualityXP = Math.round((baseXP + priorityBonus) * (typeMultipliers[task.type] || 1.0));
 
-    // 4. Pathfinder Bonus (Unblocking others)
-    if (context.wasBlocked) {
-        xp += 100; // Static bonus for clearing a blocker
-    }
-
-    // 5. Efficiency Bonus (Time vs Estimate)
+    // 2. Velocity Calculation (Efficiency & Professionalism)
     if (task.estimatedTime > 0 && task.actualTime > 0) {
         const ratio = task.estimatedTime / task.actualTime;
         if (ratio > 1) {
-            const timeMultiplier = Math.min(1.5, 1 + (ratio - 1) * 0.5);
-            xp *= timeMultiplier;
+            velocityXP += Math.round(baseXP * (Math.min(1.5, ratio) - 1)); // Capped for professional feel
         }
     }
 
-    // 6. Collaboration Bonus
-    if (task.assignees?.length >= 3) {
-        xp *= 1.2;
-    }
-
-    // 7. Early Bird Bonus
     if (task.dueDate && new Date() < new Date(task.dueDate)) {
         const timeDiff = new Date(task.dueDate) - new Date();
         const daysEarly = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
         if (daysEarly > 0) {
-            xp += (Math.min(daysEarly, 5) * 20);
+            velocityXP += (Math.min(daysEarly, 5) * 20); // Professional punctuality bonus
         }
     }
 
-    return Math.round(xp);
+    // 3. Collaboration Calculation (Balanced "Synergy")
+    const teamSize = task.assignees?.length || (task.assignee ? 1 : 0);
+    if (teamSize > 1) {
+        // Logarithmic scale: more members = diminishing returns to prevent inflation
+        collabXP = Math.round(baseXP * Math.log2(teamSize) * 0.35);
+    }
+
+    const totalXP = qualityXP + velocityXP + collabXP;
+
+    return { 
+        totalXP, 
+        breakdown: { qualityXP, velocityXP, collabXP, type: task.type || 'Task' }
+    };
 };
 
 /**
  * Awards XP, handles Level Ups, and assigns Badges
  */
-const awardXP = async (userId, xpEarned, sourceTask = null, context = {}) => {
+const awardXP = async (userId, xpData, sourceTask = null, context = {}) => {
     try {
         const user = await User.findById(userId);
         if (!user) return null;
 
-        // Initialize gamification nested properties safely
+        // Ensure matured gamification structure
         if (!user.gamification) user.gamification = {};
         if (typeof user.gamification.xp !== 'number') user.gamification.xp = 0;
         if (typeof user.gamification.level !== 'number') user.gamification.level = 1;
-        if (!user.gamification.streaks) user.gamification.streaks = { current: 0, longest: 0, lastActivity: null };
+        
+        // Ensure specialties Map exists
+        if (!user.gamification.specialties || !(user.gamification.specialties instanceof Map)) {
+            user.gamification.specialties = new Map([
+                ['Strategic', 0], ['Engineering', 0], ['Sustainability', 0], ['Operations', 0]
+            ]);
+        }
 
-        // --- 1. Streak & Milestone Logic ---
+        const stats = typeof xpData === 'number' ? { totalXP: xpData, breakdown: { qualityXP: xpData, velocityXP: 0, collabXP: 0, type: 'Manual' } } : xpData;
+
+        // --- 1. Streak Logic ---
+        if (!user.gamification.streaks) user.gamification.streaks = { current: 0, longest: 0, lastActivity: null };
         const now = new Date();
         const last = user.gamification.streaks.lastActivity;
         let milestoneBurst = 0;
 
         if (last) {
-            const diffDays = Math.floor((now - new Date(last)) / (1000 * 60 * 60 * 24));
-            if (diffDays === 1) {
+            const lastDate = new Date(last);
+            const isToday = lastDate.toDateString() === now.toDateString();
+            const isYesterday = new Date(now - 86400000).toDateString() === lastDate.toDateString();
+
+            if (isYesterday) {
                 user.gamification.streaks.current += 1;
                 if (user.gamification.streaks.current > user.gamification.streaks.longest) {
                     user.gamification.streaks.longest = user.gamification.streaks.current;
                 }
-                
-                // Milestone Bursts
-                if (user.gamification.streaks.current === 7 || user.gamification.streaks.current === 30) {
-                    milestoneBurst = 1000;
-                }
-            } else if (diffDays > 1) {
-                user.gamification.streaks.current = 0;
+            } else if (!isToday) {
+                user.gamification.streaks.current = 1;
             }
         } else {
             user.gamification.streaks.current = 1;
-            user.gamification.streaks.longest = 1;
         }
         user.gamification.streaks.lastActivity = now;
 
-        // --- 2. Tiered Critical Roll ---
-        let finalXp = xpEarned;
-        let rollResult = 'standard';
+        // --- 2. Multipliers ---
         let multiplier = 1;
-
+        let rollResult = 'standard';
         if (sourceTask) {
             const roll = Math.random() * 100;
-            if (roll > 99) { // 1%
-                multiplier = 3;
-                rollResult = 'legendary';
-            } else if (roll > 94) { // 5%
-                multiplier = 2;
-                rollResult = 'critical';
-            } else if (roll > 79) { // 15%
-                multiplier = 1.5;
-                rollResult = 'great';
-            }
+            if (roll > 99) { multiplier = 2.2; rollResult = 'legendary'; }
+            else if (roll > 95) { multiplier = 1.5; rollResult = 'critical'; }
         }
 
-        finalXp = Math.round(finalXp * multiplier) + milestoneBurst;
-
+        const finalXp = Math.round(stats.totalXP * multiplier) + milestoneBurst;
         const oldLevel = user.gamification.level;
+
+        // Update Totals
         user.gamification.xp += finalXp;
 
-        // Specialty Logic
-        if (sourceTask && sourceTask.type) {
-            const type = sourceTask.type;
-            if (!user.gamification.specialties) user.gamification.specialties = {};
-            user.gamification.specialties[type] = (user.gamification.specialties[type] || 0) + finalXp;
+        // Update Matured Specialty Axes
+        if (sourceTask) {
+            const type = stats.breakdown.type;
+            const q = Math.round(stats.breakdown.qualityXP * multiplier);
+            const v = Math.round(stats.breakdown.velocityXP * multiplier);
+            const s = Math.round(stats.breakdown.collabXP * multiplier);
+
+            // Distribute Quality points to relevant axis
+            Object.entries(DOMAIN_MAPPING).forEach(([axis, types]) => {
+                if (types.includes(type)) {
+                    const current = user.gamification.specialties.get(axis) || 0;
+                    user.gamification.specialties.set(axis, current + q);
+                }
+            });
+
+            // Reward Output Velocity and Synergy into the Operations Domain
+            const currentOps = user.gamification.specialties.get('Operations') || 0;
+            user.gamification.specialties.set('Operations', currentOps + v + s);
         }
 
-        // --- 3. Growing Curve Level Check ---
+        // --- 3. Level Check ---
         let newLevel = oldLevel;
         let nextThreshold = getRequiredXP(newLevel + 1);
-
         while (user.gamification.xp >= nextThreshold) {
             newLevel++;
             nextThreshold = getRequiredXP(newLevel + 1);
@@ -170,7 +180,6 @@ const awardXP = async (userId, xpEarned, sourceTask = null, context = {}) => {
         const leveledUp = newLevel > oldLevel;
         if (leveledUp) {
             user.gamification.level = newLevel;
-            // Frames/Badges logic...
             if (!user.gamification.frames) user.gamification.frames = ['standard'];
             if (newLevel >= 5 && !user.gamification.frames.includes('bronze')) user.gamification.frames.push('bronze');
             if (newLevel >= 10 && !user.gamification.frames.includes('silver')) user.gamification.frames.push('silver');
@@ -178,37 +187,23 @@ const awardXP = async (userId, xpEarned, sourceTask = null, context = {}) => {
         }
 
         user.markModified('gamification');
-        await User.updateOne({ _id: user._id }, { $set: { gamification: user.gamification } });
+        // Explicit Save for Map Persistence
+        await user.save();
 
-        // --- 4. Socket Announcements ---
-        const io = socketUtil.getIO();
-        if (io) {
-            // Personal Update
-            io.to(userId.toString()).emit('gamification_update', {
+        // Socket Announcements (Silent check for Background Scripts)
+        if (socketUtil.isInitialized()) {
+            const io = socketUtil.getIO();
+            io.to(`user_${userId}`).emit('gamification_update', {
                 type: leveledUp ? 'level_up' : 'xp_gained',
                 xpGained: finalXp,
                 rollResult,
                 multiplier,
-                milestoneBurst,
-                newLevel: leveledUp ? newLevel : user.gamification.level,
-                totalXP: user.gamification.xp,
-                streak: user.gamification.streaks.current,
-                userId: user._id,
-                name: user.name
+                newLevel: user.gamification.level,
+                totalXP: user.gamification.xp
             });
-
-            // Global Announcement for Legendary Wins
-            if (rollResult === 'legendary') {
-                io.emit('gamification_update', {
-                    type: 'legendary_win',
-                    name: user.name,
-                    userId: user._id
-                });
-            }
         }
 
         return { xpGained: finalXp, rollResult, leveledUp, newLevel };
-
     } catch (error) {
         logger.error(`Gamification Engine Error (awardXP): ${error.message}`);
         return null;
@@ -216,34 +211,71 @@ const awardXP = async (userId, xpEarned, sourceTask = null, context = {}) => {
 };
 
 /**
- * Heuristic scan for milestone achievements.
- */
-const checkBadges = async (user, task) => {
-    // ... Existing badge logic (Bug Squasher, Early Bird) ...
-    return null; // Simplified for brevity in this overhaul
-};
-
-/**
- * Revokes XP
+ * Revokes XP and Specialty Points (Reciprocal Balancing)
  */
 const revokeXP = async (userId, task) => {
     try {
         const user = await User.findById(userId);
         if (!user || !user.gamification) return null;
 
-        const xpToRevoke = calculateTaskXP(task);
+        const stats = calculateTaskXP(task);
+        const xpToRevoke = stats.totalXP;
+
+        // Revoke Total XP
         user.gamification.xp = Math.max(0, user.gamification.xp - xpToRevoke);
 
+        // Revoke Specialty Points
+        if (!user.gamification.specialties || !(user.gamification.specialties instanceof Map)) {
+            // Force initialization if missing or POJO (Plain Old JavaScript Object) from legacy data
+            const specialtiesObj = user.gamification.specialties || {};
+            user.gamification.specialties = new Map([
+                ['Strategic', specialtiesObj.Strategic || 0],
+                ['Engineering', specialtiesObj.Engineering || 0],
+                ['Sustainability', specialtiesObj.Sustainability || 0],
+                ['Operations', specialtiesObj.Operations || 0]
+            ]);
+        }
+
+        const type = stats.breakdown.type;
+        const q = stats.breakdown.qualityXP;
+        const v = stats.breakdown.velocityXP;
+        const s = stats.breakdown.collabXP;
+
+        Object.entries(DOMAIN_MAPPING).forEach(([axis, types]) => {
+            if (types.includes(type)) {
+                const current = user.gamification.specialties.get(axis) || 0;
+                user.gamification.specialties.set(axis, Math.max(0, current - q));
+            }
+        });
+
+        // Revoke Velocity/Synergy from Operations
+        const opsCurrent = user.gamification.specialties.get('Operations') || 0;
+        user.gamification.specialties.set('Operations', Math.max(0, opsCurrent - v - s));
+
+        // Re-calculate Level (Professional Reciprocal De-escalation)
         let newLevel = user.gamification.level || 1;
         while (newLevel > 1 && user.gamification.xp < getRequiredXP(newLevel)) {
             newLevel--;
         }
-
         user.gamification.level = newLevel;
-        await User.updateOne({ _id: user._id }, { $set: { gamification: user.gamification } });
 
+        user.markModified('gamification');
+        await user.save();
+        
+        // Socket Announcements for Loss (Transparency in Regression)
+        if (socketUtil.isInitialized()) {
+            const io = socketUtil.getIO();
+            io.to(`user_${userId}`).emit('gamification_update', {
+                type: 'xp_lost',
+                xpLost: xpToRevoke,
+                newLevel: user.gamification.level,
+                totalXP: user.gamification.xp
+            });
+        }
+        
         return { xpLost: xpToRevoke, totalXP: user.gamification.xp, newLevel };
     } catch (error) {
+        logger.error(`Gamification Engine Error (revokeXP): ${error.message}`);
         return null;
     }
 };
@@ -251,5 +283,7 @@ const revokeXP = async (userId, task) => {
 module.exports = {
     calculateTaskXP,
     awardXP,
-    revokeXP
+    revokeXP,
+    getRequiredXP,
+    DOMAIN_MAPPING
 };

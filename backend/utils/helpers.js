@@ -16,7 +16,64 @@ const getFrontendUrl = () => {
  * @param {Object} user - The mongoose user document.
  * @returns {Object} The formatted user object.
  */
-const formatUserResponse = (user) => {
+const formatUserResponse = (userDoc) => {
+    // Convert to plain object if it's a Mongoose document to handle Maps and other special types
+    const user = (userDoc && typeof userDoc.toObject === 'function') ? userDoc.toObject() : userDoc;
+
+    // Self-Healing Strategy: Ensure matured specialties exist for all users
+    const AXES = ['Strategic', 'Engineering', 'Sustainability', 'Operations'];
+    
+    // Initialize gamification structure if primitive or missing
+    const gamification = user.gamification || { 
+        level: 1, 
+        xp: 0, 
+        specialties: { Strategic: 0, Engineering: 0, Sustainability: 0, Operations: 0 }, 
+        badges: [],
+        streaks: { current: 0, longest: 0, lastActivity: null }
+    };
+    if (!gamification.specialties) {
+        gamification.specialties = { Strategic: 0, Engineering: 0, Sustainability: 0, Operations: 0 };
+    }
+    
+    // --- Deep Migration Guard (Recover legacy and very old keys) ---
+    const foldMap = {
+        'Research': 'Strategic',
+        'Innovation': 'Strategic',
+        'Quality': 'Engineering',
+        'Stability': 'Operations',
+        'Synergy': 'Operations',
+        'Velocity': 'Operations',
+        'Hygiene': 'Sustainability'
+    };
+
+    Object.entries(foldMap).forEach(([legacyKey, newKey]) => {
+        if (gamification.specialties[legacyKey] !== undefined) {
+            gamification.specialties[newKey] = (gamification.specialties[newKey] || 0) + gamification.specialties[legacyKey];
+            delete gamification.specialties[legacyKey];
+        }
+    });
+
+    // Back-fill missing axes to ensure executive radar maturity
+    AXES.forEach(axis => {
+        if (gamification.specialties[axis] === undefined) {
+            gamification.specialties[axis] = 0;
+        }
+    });
+
+    // --- Absolute Strategic Maturity (Fixed Scaling) ---
+    // Instead of relative (axis/total), we use an absolute benchmark (e.g. 1,000 pts = 100% axis)
+    // This ensures the radar physically "shrinks" if points are revoked.
+    const RADAR_BENCHMARK = 1000;
+    const normalizedSpecialties = {};
+    
+    AXES.forEach(axis => {
+        const points = gamification.specialties[axis] || 0;
+        // Percentage of the absolute maturity benchmark, capped at 100
+        const raw = Math.min(100, (points / RADAR_BENCHMARK) * 100);
+        // Minimum 5% if points exist to maintain geometric shape, else 0
+        normalizedSpecialties[axis] = points > 0 ? Math.max(5, Math.round(raw)) : 0;
+    });
+
     return {
         _id: user.id || user._id,
         name: user.name,
@@ -28,7 +85,12 @@ const formatUserResponse = (user) => {
         customMessage: user.customMessage,
         location: user.location,
         timezoneOffset: user.timezoneOffset,
-        timezoneName: user.timezoneName
+        timezoneName: user.timezoneName,
+        interfacePrefs: user.interfacePrefs,
+        gamification: {
+            ...gamification,
+            normalizedSpecialties // Injected for High-Accuracy Radar plotting
+        }
     };
 };
 

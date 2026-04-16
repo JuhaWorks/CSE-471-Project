@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { useAuthStore, api } from '../../../store/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -6,20 +6,20 @@ import {
     AlertCircle, Navigation, Sunrise, Sunset, Gauge
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import Card from '../../ui/Card';
+import { cn } from '../../../utils/cn';
+import { motion } from 'framer-motion';
 
 const Skeleton = ({ className = '' }) => (
     <div className={`animate-pulse bg-black/[0.04] dark:bg-white/[0.06] rounded-lg ${className}`} />
 );
 
-const MetricCard = ({ icon: Icon, label, value, unit }) => (
-    <div className="bg-black/[0.03] dark:bg-white/[0.04] rounded-lg p-3 flex flex-col gap-1.5">
-        <div className="flex items-center gap-1.5">
-            <Icon className="w-[11px] h-[11px] text-black/30 dark:text-white/30 shrink-0" strokeWidth={1.8} />
-            <span className="text-[11px] text-black/40 dark:text-white/40 tracking-wide truncate">{label}</span>
-        </div>
-        <div className="flex items-baseline gap-0.5">
-            <span className="text-[15px] font-medium text-black dark:text-white tabular-nums leading-none">{value}</span>
-            {unit && <span className="text-[11px] text-black/40 dark:text-white/40 ml-0.5">{unit}</span>}
+const MiniMetric = ({ icon: Icon, label, value, unit }) => (
+    <div className="flex flex-col items-center gap-1 flex-1 min-w-0">
+        <Icon className="w-3 h-3 text-tertiary opacity-40" strokeWidth={2} />
+        <div className="flex items-baseline gap-0.5 min-w-0">
+            <span className="text-[11px] font-black text-primary tabular-nums tracking-tighter truncate">{value}</span>
+            <span className="text-[7px] font-bold text-tertiary uppercase truncate">{unit}</span>
         </div>
     </div>
 );
@@ -65,195 +65,125 @@ const WeatherWidget = () => {
         return Math.min(100, Math.max(0, Math.round(pct)));
     }, [weather]);
 
-    const formatTime = (ts) => {
-        if (!ts) return '—';
-        return new Date(ts * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
-    };
-
-    const cardBase = "bg-white dark:bg-black/80 border border-black/[0.08] dark:border-white/[0.08] rounded-2xl overflow-hidden max-w-sm";
-
     if (isLocating) {
         return (
-            <div className={cardBase}>
-                <div className="flex flex-col items-center gap-3 py-12 px-6 text-center">
-                    <div className="w-10 h-10 rounded-xl bg-black/[0.04] dark:bg-white/[0.04] flex items-center justify-center">
-                        <Navigation className="w-[18px] h-[18px] text-black/30 dark:text-white/30 animate-pulse" strokeWidth={1.5} />
-                    </div>
-                    <p className="text-[13px] text-black/40 dark:text-white/40">Locating…</p>
-                </div>
-            </div>
+            <Card variant="glass" compact className="flex flex-col items-center justify-center p-8 text-center min-h-[140px]">
+                <Navigation className="w-4 h-4 text-theme animate-pulse mb-3" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-tertiary">Locating Node…</p>
+            </Card>
         );
     }
 
     if (!manualLocation && !coords) {
         return (
-            <div className={cardBase}>
-                <div className="flex flex-col items-center gap-3 py-12 px-6 text-center">
-                    <div className="w-10 h-10 rounded-xl bg-black/[0.04] dark:bg-white/[0.04] flex items-center justify-center">
-                        <MapPin className="w-[18px] h-[18px] text-black/30 dark:text-white/30" strokeWidth={1.5} />
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[14px] font-medium text-black dark:text-white">Location unavailable</p>
-                        <p className="text-[13px] text-black/40 dark:text-white/40 leading-relaxed max-w-[200px]">
-                            Allow location access or add a city in your profile.
-                        </p>
-                    </div>
-                    <Link
-                        to="/profile"
-                        className="mt-1 text-[13px] text-black dark:text-white border border-black/10 dark:border-white/10 rounded-lg px-4 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors"
-                    >
-                        Set location
-                    </Link>
-                </div>
-            </div>
+            <Card variant="glass" compact className="flex flex-col items-center justify-center p-8 text-center min-h-[140px]">
+                <MapPin className="w-4 h-4 text-tertiary opacity-30 mb-3" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-primary mb-2">Location Required</p>
+                <Link to="/profile" className="text-[8px] font-black uppercase tracking-widest text-theme hover:underline">Configure Pulse</Link>
+            </Card>
         );
     }
 
-    if (isLoading) {
+    if (isLoading || !weather) {
         return (
-            <div className={cardBase}>
-                <div className="p-5 flex justify-between items-start">
-                    <div className="space-y-2">
-                        <Skeleton className="w-20 h-3" />
-                        <Skeleton className="w-32 h-4" />
+            <Card variant="glass" compact className="space-y-4 min-h-[180px]">
+                <div className="flex justify-between">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-6 w-6" />
+                </div>
+                <div className="flex items-center gap-6">
+                    <Skeleton className="h-12 w-16" />
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-2 w-full" />
+                        <Skeleton className="h-2 w-2/3" />
                     </div>
-                    <Skeleton className="w-8 h-8 rounded-lg" />
                 </div>
-                <div className="px-5 pb-5 flex justify-between items-end">
-                    <div className="space-y-2.5">
-                        <Skeleton className="w-28 h-14" />
-                        <Skeleton className="w-20 h-3" />
-                        <Skeleton className="w-16 h-3" />
-                    </div>
-                    <Skeleton className="w-16 h-16 rounded-xl" />
-                </div>
-                <div className="h-px bg-black/[0.05] dark:bg-white/[0.05] mx-5" />
-                <div className="p-5 grid grid-cols-4 gap-2">
-                    {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-14" />)}
-                </div>
-            </div>
+            </Card>
         );
     }
 
     if (isError) {
         return (
-            <div className={`${cardBase} border-red-500/20`}>
-                <div className="flex flex-col items-center gap-3 py-12 px-6 text-center">
-                    <div className="w-10 h-10 rounded-xl bg-red-500/[0.06] flex items-center justify-center">
-                        <AlertCircle className="w-[18px] h-[18px] text-red-500/60" strokeWidth={1.5} />
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-[14px] font-medium text-black dark:text-white">Unable to load weather</p>
-                        <p className="text-[13px] text-black/40 dark:text-white/40">Check your connection and try again.</p>
-                    </div>
-                    <button
-                        onClick={() => refetch()}
-                        className="mt-1 text-[13px] text-black dark:text-white border border-black/10 dark:border-white/10 rounded-lg px-4 py-1.5 hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors"
-                    >
-                        Retry
-                    </button>
-                </div>
-            </div>
+            <Card variant="glass" compact className="flex flex-col items-center justify-center p-8 text-center min-h-[140px] border-danger/20">
+                <AlertCircle className="w-4 h-4 text-danger opacity-60 mb-3" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-danger">Signal Lost</p>
+                <button onClick={() => refetch()} className="mt-2 text-[8px] font-black uppercase tracking-widest text-theme">Retry</button>
+            </Card>
         );
     }
 
     return (
-        <div className={cardBase}>
-
-            {/* Header */}
-            <div className="px-5 pt-5 pb-4 flex items-start justify-between gap-3">
-                <div>
-                    <div className="flex items-center gap-1.5 mb-1">
-                        <span className="relative flex h-[5px] w-[5px]">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60" />
-                            <span className="relative inline-flex rounded-full h-[5px] w-[5px] bg-emerald-500" />
-                        </span>
-                        <span className="text-[11px] text-black/40 dark:text-white/40 tracking-wide">Live conditions</span>
+        <Card variant="glass" compact padding="p-0" className="overflow-hidden bg-theme/[0.02]">
+            {/* Ultra-Compact Header */}
+            <div className="px-5 py-4 flex items-center justify-between border-b border-glass bg-surface/20">
+                <div className="flex items-center gap-3">
+                    <div className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-60"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </div>
                     <div className="flex items-baseline gap-1.5">
-                        <span className="text-[14px] font-medium text-black dark:text-white">{weather.city}</span>
-                        <span className="text-black/20 dark:text-white/20">·</span>
-                        <span className="text-[13px] text-black/40 dark:text-white/40">{weather.country}</span>
+                        <span className="text-[11px] font-black text-primary uppercase tracking-tight">{weather.city}</span>
+                        <span className="text-[9px] font-bold text-tertiary uppercase tracking-widest opacity-40">{weather.country}</span>
                     </div>
                 </div>
-                <button
-                    onClick={() => refetch()}
-                    className="w-8 h-8 flex items-center justify-center rounded-lg border border-black/[0.08] dark:border-white/[0.08] hover:bg-black/[0.03] dark:hover:bg-white/[0.04] transition-colors shrink-0"
-                >
-                    <RefreshCcw
-                        className={`w-[13px] h-[13px] text-black/40 dark:text-white/40 ${isFetching ? 'animate-spin' : ''}`}
-                        strokeWidth={1.8}
-                    />
+                <button onClick={() => refetch()} className="group">
+                    <RefreshCcw className={cn("w-3 h-3 text-tertiary opacity-30 group-hover:opacity-100 transition-all", isFetching && "animate-spin text-theme opacity-100")} />
                 </button>
             </div>
 
-            {/* Temperature hero */}
-            <div className="px-5 pb-5 flex items-end justify-between gap-3">
-                <div>
-                    <div className="flex items-start leading-none mb-2.5">
-                        <span className="text-[64px] font-medium text-black dark:text-white tabular-nums tracking-tight leading-none">
-                            {Math.round(weather.temp)}
-                        </span>
-                        <span className="text-[24px] font-normal text-black/40 dark:text-white/40 mt-2.5">°C</span>
+            {/* Core Temp Row */}
+            <div className="px-5 py-6 flex items-center justify-between gap-6">
+                <div className="flex-1">
+                    <div className="flex items-baseline gap-1 leading-none mb-1">
+                        <span className="text-4xl font-black text-primary tracking-tighter tabular-nums">{Math.round(weather.temp)}</span>
+                        <span className="text-[10px] font-black text-tertiary uppercase opacity-40">°C</span>
                     </div>
-                    <div className="flex items-center gap-2 mb-1.5">
-                        <span className="text-[13px] text-black/50 dark:text-white/50 tabular-nums">{Math.round(weather.tempMin)}°</span>
-                        <div className="flex-1 h-[2px] bg-black/[0.06] dark:bg-white/[0.08] rounded-full overflow-hidden min-w-[40px]">
-                            <div
-                                className="h-full bg-black/20 dark:bg-white/25 rounded-full"
-                                style={{ width: `${rangeBarWidth}%` }}
-                            />
+                    <div className="flex items-center gap-2 max-w-[120px]">
+                        <span className="text-[9px] font-black text-tertiary min-w-4 tabular-nums">{Math.round(weather.tempMin)}°</span>
+                        <div className="flex-1 h-[3px] bg-sunken rounded-full overflow-hidden">
+                            <motion.div initial={{ width: 0 }} animate={{ width: `${rangeBarWidth}%` }} className="h-full bg-theme/40" />
                         </div>
-                        <span className="text-[13px] text-black/50 dark:text-white/50 tabular-nums">{Math.round(weather.tempMax)}°</span>
+                        <span className="text-[9px] font-black text-tertiary min-w-4 tabular-nums">{Math.round(weather.tempMax)}°</span>
                     </div>
-                    <span className="text-[13px] text-black/40 dark:text-white/40 capitalize">{weather.description}</span>
                 </div>
-                <div className="w-[72px] h-[72px] shrink-0">
-                    <img
-                        src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`}
-                        alt={weather.description}
-                        className="w-full h-full object-contain"
+                
+                <div className="flex flex-col items-end text-right shrink-0">
+                    <img 
+                        src={`https://openweathermap.org/img/wn/${weather.icon}@2x.png`} 
+                        alt="" 
+                        className="w-12 h-12 object-contain drop-shadow-md"
                     />
+                    <p className="text-[9px] font-black text-theme uppercase tracking-widest mt-[-8px]">{weather.description}</p>
                 </div>
             </div>
 
-            <div className="h-px bg-black/[0.05] dark:bg-white/[0.05] mx-5" />
-
-            {/* Metrics grid */}
-            <div className="p-5 grid grid-cols-4 gap-2">
-                <MetricCard icon={Wind} label="Wind" value={weather.windSpeed.toFixed(1)} unit="m/s" />
-                <MetricCard icon={Droplets} label="Humidity" value={weather.humidity} unit="%" />
-                <MetricCard icon={Gauge} label="Pressure" value={weather.pressure} unit="hPa" />
-                <MetricCard icon={Cloud} label="Cloud" value={weather.cloudiness} unit="%" />
+            {/* Micro Metrics - Single Row */}
+            <div className="px-5 py-4 bg-sunken/40 border-t border-glass flex items-center justify-between gap-4">
+                <MiniMetric icon={Wind} label="Wind" value={weather.windSpeed.toFixed(1)} unit="m/s" />
+                <div className="w-px h-6 bg-glass" />
+                <MiniMetric icon={Droplets} label="Humidity" value={weather.humidity} unit="%" />
+                <div className="w-px h-6 bg-glass" />
+                <MiniMetric icon={Gauge} label="Pressure" value={weather.pressure} unit="HPA" />
+                <div className="w-px h-6 bg-glass" />
+                <MiniMetric icon={Cloud} label="Cloud" value={weather.cloudiness} unit="%" />
             </div>
 
-            <div className="h-px bg-black/[0.05] dark:bg-white/[0.05] mx-5" />
-
-            {/* Footer */}
-            <div className="px-5 py-4 flex items-center justify-between gap-3">
+            {/* Footer - Minimalist Signals */}
+            <div className="px-5 py-3 flex items-center justify-between text-[8px] font-black text-tertiary uppercase tracking-[0.2em] opacity-30">
                 <div className="flex items-center gap-4">
                     <div className="flex items-center gap-1.5">
-                        <Sunrise className="w-[13px] h-[13px] text-black/30 dark:text-white/30 shrink-0" strokeWidth={1.8} />
-                        <div>
-                            <span className="block text-[11px] text-black/30 dark:text-white/30 mb-0.5">Sunrise</span>
-                            <span className="text-[13px] font-medium text-black dark:text-white tabular-nums">{formatTime(weather.sunrise)}</span>
-                        </div>
+                        <Sunrise size={10} strokeWidth={3} />
+                        <span>{new Date(weather.sunrise * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                        <Sunset className="w-[13px] h-[13px] text-black/30 dark:text-white/30 shrink-0" strokeWidth={1.8} />
-                        <div>
-                            <span className="block text-[11px] text-black/30 dark:text-white/30 mb-0.5">Sunset</span>
-                            <span className="text-[13px] font-medium text-black dark:text-white tabular-nums">{formatTime(weather.sunset)}</span>
-                        </div>
+                        <Sunset size={10} strokeWidth={3} />
+                        <span>{new Date(weather.sunset * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
                     </div>
                 </div>
-                <span className="text-[11px] text-black/30 dark:text-white/30 text-right shrink-0">
-                    Updated {new Date(weather.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}
-                </span>
+                <span>Forensic Pulse Sync</span>
             </div>
-
-        </div>
+        </Card>
     );
 };
 
-export default WeatherWidget;
+export default memo(WeatherWidget);

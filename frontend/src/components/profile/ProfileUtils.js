@@ -6,23 +6,15 @@ export function cn(...args) {
 }
 
 export const getLevelProgress = (xp, level) => {
-    const thresholds = {
-        1: 0, 2: 100, 3: 300, 4: 600, 5: 1000,
-        6: 1500, 7: 2100, 8: 2800, 9: 3600, 10: 4500
-    };
-    
     const getReq = (lvl) => {
-        if (lvl <= 10) return thresholds[lvl] || 0;
-        let total = thresholds[10];
-        for (let i = 11; i <= lvl; i++) {
-            total += (i * 500);
-        }
-        return total;
+        if (lvl <= 1) return 0;
+        return Math.floor(100 * Math.pow(lvl, 2.2));
     };
     
     const baseXP = getReq(level);
     const nextXP = getReq(level + 1);
-    const progress = Math.min(100, Math.max(0, ((xp - baseXP) / (nextXP - baseXP)) * 100));
+    const range = nextXP - baseXP;
+    const progress = range > 0 ? Math.min(100, Math.max(0, ((xp - baseXP) / range) * 100)) : 0;
     
     return { progress, nextXP };
 };

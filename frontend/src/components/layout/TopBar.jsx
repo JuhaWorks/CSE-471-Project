@@ -86,7 +86,7 @@ const TopBar = () => {
                         <Menu className="w-5 h-5" />
                     </button>
 
-                    <div className="relative hidden sm:block max-w-sm w-full group">
+                    <div className="relative hidden md:flex max-w-sm w-full group">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-theme transition-colors" />
                         <input
                             type="text"
@@ -96,7 +96,7 @@ const TopBar = () => {
                                 "focus:border-theme/30 focus:ring-4 focus:ring-theme/5 transition-all"
                             ))}
                         />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden md:flex items-center gap-1 px-1.5 py-0.5 rounded-lg border border-default bg-surface text-[10px] font-black text-tertiary">
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-1 px-1.5 py-0.5 rounded-lg border border-default bg-surface text-[10px] font-black text-tertiary">
                             <Command className="w-2.5 h-2.5" />
                             <span>K</span>
                         </div>
@@ -104,8 +104,7 @@ const TopBar = () => {
                     
                     {/* Brand name for very small mobile screens when sidebar is hidden */}
                     {isMobile && (
-                        <div className="flex items-center gap-2 sm:hidden overflow-hidden">
-                            <img src="/logo.png" alt="" width={24} height={24} className="w-6 h-6 object-contain opacity-80" />
+                        <div className="flex items-center gap-2 overflow-hidden">
                             <span className="text-xl font-black tracking-tighter text-primary truncate">klvira</span>
                         </div>
                     )}

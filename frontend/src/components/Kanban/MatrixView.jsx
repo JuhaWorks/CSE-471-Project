@@ -17,6 +17,50 @@ import {
 import { api } from '../../store/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { getOptimizedAvatar } from '../../utils/avatar';
+import SpecialtyRadar, { RADAR_SUBJECTS } from '../profile/SpecialtyRadar';
+
+// --- Shared Internal Components ---
+
+const MiniProgressMap = ({ tasks, memberId }) => {
+    const data = useMemo(() => {
+        const now = new Date();
+        const days = 28; // 4 weeks
+        const stats = new Array(days).fill(0).map((_, i) => {
+            const d = new Date();
+            d.setDate(now.getDate() - (days - 1 - i));
+            d.setHours(0,0,0,0);
+            return { date: d, count: 0 };
+        });
+
+        tasks.forEach(t => {
+            if (t.assignee?._id === memberId || t.assignees?.some(a => a._id === memberId)) {
+                const updatedDate = new Date(t.updatedAt || t.createdAt);
+                updatedDate.setHours(0,0,0,0);
+                const dayDiff = Math.floor((now - updatedDate) / (1000 * 3600 * 24));
+                if (dayDiff >= 0 && dayDiff < days) {
+                    stats[days - 1 - dayDiff].count++;
+                }
+            }
+        });
+        return stats;
+    }, [tasks, memberId]);
+
+    return (
+        <div className="flex gap-[2px] mt-2">
+            {data.map((d, i) => (
+                <div 
+                    key={i} 
+                    className={twMerge(clsx(
+                        "w-1.5 h-1.5 rounded-[1px] transition-all",
+                        d.count === 0 ? "bg-sunken border border-glass/20" : 
+                        (d.count < 2 ? "bg-theme/30" : (d.count < 4 ? "bg-theme/60" : "bg-theme"))
+                    ))}
+                    title={`${d.date.toLocaleDateString()}: ${d.count} activities`}
+                />
+            ))}
+        </div>
+    );
+};
 
 /**
  * Priority Alignment Matrix - Professional Production Edition
@@ -101,8 +145,11 @@ const MatrixTaskCard = React.memo(({ task, onOpen, isSelected, onSelect, isBatch
             <div className="flex items-center gap-4">
                 <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5 mb-1">
-                        <span className={clsx("text-[7px] font-black uppercase px-2 py-0.5 rounded-md border", 
-                            task.type === 'Bug' ? 'bg-danger/10 border-danger/20 text-danger' : 'bg-theme/10 border-theme/20 text-theme'
+                        <span className={clsx("text-[7px] font-black uppercase px-2 py-0.5 rounded-md border transition-colors", 
+                            ['Epic', 'Feature', 'Story', 'Discovery', 'Research'].includes(task.type) ? 'bg-blue-500/10 border-blue-500/20 text-blue-400' : // Strategic
+                            ['Refactor', 'DevOps', 'Technical Debt', 'QA', 'Performance', 'Engineering'].includes(task.type) ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : // Engineering
+                            ['Maintenance', 'Hygiene', 'Task', 'Sustainability'].includes(task.type) ? 'bg-slate-500/10 border-slate-500/20 text-slate-400' : // Sustainability
+                            'bg-rose-500/10 border-rose-500/20 text-rose-400' // Operations (Bug, Security, etc.)
                         )}>
                             {task.type || 'Task'}
                         </span>
@@ -186,8 +233,49 @@ const MatrixQuadrant = React.memo(({ quadrant, tasks, onOpen, onDrop, isBatchMod
     );
 });
 
-const AnalyticsSidebar = React.memo(({ metrics, onOpenTask, project, tasks }) => {
+const AnalyticsSidebar = React.memo(({ metrics, onOpenTask, project, tasks, memberFilter, onMemberFilterChange }) => {
     const [activeTab, setActiveTab] = useState('ANALYTICS');
+
+    // Strategic Taxonomy Mapping (Consolidated to Mature 4 Domains)
+    const TYPE_TO_AXIS = useMemo(() => ({
+        Epic: 'Strategic', Feature: 'Strategic', Story: 'Strategic', Discovery: 'Strategic', Research: 'Strategic',
+        Refactor: 'Engineering', DevOps: 'Engineering', 'Technical Debt': 'Engineering', QA: 'Engineering', Performance: 'Engineering', Engineering: 'Engineering',
+        Maintenance: 'Sustainability', Hygiene: 'Sustainability', Task: 'Sustainability', Sustainability: 'Sustainability',
+        Bug: 'Operations', Security: 'Operations', Compliance: 'Operations', Meeting: 'Operations', Review: 'Operations', Support: 'Operations', Operations: 'Operations'
+    }), []);
+
+    // Project Strategic Footprint Calculator (Universal Normalization Mode)
+    const { projectSpecialties, totalPoints } = useMemo(() => {
+        const results = RADAR_SUBJECTS.reduce((acc, sub) => ({ ...acc, [sub]: 0 }), {});
+        
+        const filteredByMember = (tasks || []).filter(t => 
+            memberFilter === 'ALL' || t.assignees?.some(a => a._id === memberFilter) || t.assignee?._id === memberFilter
+        );
+
+        filteredByMember.forEach(task => {
+            if (task.status === 'Backlog' || task.status === 'Canceled') return;
+
+            const axis = TYPE_TO_AXIS[task.type] || 'Sustainability';
+            const weight = task.status === 'Completed' ? 100 : 40;
+            results[axis] += weight;
+
+            if (task.type === 'Technical Debt') results['Engineering'] += (weight * 0.4);
+            if (task.type === 'Discovery') results['Strategic'] += (weight * 0.6);
+        });
+
+        // Absolute Strategic Maturity (Fixed Scale)
+        const MATURITY_BENCHMARK = 1000;
+        const normalized = {};
+        RADAR_SUBJECTS.forEach(sub => {
+            const points = results[sub] || 0;
+            // Physical growth/shrinkage based on absolute benchmark
+            const raw = Math.min(100, (points / MATURITY_BENCHMARK) * 100);
+            normalized[sub] = points > 0 ? Math.max(5, Math.round(raw)) : 0;
+        });
+
+        const total = Object.values(results).reduce((a, b) => a + b, 0);
+        return { projectSpecialties: normalized, totalPoints: Math.round(total) };
+    }, [tasks, memberFilter, TYPE_TO_AXIS]);
 
     const tabs = [
         { id: 'ANALYTICS', icon: LayoutDashboard, label: 'Analytics' },
@@ -477,6 +565,48 @@ const AnalyticsSidebar = React.memo(({ metrics, onOpenTask, project, tasks }) =>
 
                     {activeTab === 'TEAM' && (
                         <motion.div key="team" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
+                            {/* Project Strategic Dynamics Radar */}
+                            <div className="bg-surface border border-glass rounded-[2rem] p-6 relative overflow-hidden group/dynamics">
+                                <div className="absolute inset-0 bg-gradient-to-br from-theme/5 to-transparent opacity-0 group-hover/dynamics:opacity-100 transition-opacity" />
+                                
+                                <div className="flex flex-col gap-5 mb-6 relative z-10">
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[9px] font-black text-theme uppercase tracking-[0.2em]">{memberFilter === 'ALL' ? 'Squad Strategic Mix' : 'Member Tactical Mix'}</span>
+                                        <TrendingUp className="w-3.5 h-3.5 text-theme/40" />
+                                    </div>
+                                    
+                                    {/* Tactical Member Selection Integration */}
+                                    <div className="relative group/search">
+                                        <select 
+                                            value={memberFilter} 
+                                            onChange={(e) => onMemberFilterChange?.(e.target.value)}
+                                            className="w-full bg-sunken/50 border border-glass rounded-xl px-4 py-2.5 text-[10px] font-black text-primary uppercase appearance-none focus:ring-0 focus:border-theme/40 transition-all cursor-pointer"
+                                        >
+                                            <option value="ALL">All Squad Members</option>
+                                            {project?.members?.map(m => (
+                                                <option key={m.userId?._id || m.userId} value={m.userId?._id || m.userId}>
+                                                    {m.userId?.name || 'Unknown Member'}
+                                                </option>
+                                            ))}
+                                        </select>
+                                        <ChevronRight className="absolute right-4 top-1/2 -translate-y-1/2 w-3 h-3 text-tertiary/40 rotate-90 pointer-events-none" />
+                                    </div>
+                                </div>
+
+                                <SpecialtyRadar specialties={projectSpecialties} isProjectView height={240} manualFullMark={100} />
+                                
+                                <div className="mt-4 pt-4 border-t border-glass flex items-center justify-between text-[8px] font-black text-tertiary/60 uppercase tracking-widest relative z-10">
+                                    <div className="flex flex-col gap-0.5">
+                                        <span className="text-primary/40">Visualizer Scale</span>
+                                        <span>Normalized Mix (0-100%)</span>
+                                    </div>
+                                    <div className="text-right flex flex-col gap-0.5">
+                                        <span className="text-theme">{totalPoints.toLocaleString()}</span>
+                                        <span>Strategic Volume</span>
+                                    </div>
+                                </div>
+                            </div>
+
                             <div className="bg-surface border border-glass rounded-[2rem] p-6">
                                 <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block mb-8">Workload Distribution</span>
                                 <div className="h-[300px] w-full min-h-[300px]">
@@ -517,38 +647,63 @@ const AnalyticsSidebar = React.memo(({ metrics, onOpenTask, project, tasks }) =>
                                 </div>
                                 <span className="text-[9px] font-black text-theme uppercase tracking-widest block mb-4 relative z-10">Squad Leaderboard</span>
                                 
-                                <div className="space-y-2 relative z-10">
-                                    {leaderboard.length > 0 ? leaderboard.map((user, index) => (
-                                        <motion.div 
-                                            key={user._id}
-                                            initial={{ opacity: 0, x: -10 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ delay: index * 0.1 }}
-                                            className="flex items-center justify-between p-3 bg-sunken/40 border border-glass rounded-xl hover:bg-theme/5 hover:border-theme/30 transition-all group"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div className="relative">
-                                                    <img src={getOptimizedAvatar(user.avatar)} alt={user.name} className="w-8 h-8 rounded-lg object-cover ring-1 ring-white/10" />
-                                                    {index === 0 && (
-                                                        <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center text-black text-[8px] font-black shadow-lg">1</div>
-                                                    )}
-                                                </div>
-                                                <div className="flex flex-col">
-                                                    <span className="text-[11px] font-black text-primary truncate max-w-[100px]">{user.name}</span>
-                                                    <div className="flex items-center gap-1.5 mt-0.5">
-                                                        <span className="text-[9px] font-black text-theme/80 uppercase">Lvl {user.level}</span>
-                                                        {user.badges?.length > 0 && (
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-theme" title={`${user.badges.length} Badges`} />
-                                                        )}
+                                <div className="space-y-4 relative z-10">
+                                    {leaderboard.length > 0 ? leaderboard.map((user, index) => {
+                                        const mStats = metrics.memberMetrics.find(m => m.id === user._id) || { active: 0, completed: 0 };
+                                        const total = mStats.active + mStats.completed;
+                                        const progress = total > 0 ? Math.round((mStats.completed / total) * 100) : 0;
+
+                                        return (
+                                            <motion.div 
+                                                key={user._id}
+                                                initial={{ opacity: 0, x: -10 }}
+                                                animate={{ opacity: 1, x: 0 }}
+                                                transition={{ delay: index * 0.1 }}
+                                                className="flex flex-col p-4 bg-sunken/40 border border-glass rounded-[1.5rem] hover:bg-theme/5 hover:border-theme/30 transition-all group"
+                                            >
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <div className="flex items-center gap-3">
+                                                        <div className="relative">
+                                                            <img src={getOptimizedAvatar(user.avatar)} alt={user.name} className="w-10 h-10 rounded-xl object-cover ring-1 ring-white/10" />
+                                                            {index === 0 && (
+                                                                <div className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-amber-400 rounded-full flex items-center justify-center text-black text-[8px] font-black shadow-lg">1</div>
+                                                            )}
+                                                        </div>
+                                                        <div className="flex flex-col text-left">
+                                                            <span className="text-[12px] font-black text-primary truncate max-w-[120px]">{user.name}</span>
+                                                            <div className="flex items-center gap-1.5 mt-0.5">
+                                                                <span className="text-[9px] font-black text-theme/80 uppercase tracking-widest">Lvl {user.level}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                    <div className="text-right">
+                                                        <div className="text-[14px] font-black font-mono text-theme leading-none">{user.xp.toLocaleString()}</div>
+                                                        <div className="text-[7px] font-black text-tertiary/60 uppercase tracking-widest mt-1">Total XP</div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-[12px] font-black font-mono text-theme leading-none">{user.xp.toLocaleString()}</div>
-                                                <div className="text-[7px] font-black text-tertiary/60 uppercase tracking-widest mt-1">Total XP</div>
-                                            </div>
-                                        </motion.div>
-                                    )) : (
+
+                                                <div className="space-y-2">
+                                                    <div className="flex items-center justify-between">
+                                                        <span className="text-[8px] font-black text-tertiary/40 uppercase tracking-widest">Project Progress</span>
+                                                        <span className="text-[9px] font-black text-primary font-mono">{progress}%</span>
+                                                    </div>
+                                                    <div className="h-1.5 w-full bg-glass rounded-full overflow-hidden">
+                                                        <motion.div 
+                                                            initial={{ width: 0 }}
+                                                            animate={{ width: `${progress}%` }}
+                                                            transition={{ duration: 1, ease: "easeOut" }}
+                                                            className="h-full bg-gradient-to-r from-theme to-emerald-400"
+                                                        />
+                                                    </div>
+                                                </div>
+
+                                                <div className="mt-4 pt-3 border-t border-glass/40">
+                                                    <span className="text-[8px] font-black text-tertiary/40 uppercase tracking-widest block mb-1">Momentum Map</span>
+                                                    <MiniProgressMap tasks={tasks} memberId={user._id} />
+                                                </div>
+                                            </motion.div>
+                                        );
+                                    }) : (
                                         <div className="text-center p-4 border border-dashed border-glass rounded-xl opacity-50">
                                             <span className="text-[9px] font-black text-tertiary uppercase">No Data Yet</span>
                                         </div>
@@ -703,7 +858,14 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
         const now = new Date();
         filteredTasks.forEach(t => {
             const priorityWeight = { 'Urgent': 20, 'High': 12, 'Medium': 6, 'Low': 2 };
-            const valueScore = priorityWeight[t.priority] || 6;
+            let valueScore = priorityWeight[t.priority] || 6;
+
+            // Professional Strategic Weighting
+            const type = t.type || 'Task';
+            if (['Epic', 'Security'].includes(type)) valueScore += 8;
+            else if (['Feature', 'Compliance'].includes(type)) valueScore += 5;
+            else if (['Story', 'Bug', 'Research', 'Discovery', 'Refactor'].includes(type)) valueScore += 2;
+
             const hoursRemaining = t.dueDate ? (new Date(t.dueDate) - now) / (1000 * 60 * 60) : 1000;
             const urgencyScore = hoursRemaining < 0 ? 25 : (hoursRemaining < 24 ? 15 : (hoursRemaining < 72 ? 10 : 0));
             
@@ -792,7 +954,16 @@ const MatrixView = ({ tasks = [], project = null, onOpenTask, onUpdateTask }) =>
                     ))}
                 </div>
             </div>
-            {isSidebarOpen && <AnalyticsSidebar metrics={metrics} project={project} tasks={filteredTasks} onOpenTask={onOpenTask} />}
+            {isSidebarOpen && (
+                <AnalyticsSidebar 
+                    metrics={metrics} 
+                    project={project} 
+                    tasks={tasks} 
+                    onOpenTask={onOpenTask} 
+                    memberFilter={memberFilter} 
+                    onMemberFilterChange={setMemberFilter}
+                />
+            )}
         </div>
     );
 };

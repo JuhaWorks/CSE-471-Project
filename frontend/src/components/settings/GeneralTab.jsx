@@ -4,19 +4,25 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useMutation } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { User, FileText, BadgeCheck, Zap, Info } from 'lucide-react';
+import { User, BadgeCheck, Zap, Info, Palette } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import ThemeSelector from './ThemeSelector';
 import ModeSelector from './ModeSelector';
 import Button from '../ui/Button';
-import Card from '../ui/Card';
-import { motion } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import GlassSurface from '../ui/GlassSurface';
 
+const cn = (...inputs) => twMerge(clsx(inputs));
+
 const generalSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
+    interfacePrefs: z.object({
+        showTeamClock: z.boolean().default(true),
+        showWeather: z.boolean().default(true),
+        showQuote: z.boolean().default(true),
+        showChatBubbles: z.boolean().default(true)
+    }).optional()
 });
 
 export default function GeneralTab({ showOnlyAppearance = false }) {
@@ -25,15 +31,21 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
         register,
         handleSubmit,
         watch,
+        setValue,
         formState: { errors },
     } = useForm({
         resolver: zodResolver(generalSchema),
         defaultValues: {
             name: user?.name || '',
+            interfacePrefs: {
+                showTeamClock: user?.interfacePrefs?.showTeamClock ?? true,
+                showWeather: user?.interfacePrefs?.showWeather ?? true,
+                showApod: user?.interfacePrefs?.showApod ?? true,
+                showQuote: user?.interfacePrefs?.showQuote ?? true,
+                showChatBubbles: user?.interfacePrefs?.showChatBubbles ?? true
+            }
         },
     });
-
-
 
     const updateMutation = useMutation({
         mutationFn: async (data) => {
@@ -55,16 +67,164 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
 
     return (
         <div className="space-y-12 animate-in fade-in slide-in-from-bottom-5 duration-700">
-            {showOnlyAppearance && (
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-2">
-                    <ModeSelector />
-                    <ThemeSelector />
-                </div>
-            )}
+            {showOnlyAppearance ? (
+                <div className="space-y-12">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-2">
+                        <ModeSelector />
+                        <ThemeSelector />
+                    </div>
 
-            {!showOnlyAppearance && (
+                    <div className="pt-8 border-t border-default space-y-6">
+                        <div className="flex items-center gap-3 mb-2">
+                            <Palette size={14} className="text-theme" />
+                            <span className="text-[10px] font-black uppercase tracking-[0.2em] text-secondary">Dashboard Display</span>
+                        </div>
+                        
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                            {/* Team Clock Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show Team Clocks</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Display teammate locations on home dashboard</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !watch('interfacePrefs.showTeamClock');
+                                        setValue('interfacePrefs.showTeamClock', newVal, { shouldDirty: true });
+                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showTeamClock: newVal } });
+                                    }}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full relative transition-all duration-300",
+                                        watch('interfacePrefs.showTeamClock') ? "bg-theme" : "bg-sunken border border-glass"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                        watch('interfacePrefs.showTeamClock') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                    )} />
+                                </button>
+                            </div>
+
+                            {/* Weather Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show Weather</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Display current weather insights at home</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !watch('interfacePrefs.showWeather');
+                                        setValue('interfacePrefs.showWeather', newVal, { shouldDirty: true });
+                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showWeather: newVal } });
+                                    }}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full relative transition-all duration-300",
+                                        watch('interfacePrefs.showWeather') ? "bg-theme" : "bg-sunken border border-glass"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                        watch('interfacePrefs.showWeather') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                    )} />
+                                </button>
+                            </div>
+
+                            {/* NASA APOD Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show NASA APOD</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Display Astronomy Picture of the Day widget</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !watch('interfacePrefs.showApod');
+                                        setValue('interfacePrefs.showApod', newVal, { shouldDirty: true });
+                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showApod: newVal } });
+                                    }}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full relative transition-all duration-300",
+                                        watch('interfacePrefs.showApod') ? "bg-theme" : "bg-sunken border border-glass"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                        watch('interfacePrefs.showApod') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                    )} />
+                                </button>
+                            </div>
+
+                            {/* Daily Quote Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Show Daily Inspiration</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Display Quote of the Day on your home dashboard</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !watch('interfacePrefs.showQuote');
+                                        setValue('interfacePrefs.showQuote', newVal, { shouldDirty: true });
+                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showQuote: newVal } });
+                                    }}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full relative transition-all duration-300",
+                                        watch('interfacePrefs.showQuote') ? "bg-theme" : "bg-sunken border border-glass"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                        watch('interfacePrefs.showQuote') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                    )} />
+                                </button>
+                            </div>
+
+                            {/* Global Chat Bubbles Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Enable Messaging Bubbles</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Allow specific chats to float at the bottom right</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !watch('interfacePrefs.showChatBubbles');
+                                        setValue('interfacePrefs.showChatBubbles', newVal, { shouldDirty: true });
+                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showChatBubbles: newVal } });
+                                    }}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full relative transition-all duration-300",
+                                        watch('interfacePrefs.showChatBubbles') ? "bg-theme" : "bg-sunken border border-glass"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                        watch('interfacePrefs.showChatBubbles') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                    )} />
+                                </button>
+                            </div>
+
+                            {/* Individual Bubble Management */}
+                            {watch('interfacePrefs.showChatBubbles') && user?.interfacePrefs?.bubbledChats?.length > 0 && (
+                                <div className="mt-8 pt-8 border-t border-glass space-y-4">
+                                    <p className="text-[10px] font-black text-tertiary uppercase tracking-[0.2em]">Currently Bubbled Conversations</p>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                        {user.interfacePrefs.bubbledChats.map((chatId) => {
+                                            // Find chat details if available in useChatStore
+                                            // For now, we'll just show the ID or a placeholder if store isn't imported here
+                                            // Re-fetching logic might be better in useChatStore
+                                            return <BubbledChatCard key={chatId} chatId={chatId} />;
+                                        })}
+                                    </div>
+                                </div>
+                            )}
+                        </form>
+                    </div>
+                </div>
+            ) : (
                 <>
-                    {/* Header with improved contrast */}
                     <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 border-b border-default">
                         <div className="space-y-1">
                             <h2 className="text-2xl font-black text-primary tracking-tighter uppercase">Profile <span className="text-theme">Info.</span></h2>
@@ -76,18 +236,9 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                         </div>
                     </div>
 
-                    {/* Profile Section */}
                     <div className="relative overflow-hidden border border-default rounded-xl group">
                         <div className="absolute inset-0 z-0">
-                            <GlassSurface 
-                                width="100%" 
-                                height="100%" 
-                                borderRadius={12} 
-                                displace={0.5} 
-                                distortionScale={-60} 
-                                backgroundOpacity={0.06} 
-                                opacity={0.93} 
-                            />
+                            <GlassSurface width="100%" height="100%" borderRadius={12} displace={0.5} distortionScale={-60} backgroundOpacity={0.06} opacity={0.93} />
                         </div>
                         
                         <div className="relative z-10">
@@ -95,19 +246,16 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                 <div className="w-7 h-7 rounded-md flex items-center justify-center bg-surface border border-default">
                                     <User size={13} className="text-tertiary" />
                                 </div>
-                                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-secondary font-semibold">
-                                    Account Details
-                                </span>
+                                <span className="font-mono text-[10px] tracking-[0.14em] uppercase text-secondary font-semibold">Account Details</span>
                             </div>
                             <div className="relative h-px bg-surface" />
 
                             <form onSubmit={handleSubmit(onSubmit)} className="px-8 py-8 space-y-6">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                                    {/* Name Field */}
                                     <div className="space-y-2">
                                         <label className="block font-mono text-[9px] tracking-[0.16em] uppercase text-tertiary font-semibold mb-2">Full Name</label>
                                         <div className="relative group">
-                                            <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-disabled pointer-events-none group-focus-within:text-theme transition-colors transition-colors" />
+                                            <User size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-disabled pointer-events-none group-focus-within:text-theme transition-colors" />
                                             <input
                                                 type="text"
                                                 placeholder="Enter your name"
@@ -117,52 +265,18 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                         </div>
                                         {errors.name && <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-rose-500 font-semibold mt-1.5">{errors.name.message}</p>}
                                     </div>
-
-
                                 </div>
 
                                 <div className="pt-6 flex flex-col sm:flex-row items-start sm:items-center justify-between border-t border-default gap-6">
                                     <div className="flex items-center gap-2">
                                         <Info size={12} className="text-disabled shrink-0" />
-                                        <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-disabled max-w-[300px] leading-relaxed">
-                                            Updates will be reflected globally across the platform.
-                                        </p>
+                                        <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-disabled max-w-[300px] leading-relaxed">Updates will be reflected globally.</p>
                                     </div>
-                                    <Button
-                                        type="submit"
-                                        isLoading={updateMutation.isPending}
-                                        disabled={updateMutation.isPending}
-                                        className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-primary text-elevated text-xs font-semibold tracking-wide hover:bg-theme hover:text-white transition-all shadow-xl shadow-primary/5"
-                                    >
+                                    <Button type="submit" isLoading={updateMutation.isPending} disabled={updateMutation.isPending} className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-primary text-elevated text-xs font-semibold tracking-wide hover:bg-theme hover:text-white transition-all shadow-xl shadow-primary/5">
                                         Save Changes
                                     </Button>
                                 </div>
                             </form>
-                        </div>
-                    </div>
-
-
-                    {/* Feedback Loops with better visibility */}
-                    <div className="relative flex items-center gap-4 p-8 overflow-hidden rounded-[2.5rem] mt-20 border border-theme/20">
-                        <div className="absolute inset-0 z-0">
-                            <GlassSurface 
-                                width="100%" 
-                                height="100%" 
-                                borderRadius={40} 
-                                displace={0.3} 
-                                distortionScale={-40} 
-                                backgroundOpacity={0.08} 
-                                opacity={0.85} 
-                            />
-                        </div>
-                        <div className="relative z-10 flex items-center gap-4 w-full">
-                            <div className="w-12 h-12 rounded-2xl bg-theme/20 flex items-center justify-center border border-theme/30">
-                                <Zap className="w-6 h-6 text-theme" />
-                            </div>
-                            <div className="flex flex-col">
-                                <span className="text-xs font-black text-primary uppercase tracking-[0.2em]">Profile Synced</span>
-                                <span className="text-[10px] text-secondary font-medium tracking-wide">All profile updates are globally broadcasted and active.</span>
-                            </div>
                         </div>
                     </div>
                 </>
@@ -170,3 +284,38 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
         </div>
     );
 }
+
+import { useChatStore } from '../../store/useChatStore';
+import { X } from 'lucide-react';
+
+const BubbledChatCard = ({ chatId }) => {
+    const { chats, toggleBubble } = useChatStore();
+    const chat = chats.find(c => c._id === chatId);
+    const { user } = useAuthStore();
+    
+    if (!chat) return null;
+
+    const other = chat.type === 'private' ? chat.participants.find(p => p._id !== user?._id) : null;
+    const name = chat.type === 'group' ? chat.name : other?.name;
+
+    return (
+        <div className="flex items-center justify-between p-3 rounded-xl bg-base border border-glass">
+            <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg overflow-hidden border border-glass">
+                    <img 
+                        src={chat.type === 'group' ? (chat.avatar || 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=100') : other?.avatar} 
+                        className="w-full h-full object-cover"
+                        alt=""
+                    />
+                </div>
+                <span className="text-[11px] font-bold text-primary truncate max-w-[120px]">{name}</span>
+            </div>
+            <button 
+                onClick={() => toggleBubble(chatId)}
+                className="p-1.5 hover:bg-glass rounded-lg text-tertiary hover:text-danger transition-all"
+            >
+                <X size={14} />
+            </button>
+        </div>
+    );
+};

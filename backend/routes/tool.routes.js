@@ -1,7 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { getApod, getWeather, getTeamIntelligence, reverseGeocode } = require('../controllers/tool.controller');
+const { getApod, getWeather, getTeamIntelligence, reverseGeocode, getQuotes } = require('../controllers/tool.controller');
 const { protect } = require('../middlewares/access.middleware');
+
+// @route   GET /api/tools/quotes
+// @desc    Get Daily Inspiration (Proxied)
+// @access  Private
+router.get('/quotes', protect, getQuotes);
 
 // @route   GET /api/tools/apod
 // @desc    Get NASA Astronomy Picture of the Day

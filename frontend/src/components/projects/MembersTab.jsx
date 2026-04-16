@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../store/useAuthStore';
 import { useProjectMembers } from '../../hooks/projects/useProjectMembers';
 import InviteMemberDialog from './InviteMemberDialog';
-import MemberRow from './MemberRow';
+import { MemberRow } from './ProjectShared';
 import Card from '../ui/Card';
 import { Users, ShieldCheck, Zap, Plus, UserPlus } from 'lucide-react';
 

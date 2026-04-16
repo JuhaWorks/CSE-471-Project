@@ -56,16 +56,17 @@ class NotificationService {
             if (!recipient) return notification;
 
             // 2. Real-time Delivery (Always try if recipient is online)
+            const CATEGORY_MAP = {
+                'Assignment': 'assignments',
+                'Mention': 'mentions',
+                'Deadline': 'deadlines',
+                'StatusUpdate': 'statusUpdates',
+                'MetadataUpdate': 'updates',
+                'Comment': 'comments'
+            };
+            const prefKey = CATEGORY_MAP[type];
+
             try {
-                const categoryMap = {
-                    'Assignment': 'assignments',
-                    'Mention': 'mentions',
-                    'Deadline': 'deadlines',
-                    'StatusUpdate': 'statusUpdates',
-                    'Comment': 'comments'
-                };
-                const prefKey = categoryMap[type];
-                
                 // Channel Check: In-App
                 const inAppGlobal = recipient?.notificationPrefs?.inApp ?? true;
                 const categoryPrefs = recipient?.notificationPrefs?.categories?.[prefKey];
@@ -75,7 +76,9 @@ class NotificationService {
                     ? (categoryPrefs.inApp ?? true) 
                     : (categoryPrefs ?? true);
 
-                if (inAppGlobal && isInAppEnabled) {
+                const isSelf = senderId?.toString() === recipientId?.toString();
+
+                if (inAppGlobal && isInAppEnabled && !isSelf) {
                     const io = socketUtil.getIO();
                     if (io) {
                         io.to(`user_${recipientId}`).emit('newNotification', {
@@ -89,31 +92,29 @@ class NotificationService {
             }
 
             // 3. Email Delivery Logic
-            const categoryMap = {
-                'Assignment': 'assignments',
-                'Mention': 'mentions',
-                'Deadline': 'deadlines',
-                'StatusUpdate': 'statusUpdates',
-                'Comment': 'comments'
-            };
-            const prefKey = categoryMap[type];
-            const categoryPrefs = recipient?.notificationPrefs?.categories?.[prefKey];
+            const isSelf = senderId?.toString() === recipientId?.toString();
+            const categoryPrefsRecipient = recipient?.notificationPrefs?.categories?.[prefKey];
 
-            // Robust check: if categoryPrefs is an object, check .email, otherwise fallback to legacy boolean or true
-            const isEmailEnabledForCategory = typeof categoryPrefs === 'object' 
-                ? (categoryPrefs.email ?? true) 
-                : (categoryPrefs ?? true);
+            const isEmailEnabledForCategory = typeof categoryPrefsRecipient === 'object' 
+                ? (categoryPrefsRecipient.email ?? true) 
+                : (categoryPrefsRecipient ?? true);
 
             const isEmailActiveGlobal = recipient?.notificationPrefs?.email ?? true;
 
-            if (isEmailActiveGlobal && isEmailEnabledForCategory) {
+            if (isEmailActiveGlobal && isEmailEnabledForCategory && !isSelf) {
                 const inQuietHours = this.isInQuietHours(recipient);
                 const isDigest = recipient?.notificationPrefs?.frequency === 'digest';
 
-                // Urgent items bypass quiet hours and digests
-                const isUrgent = priority === 'Urgent' || priority === 'High' || type === 'Mention' || type === 'Deadline';
+                // --- Emergency Command Bypass ---
+                // Strategic types like Security/Compliance and High/Urgent priority bypass all restrictions
+                const taskType = metadata?.taskType || '';
+                const isEmergencyType = ['Security', 'Compliance'].includes(taskType);
+                const isHighPriority = priority === 'Urgent' || priority === 'High';
+                const isMentionOrDeadline = type === 'Mention' || type === 'Deadline';
+                
+                const isUrgent = isEmergencyType || isHighPriority || isMentionOrDeadline;
 
-                console.log(`[NOTIFY] Evaluating delivery for ${recipient.email}: Category(${prefKey}): ${isCategoryEnabled}, EmailGlobal: ${isEmailActive}, Urgent: ${isUrgent}, Digest: ${isDigest}, QuietHours: ${inQuietHours}`);
+                console.log(`[NOTIFY] Evaluating delivery for ${recipient.email}: Category(${prefKey}): ${isEmailEnabledForCategory}, Emergency: ${isUrgent}, Digest: ${isDigest}, QuietHours: ${inQuietHours}`);
 
                 if (isUrgent || (!isDigest && !inQuietHours)) {
                     const { projectName } = metadata || {};

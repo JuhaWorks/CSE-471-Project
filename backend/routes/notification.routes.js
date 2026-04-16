@@ -4,7 +4,8 @@ const {
     getNotifications, 
     markAsRead, 
     markAllAsRead, 
-    updatePreferences 
+    updatePreferences,
+    sendTestNotification
 } = require('../controllers/notification.controller');
 const { protect } = require('../middlewares/access.middleware');
 
@@ -14,5 +15,6 @@ router.get('/', getNotifications);
 router.patch('/read-all', markAllAsRead);
 router.patch('/:id/read', markAsRead);
 router.put('/preferences', updatePreferences);
+router.post('/test', sendTestNotification);
 
 module.exports = router;

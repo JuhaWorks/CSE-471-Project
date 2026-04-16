@@ -18,11 +18,19 @@ const WEATHER_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
  */
 const getApod = async (req, res, next) => {
     try {
-        const CACHE_DURATION = 1000 * 60 * 60 * 6; // Cache for 6 hours
+        const CACHE_DURATION = 1000 * 60 * 60 * 12; // Successful cache: 12 hours
+        const RETRY_COOLDOWN = 1000 * 60 * 60 * 1; // Failure cooldown: 1 hour
         const now = new Date();
 
-        if (apodCache.data && apodCache.lastFetched && (now - apodCache.lastFetched < CACHE_DURATION)) {
-            return res.status(200).json({ status: 'success', data: apodCache.data });
+        // 1. Check if we have valid cached data
+        if (apodCache.data && apodCache.lastFetched) {
+            const age = now - apodCache.lastFetched;
+            
+            // If data is within duration, or it's a fallback and we're within cooldown, serve it
+            const isFallback = apodCache.data.title === 'System Insight';
+            if (age < (isFallback ? RETRY_COOLDOWN : CACHE_DURATION)) {
+                return res.status(200).json({ status: 'success', data: apodCache.data });
+            }
         }
 
         const apiKey = process.env.NASA_API_KEY || 'DEMO_KEY';
@@ -40,12 +48,12 @@ const getApod = async (req, res, next) => {
                     thumbs: true,
                     date: offset ? getDateStr(offset) : undefined,
                 },
-                timeout: 3500, // Reduced from 10s to prevent interface hanging
+                timeout: 15000, 
             });
         };
 
         let apodData = null;
-        for (let i = 0; i <= 1; i++) { // Reduced from 4 attempts to 2
+        for (let i = 0; i <= 1; i++) { 
             try {
                 const response = await fetchFromNasa(i);
                 if (response.data) {
@@ -53,28 +61,30 @@ const getApod = async (req, res, next) => {
                         title: response.data.title,
                         explanation: response.data.explanation,
                         author: response.data.copyright || 'NASA',
-                        url: response.data.media_type === 'video' ? response.data.thumbnail_url : response.data.url,
+                        url: response.data.media_type === 'video' ? (response.data.thumbnail_url || response.data.url) : response.data.url,
                         date: response.data.date,
                     };
                     break;
                 }
             } catch (err) {
                 logger.warn(`NASA APOD attempt ${i} failed: ${err.message}`);
+                // Don't log 429 as full error, just a warn info
+                if (err.response?.status === 429) break; 
             }
         }
 
         if (!apodData) {
-            // Fallback if NASA is completely down or timing out
+            // High-fidelity fallback if NASA is completely down or rate-limited
             apodData = {
                 title: 'System Insight',
-                explanation: 'Connecting to orbital intelligence... NASA systems currently under high load.',
-                author: 'System Autoprompt',
-                url: 'https://picsum.photos/seed/cosmos/1200/800', // Better resolution placeholder
+                explanation: 'A panoramic view of orbital intelligence. NASA telemetry is currently under maintenance or rate-limited. Serving local archive.',
+                author: 'Klivra Intelligence',
+                url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop', 
                 date: new Date().toISOString().split('T')[0],
             };
         }
 
-        // Update cache
+        // Update global cache
         apodCache = {
             data: apodData,
             lastFetched: now
@@ -222,10 +232,13 @@ const getTeamIntelligence = async (req, res, next) => {
         const teammateObjectIds = Array.from(teammateIdStrings).map(id => new mongoose.Types.ObjectId(id));
         console.log(`[TEAM_TIME] Aggregated ${teammateObjectIds.length} unique teammate IDs`);
 
-        // 3. Fetch user details
+        // 3. Fetch user details - inclusive of users without isActive field (default true)
         const teammates = await User.find({
             _id: { $in: teammateObjectIds },
-            isActive: true
+            $or: [
+                { isActive: true },
+                { isActive: { $exists: false } }
+            ]
         }).select('name avatar location timezoneOffset timezoneName status').lean();
 
         console.log(`[TEAM_TIME] Found ${teammates.length} active teammate profiles`);
@@ -309,9 +322,56 @@ const reverseGeocode = async (req, res, next) => {
     }
 };
 
+/**
+ * @desc    Get Daily Inspiration (Proxied from FavQs)
+ * @route   GET /api/tools/quotes
+ * @access  Private
+ */
+const getQuotes = async (req, res, next) => {
+    try {
+        const apiKey = process.env.FAVQS_API_KEY;
+        if (!apiKey) {
+            return res.status(500).json({ status: 'error', message: 'Quote service not configured' });
+        }
+
+        const response = await axios.get('https://favqs.com/api/quotes', {
+            headers: {
+                'Authorization': `Token token="${apiKey}"`
+            },
+            timeout: 5000
+        });
+
+        if (response.data && response.data.quotes) {
+            // Picking a random quote from the set
+            const quotes = response.data.quotes;
+            const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+            
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    body: randomQuote.body,
+                    author: randomQuote.author
+                }
+            });
+        } else {
+            throw new Error('Malformed API response');
+        }
+    } catch (error) {
+        logger.error(`FavQs Proxy Error: ${error.message}`);
+        res.status(200).json({ 
+            status: 'success', 
+            data: { 
+                body: "Success is not final, failure is not fatal: it is the courage to continue that counts.", 
+                author: "Winston Churchill" 
+            } 
+        });
+    }
+};
+
 module.exports = {
     getApod,
     getWeather,
     getTeamIntelligence,
-    reverseGeocode
+    reverseGeocode,
+    getQuotes
 };

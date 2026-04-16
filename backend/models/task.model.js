@@ -24,12 +24,15 @@ const taskSchema = new mongoose.Schema(
         },
         type: {
             type: String,
-            enum: ['Task', 'Bug', 'Feature', 'Maintenance'],
-            default: 'Task',
+            default: 'Story',
+        },
+        domain: {
+            type: String,
+            enum: ['Strategic', 'Engineering', 'Sustainability', 'Operations'],
+            default: 'Strategic',
         },
         points: {
             type: Number,
-            enum: [1, 2, 3, 5, 8, 13],
             default: 1,
         },
         // Support for multiple assignees
@@ -91,6 +94,27 @@ const taskSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+// --- Strategic Domain Automation ---
+const DOMAIN_MAP = {
+    Strategic: ['Epic', 'Feature', 'Story', 'Discovery', 'Research'],
+    Engineering: ['DevOps', 'Refactor', 'Technical Debt', 'QA', 'Performance', 'Engineering'],
+    Sustainability: ['Maintenance', 'Hygiene', 'Task', 'Sustainability'],
+    Operations: ['Bug', 'Security', 'Compliance', 'Meeting', 'Review', 'Support', 'Operations']
+};
+
+taskSchema.pre('save', function() {
+    if (this.isModified('type') || this.isNew) {
+        let foundDomain = 'Operations'; // Default fallback
+        for (const [domain, types] of Object.entries(DOMAIN_MAP)) {
+            if (types.includes(this.type)) {
+                foundDomain = domain;
+                break;
+            }
+        }
+        this.domain = foundDomain;
+    }
+});
 
 // Optimize queries for finding tasks inside a project or assigned to a specific user
 taskSchema.index({ project: 1, assignees: 1 });

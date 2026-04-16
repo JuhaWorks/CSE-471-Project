@@ -118,12 +118,16 @@ const userSchema = new mongoose.Schema(
                 awardedAt: { type: Date, default: Date.now }
             }],
             // Experience per category for Radar Chart
+            // Executive Strategic Domains (4-Axis Consolidation)
             specialties: {
-                Task: { type: Number, default: 0 },
-                Bug: { type: Number, default: 0 },
-                Feature: { type: Number, default: 0 },
-                Maintenance: { type: Number, default: 0 },
-                Research: { type: Number, default: 0 }
+                type: Map,
+                of: Number,
+                default: () => new Map([
+                    ['Strategic', 0],
+                    ['Engineering', 0],
+                    ['Sustainability', 0],
+                    ['Operations', 0]
+                ])
             },
             // Engagement streaks
             streaks: {
@@ -178,6 +182,10 @@ const userSchema = new mongoose.Schema(
                     email: { type: Boolean, default: true },
                     inApp: { type: Boolean, default: true }
                 },
+                messages: {
+                    email: { type: Boolean, default: false },
+                    inApp: { type: Boolean, default: true }
+                },
                 security: {
                     email: { type: Boolean, default: true },
                     inApp: { type: Boolean, default: true }
@@ -194,10 +202,18 @@ const userSchema = new mongoose.Schema(
             },
             quietHours: {
                 enabled: { type: Boolean, default: false },
-                start: { type: String, default: '22:00' }, // HH:mm format
+                start: { type: String, default: '22:00' },
                 end: { type: String, default: '08:00' },
                 timezone: { type: String, default: 'UTC' }
             }
+        },
+        interfacePrefs: {
+            showTeamClock: { type: Boolean, default: true },
+            showWeather: { type: Boolean, default: true },
+            showApod: { type: Boolean, default: true },
+            showQuote: { type: Boolean, default: true },
+            bubbledChats: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chat' }],
+            archivedChats: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chat' }]
         },
 
         // --- Multi-device Session Management ---

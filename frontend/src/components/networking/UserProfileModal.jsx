@@ -1,36 +1,62 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { X, Shield, MapPin, Activity, Award, Calendar, CheckCircle2, Star, Zap, UserPlus, MessageCircle, Briefcase, LayoutGrid, ThumbsUp } from 'lucide-react';
 import {
-    Radar,
-    RadarChart,
-    PolarGrid,
-    PolarAngleAxis,
-    ResponsiveContainer
+    X, MapPin, Activity, Award, Star, Zap, ThumbsUp,
+    LayoutGrid, TrendingUp, Shield, Clock, Users, ChevronRight, Circle, MessageSquare
+} from 'lucide-react';
+import {
+    Radar, RadarChart, PolarGrid, PolarAngleAxis, ResponsiveContainer
 } from 'recharts';
-import { api } from '../../store/useAuthStore';
+import { useChatStore } from '../../store/useChatStore';
+import { useAuthStore, api } from '../../store/useAuthStore';
 import { getOptimizedAvatar } from '../../utils/avatar';
 import { cn } from '../../utils/cn';
 
+/* ─── helpers ─────────────────────────────────────────────────────────────── */
 const getLevelProgress = (xp, level) => {
-    // Mirror the thresholds from backend
-    const thresholds = {
-        1: 0, 2: 50, 3: 150, 4: 300, 5: 600,
-        6: 1000, 7: 1500, 8: 2200, 9: 3200, 10: 4500
-    };
-    
-    // Fallback scaling for 10+
-    const getReq = (lvl) => thresholds[lvl] || (thresholds[10] + (lvl - 10) * 5000);
-    
-    const baseXP = getReq(level);
-    const nextXP = getReq(level + 1);
+    const thresholds = { 1: 0, 2: 50, 3: 150, 4: 300, 5: 600, 6: 1000, 7: 1500, 8: 2200, 9: 3200, 10: 4500 };
+    const getReq = (lvl) => thresholds[lvl] ?? (thresholds[10] + (lvl - 10) * 5000);
+    const baseXP = getReq(level), nextXP = getReq(level + 1);
     const progress = Math.min(100, Math.max(0, ((xp - baseXP) / (nextXP - baseXP)) * 100));
-    
     return { progress, nextXP };
 };
 
+const multiplier = (current) =>
+    Math.min(1.5, 1 + (current * 0.05)).toFixed(2);
+
+/* ─── sub-components ──────────────────────────────────────────────────────── */
+const Divider = () => (
+    <div className="border-t border-[#1E2530]" />
+);
+
+const SectionLabel = ({ icon: Icon, label, accent }) => (
+    <div className="flex items-center gap-2.5 mb-4">
+        <div className={cn(
+            "w-6 h-6 rounded flex items-center justify-center",
+            accent ? "bg-[#0D6EFD]/10" : "bg-[#1A2333]"
+        )}>
+            <Icon className={cn("w-3 h-3", accent ? "text-[#0D6EFD]" : "text-[#5A6478]")} />
+        </div>
+        <span className="text-[10px] font-semibold text-[#5A6478] uppercase tracking-[0.18em]">{label}</span>
+    </div>
+);
+
+const StatPill = ({ label, value, highlight }) => (
+    <div className="flex flex-col gap-1 px-4 py-3 rounded-lg bg-[#0C1118] border border-[#1E2530]">
+        <span className={cn(
+            "text-[18px] font-bold tabular-nums leading-none",
+            highlight ? "text-[#0D6EFD]" : "text-[#E8EDF5]"
+        )}>{value}</span>
+        <span className="text-[9px] font-semibold text-[#3D4A5C] uppercase tracking-[0.15em]">{label}</span>
+    </div>
+);
+
+/* ─── main component ──────────────────────────────────────────────────────── */
 export default function UserProfileModal({ isOpen, onClose, userId }) {
+    const [activeTab, setActiveTab] = useState('overview');
+    const { user: reqUser } = useAuthStore();
+
     const { data: res, isLoading } = useQuery({
         queryKey: ['publicProfile', userId],
         queryFn: async () => (await api.get(`/users/public/${userId}`)).data,
@@ -43,6 +69,20 @@ export default function UserProfileModal({ isOpen, onClose, userId }) {
         queryFn: async () => (await api.get(`/endorsements/user/${userId}`)).data,
         enabled: !!userId && isOpen,
     });
+
+    const { fetchChats, sendMessage, setActiveChat, setDrawerOpen } = useChatStore();
+
+    const handleStartChat = async () => {
+        // 1. Send initial message
+        const msg = await sendMessage(null, "Hi! I'd like to reach out regarding our project collaboration.", userId);
+        if (msg) {
+            // 2. Set as active and open drawer
+            setActiveChat({ _id: msg.chat, participants: [user, reqUser], type: 'private' });
+            setDrawerOpen(true);
+            // 3. Close profile
+            onClose();
+        }
+    };
 
     const toggleEndorsement = async (skillName) => {
         try {
@@ -58,276 +98,378 @@ export default function UserProfileModal({ isOpen, onClose, userId }) {
 
     if (!isOpen) return null;
 
-    const renderContent = () => {
-        if (isLoading) {
-            return (
-                <div className="flex flex-col items-center justify-center p-12">
-                    <div className="w-8 h-8 rounded-full border-2 border-theme border-t-transparent animate-spin mb-4" />
-                    <span className="text-xs font-black text-tertiary uppercase tracking-widest">Loading Profile...</span>
-                </div>
-            );
-        }
+    const tabs = [
+        { id: 'overview', label: 'Overview' },
+        { id: 'skills', label: 'Skills' },
+        { id: 'badges', label: 'Badges' },
+    ];
 
-        if (!user) {
-            return (
-                <div className="flex flex-col items-center justify-center p-12 text-center">
-                    <span className="text-xs font-black text-danger uppercase tracking-widest">Profile not found</span>
-                </div>
-            );
-        }
+    /* ─── loading / error ────────────────────────────────────────────────── */
+    const renderShell = (children) => (
+        <AnimatePresence>
+            <motion.div
+                key="backdrop"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
+                onClick={onClose}
+                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 sm:p-6"
+            >
+                <motion.div
+                    key="modal"
+                    initial={{ opacity: 0, y: 12, scale: 0.98 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 8, scale: 0.98 }}
+                    transition={{ type: 'spring', stiffness: 340, damping: 28 }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="w-full max-w-[780px] bg-[#080D14] rounded-2xl border border-[#1A2333] shadow-[0_32px_80px_rgba(0,0,0,0.6)] overflow-hidden relative"
+                    style={{ fontFamily: "'IBM Plex Sans', system-ui, sans-serif" }}
+                >
+                    <div
+                        className="absolute inset-0 pointer-events-none z-0 opacity-[0.025]"
+                        style={{ backgroundImage: 'repeating-linear-gradient(0deg,transparent,transparent 1px,#fff 1px,#fff 2px)', backgroundSize: '100% 4px' }}
+                    />
 
-        const stats = user.gamification || { xp: 0, level: 1, badges: [] };
-        const { progress, nextXP } = getLevelProgress(stats.xp, stats.level);
+                    {children}
 
-        return (
-            <div className="flex flex-col">
-                {/* Banner Area */}
-                <div className="h-32 w-full relative">
-                    <div className={cn(
-                        "w-full h-full bg-gradient-to-br from-theme/20 via-surface to-sunken",
-                        user.coverImage ? "" : "opacity-100"
-                    )} />
-                    {user.coverImage && <img src={user.coverImage} className="w-full h-full object-cover" alt="Banner" />}
-                    <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-base to-transparent" />
-                </div>
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 z-30 w-8 h-8 rounded flex items-center justify-center text-[#3D4A5C] hover:text-[#8A95A8] hover:bg-[#12192A] transition-all"
+                        aria-label="Close"
+                    >
+                        <X className="w-4 h-4" />
+                    </button>
+                </motion.div>
+            </motion.div>
+        </AnimatePresence>
+    );
 
-                {/* Profile Identity */}
-                <div className="px-8 -mt-12 relative z-10">
-                    <div className="flex items-end gap-6">
-                        <div className="relative">
-                            <div className="w-28 h-28 rounded-3xl overflow-hidden ring-8 ring-base shadow-2xl relative group">
-                                <img 
-                                    src={getOptimizedAvatar(user.avatar)} 
-                                    alt={user.name}
-                                    className="w-full h-full object-cover"
-                                />
-                                {user.status === 'Online' && (
-                                    <div className="absolute bottom-2 right-2 w-4 h-4 rounded-full bg-success border-4 border-base" />
-                                )}
-                            </div>
-                            <div className="absolute -bottom-2 -left-2 w-8 h-8 rounded-xl bg-theme text-black flex items-center justify-center text-[10px] font-extrabold shadow-lg border-2 border-base">
-                                L{stats.level}
-                            </div>
+    if (isLoading) return renderShell(
+        <div className="flex flex-col items-center justify-center py-20 gap-4">
+            <div className="w-7 h-7 rounded-full border-2 border-[#0D6EFD] border-t-transparent animate-spin" />
+            <span className="text-[10px] font-semibold text-[#3D4A5C] uppercase tracking-[0.2em]">Retrieving Profile</span>
+        </div>
+    );
+
+    if (!user) return renderShell(
+        <div className="flex flex-col items-center justify-center py-20 gap-2">
+            <Shield className="w-6 h-6 text-[#3D4A5C]" />
+            <span className="text-[10px] font-semibold text-[#5A6478] uppercase tracking-[0.15em]">Profile Unavailable</span>
+        </div>
+    );
+
+    /* ─── derive data ─────────────────────────────────────────────────────── */
+    const stats = user.gamification || { xp: 0, level: 1, badges: [], streaks: { current: 0 } };
+    const { progress, nextXP } = getLevelProgress(stats.xp, stats.level);
+    const streakPct = Math.min(100, (stats.streaks?.current || 0) * 10);
+
+    const radarData = [
+        { subject: 'Strategic', A: user.gamification?.specialties?.Strategic || 0, fullMark: 1000 },
+        { subject: 'Engineering', A: user.gamification?.specialties?.Engineering || 0, fullMark: 1000 },
+        { subject: 'Sustainability', A: user.gamification?.specialties?.Sustainability || 0, fullMark: 1000 },
+        { subject: 'Operations', A: user.gamification?.specialties?.Operations || 0, fullMark: 1000 },
+    ];
+
+    /* ─── tab panels ─────────────────────────────────────────────────────── */
+    const renderOverview = () => (
+        <div className="space-y-5">
+            <div className="grid grid-cols-2 gap-2">
+                <StatPill label="Shared Projects" value={user.mutualStats?.projects ?? 0} />
+                <StatPill label="Shared Tasks" value={user.mutualStats?.tasks ?? 0} highlight />
+            </div>
+
+            <div>
+                <SectionLabel icon={Activity} label="Expertise Matrix" accent />
+                <div className="rounded-xl border border-[#1A2333] bg-[#0C1118] p-4">
+                    <div className="flex flex-col sm:flex-row items-center gap-6">
+                        <div className="w-[180px] h-[180px] shrink-0">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadarChart cx="50%" cy="50%" outerRadius="72%" data={radarData}>
+                                    <defs>
+                                        <linearGradient id="radarFill" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stopColor="#0D6EFD" stopOpacity={0.35} />
+                                            <stop offset="100%" stopColor="#0D6EFD" stopOpacity={0.05} />
+                                        </linearGradient>
+                                    </defs>
+                                    <PolarGrid stroke="#1E2530" gridType="polygon" />
+                                    <PolarAngleAxis
+                                        dataKey="subject"
+                                        tick={{ fontSize: 8, fontWeight: 600, fill: '#3D4A5C', letterSpacing: '0.05em' }}
+                                    />
+                                    <Radar
+                                        dataKey="A"
+                                        stroke="#0D6EFD"
+                                        strokeWidth={1.5}
+                                        fill="url(#radarFill)"
+                                        fillOpacity={1}
+                                        animationDuration={900}
+                                    />
+                                </RadarChart>
+                            </ResponsiveContainer>
                         </div>
 
-                        <div className="flex-1 pb-2">
-                             <div className="flex items-center gap-3">
-                                <h2 className="text-3xl font-black text-primary tracking-tighter truncate">{user.name}</h2>
-                                <span className="px-2 py-0.5 rounded-md bg-theme/10 text-[9px] font-black text-theme border border-theme/20 uppercase">
-                                    {user.role}
-                                </span>
-                             </div>
-                             <div className="flex items-center gap-3 mt-1.5 text-tertiary">
-                                {user.location && (
-                                    <span className="flex items-center gap-1 text-[11px] font-bold">
-                                        <MapPin className="w-3 h-3" /> {user.location}
-                                    </span>
-                                )}
-                                <span className="w-1 h-1 rounded-full bg-tertiary/30" />
-                                <span className="flex items-center gap-1 text-[11px] font-bold uppercase tracking-wider">
-                                    PROFESSIONAL SUITE
-                                </span>
-                             </div>
-                        </div>
-                    </div>
-
-                    {user.bio && (
-                        <p className="mt-6 text-sm text-secondary leading-relaxed opacity-90 p-4 rounded-2xl bg-sunken/50 border border-glass italic">
-                            {user.bio}
-                        </p>
-                    )}
-                </div>
-
-                <div className="px-8 pb-8 space-y-6 mt-4">
-                    {/* Mutual Collaboration Stats */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-sunken border border-glass rounded-3xl p-6 flex flex-col items-center text-center relative overflow-hidden group">
-                           <Briefcase className="w-5 h-5 text-theme mb-3" />
-                           <span className="text-[10px] font-black text-tertiary uppercase tracking-widest">Mutual Projects</span>
-                           <div className="text-3xl font-black text-primary mt-1">{user.mutualStats?.projects || 0}</div>
-                        </div>
-                        
-                        <div className="bg-sunken border border-glass rounded-3xl p-6 flex flex-col items-center text-center relative overflow-hidden group">
-                           <LayoutGrid className="w-5 h-5 text-success mb-3" />
-                           <span className="text-[10px] font-black text-tertiary uppercase tracking-widest">Shared Tasks</span>
-                           <div className="text-3xl font-black text-primary mt-1">{user.mutualStats?.tasks || 0}</div>
-                        </div>
-                    </div>
-
-                    {/* Skill Endorsements */}
-                    {user.skills?.length > 0 && (
-                        <div className="space-y-4">
-                            <h3 className="text-[11px] font-black text-tertiary uppercase tracking-widest flex items-center gap-2">
-                                <Star className="w-4 h-4 text-amber-400" /> Professional Endorsements
-                            </h3>
-                            <div className="flex flex-wrap gap-2">
-                                {user.skills.map(s => {
-                                    const count = endorsements.counts[s] || 0;
-                                    const isEndorsed = endorsements.myEndorsements.includes(s);
-                                    return (
-                                        <button
-                                            key={s}
-                                            onClick={() => toggleEndorsement(s)}
-                                            className={cn(
-                                                "flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all active:scale-95",
-                                                isEndorsed 
-                                                    ? "bg-theme border-theme text-black" 
-                                                    : "bg-surface border-glass text-primary hover:border-theme/30"
-                                            )}
-                                        >
-                                            <span className="text-xs font-bold uppercase">{s}</span>
-                                            <div className={cn(
-                                                "flex items-center gap-1 text-[10px] font-black px-1.5 py-0.5 rounded-lg",
-                                                isEndorsed ? "bg-black/20" : "bg-theme/10 text-theme"
-                                            )}>
-                                                <ThumbsUp className="w-2.5 h-2.5" />
-                                                {count}
-                                            </div>
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Specialty Matrix */}
-                    <div className="bg-elevated/50 border border-glass rounded-3xl p-8 relative overflow-hidden">
-                        <div className="relative z-10 flex flex-col md:flex-row items-center gap-8">
-                            <div className="w-full md:w-1/2 aspect-square max-w-[200px]">
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <RadarChart cx="50%" cy="50%" outerRadius="75%" data={[
-                                        { subject: 'Bug', A: user.gamification?.specialties?.Bug || 0, fullMark: 1000 },
-                                        { subject: 'Feature', A: user.gamification?.specialties?.Feature || 0, fullMark: 1000 },
-                                        { subject: 'Maint', A: user.gamification?.specialties?.Maintenance || 0, fullMark: 1000 },
-                                        { subject: 'Res', A: user.gamification?.specialties?.Research || 0, fullMark: 1000 },
-                                        { subject: 'Task', A: user.gamification?.specialties?.Task || 0, fullMark: 1000 },
-                                    ]}>
-                                        <defs>
-                                            <linearGradient id="modalRadarGradient" x1="0" y1="0" x2="0" y2="1">
-                                                <stop offset="5%" stopColor="var(--accent-500)" stopOpacity={0.8}/>
-                                                <stop offset="95%" stopColor="var(--accent-500)" stopOpacity={0.2}/>
-                                            </linearGradient>
-                                        </defs>
-                                        <PolarGrid stroke="var(--border-strong)" strokeOpacity={0.5} />
-                                        <PolarAngleAxis 
-                                            dataKey="subject" 
-                                            tick={{ fontSize: 9, fontWeight: 800, fill: 'var(--text-primary)' }} 
-                                        />
-                                        <Radar
-                                            name="Skill"
-                                            dataKey="A"
-                                            stroke="var(--accent-500)"
-                                            strokeWidth={2}
-                                            fill="url(#modalRadarGradient)"
-                                            fillOpacity={1}
-                                        />
-                                    </RadarChart>
-                                </ResponsiveContainer>
-                            </div>
-                            <div className="flex-1 text-center md:text-left">
-                                <h3 className="text-sm font-black text-primary uppercase tracking-tighter">Contribution Specialty</h3>
-                                <p className="text-[11px] text-tertiary leading-relaxed mt-2 uppercase font-bold tracking-widest">
-                                    Visualizing technical depth across project domains.
-                                </p>
-                                <div className="mt-6 flex flex-col gap-2">
-                                    <div className="flex items-center justify-between text-[11px] font-black text-tertiary uppercase">
-                                        <span>Streak Bonus</span>
-                                        <span className="text-theme">x{Math.min(1.5, 1 + ((user.gamification?.streaks?.current || 0) * 0.05)).toFixed(2)}</span>
+                        <div className="flex-1 w-full space-y-5">
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <div className="flex items-center gap-1.5 text-[9px] font-semibold text-[#5A6478] uppercase tracking-[0.15em]">
+                                        <Zap className="w-2.5 h-2.5 text-[#F59E0B]" />
+                                        Streak Momentum
                                     </div>
-                                    <div className="h-1.5 w-full bg-glass rounded-full overflow-hidden">
-                                        <div className="h-full bg-theme w-[70%]" />
+                                    <span className="text-[10px] font-bold text-[#F59E0B] font-mono">×{multiplier(stats.streaks?.current || 0)}</span>
+                                </div>
+                                <div className="h-1 w-full bg-[#1A2333] rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${streakPct}%` }}
+                                        transition={{ duration: 1.2, ease: 'easeOut' }}
+                                        className="h-full bg-gradient-to-r from-[#F59E0B] to-[#EF4444] rounded-full"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <div className="flex justify-between items-center mb-2">
+                                    <div className="flex items-center gap-1.5 text-[9px] font-semibold text-[#5A6478] uppercase tracking-[0.15em]">
+                                        <TrendingUp className="w-2.5 h-2.5 text-[#0D6EFD]" />
+                                        Level Progression
                                     </div>
+                                    <span className="text-[10px] font-bold text-[#0D6EFD] font-mono">{stats.xp.toLocaleString()} XP</span>
+                                </div>
+                                <div className="h-1 w-full bg-[#1A2333] rounded-full overflow-hidden">
+                                    <motion.div
+                                        initial={{ width: 0 }}
+                                        animate={{ width: `${progress}%` }}
+                                        transition={{ duration: 1.4, ease: 'easeOut' }}
+                                        className="h-full bg-[#0D6EFD] rounded-full"
+                                    />
+                                </div>
+                                <div className="mt-1.5 flex justify-between">
+                                    <span className="text-[8px] text-[#2D3848] font-mono">LVL {stats.level}</span>
+                                    <span className="text-[8px] text-[#2D3848] font-mono">LVL {stats.level + 1} — {nextXP.toLocaleString()} XP</span>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    );
 
-                    {/* Progress Bar */}
-                    <div className="bg-surface border border-glass rounded-[1.5rem] p-6">
-                        <div className="flex items-center justify-between mb-3">
-                            <span className="text-[11px] font-black text-primary uppercase tracking-widest flex items-center gap-2">
-                                <Zap className="w-3 h-3 text-theme" />
-                                Level Progress
-                            </span>
-                            <span className="text-[10px] font-mono text-tertiary">
-                                {stats.xp.toLocaleString()} / {nextXP.toLocaleString()} XP
-                            </span>
-                        </div>
-                        <div className="h-2 w-full bg-glass rounded-full overflow-hidden">
-                            <motion.div 
-                                initial={{ width: 0 }}
-                                animate={{ width: `${progress}%` }}
-                                transition={{ duration: 1, delay: 0.2, ease: "easeOut" }}
-                                className="h-full bg-theme relative"
+    const renderSkills = () => (
+        user.skills?.length > 0 ? (
+            <div>
+                <SectionLabel icon={Star} label="Endorsed Skills" accent />
+                <div className="flex flex-wrap gap-2">
+                    {user.skills.map((s) => {
+                        const count = endorsements.counts[s] || 0;
+                        const endorsed = endorsements.myEndorsements.includes(s);
+                        return (
+                            <button
+                                key={s}
+                                onClick={() => toggleEndorsement(s)}
+                                className={cn(
+                                    "inline-flex items-center gap-2 px-3 py-2 rounded text-[10px] font-semibold uppercase tracking-[0.1em] border transition-all duration-150 active:scale-[0.97]",
+                                    endorsed
+                                        ? "bg-[#0D6EFD] border-[#0D6EFD] text-white"
+                                        : "bg-[#0C1118] border-[#1A2333] text-[#8A95A8] hover:border-[#0D6EFD]/40 hover:text-[#E8EDF5]"
+                                )}
                             >
-                                <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                            </motion.div>
+                                {s}
+                                <span className={cn(
+                                    "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-bold",
+                                    endorsed ? "bg-white/20 text-white" : "bg-[#1A2333] text-[#5A6478]"
+                                )}>
+                                    <ThumbsUp className="w-2 h-2" />
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+            </div>
+        ) : (
+            <div className="text-center py-12 rounded-xl border border-dashed border-[#1A2333]">
+                <Star className="w-6 h-6 text-[#1E2530] mx-auto mb-2" />
+                <span className="text-[9px] font-semibold text-[#3D4A5C] uppercase tracking-[0.15em]">No skills listed</span>
+            </div>
+        )
+    );
+
+    const renderBadges = () => (
+        stats.badges?.length > 0 ? (
+            <div>
+                <SectionLabel icon={Award} label="Achievements" accent />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {stats.badges.map((badge, i) => (
+                        <div
+                            key={i}
+                            className="flex items-center gap-3 p-3 rounded-lg bg-[#0C1118] border border-[#1A2333] hover:border-[#1E2A3A] transition-all group"
+                        >
+                            <div className="w-8 h-8 rounded bg-[#0D6EFD]/10 border border-[#0D6EFD]/20 flex items-center justify-center shrink-0 group-hover:border-[#0D6EFD]/40 transition-all">
+                                <Award className="w-3.5 h-3.5 text-[#0D6EFD]" />
+                            </div>
+                            <div className="min-w-0">
+                                <div className="text-[10px] font-semibold text-[#C8D0DC] truncate uppercase tracking-[0.05em]">{badge.name}</div>
+                                <div className="text-[8px] text-[#3D4A5C] truncate mt-0.5">{badge.description}</div>
+                            </div>
+                            <ChevronRight className="w-3 h-3 text-[#1E2530] shrink-0 ml-auto" />
+                        </div>
+                    ))}
+                </div>
+            </div>
+        ) : (
+            <div className="text-center py-12 rounded-xl border border-dashed border-[#1A2333]">
+                <Award className="w-6 h-6 text-[#1E2530] mx-auto mb-2" />
+                <span className="text-[9px] font-semibold text-[#3D4A5C] uppercase tracking-[0.15em]">No achievements yet</span>
+            </div>
+        )
+    );
+
+    const tabContent = {
+        overview: renderOverview,
+        skills: renderSkills,
+        badges: renderBadges,
+    };
+
+    /* ─── full render ─────────────────────────────────────────────────────── */
+    return renderShell(
+        <div className="relative z-10 flex flex-col md:flex-row">
+
+            <div className="md:w-[240px] shrink-0 flex flex-col border-b md:border-b-0 md:border-r border-[#1A2333] bg-[#060A10]">
+
+                <div className="relative h-20 md:h-24 overflow-hidden bg-[#0C1118]">
+                    {user.coverImage ? (
+                        <img src={user.coverImage} className="w-full h-full object-cover opacity-40" alt="" />
+                    ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-[#0D6EFD]/10 to-transparent" />
+                    )}
+                    <div
+                        className="absolute inset-0 opacity-10"
+                        style={{ backgroundImage: 'linear-gradient(#1A2333 1px,transparent 1px),linear-gradient(90deg,#1A2333 1px,transparent 1px)', backgroundSize: '20px 20px' }}
+                    />
+                </div>
+
+                <div className="px-5 pb-5 flex flex-col gap-4">
+                    <div className="relative -mt-7 mb-1">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden ring-2 ring-[#0D6EFD]/40 ring-offset-2 ring-offset-[#060A10] shadow-xl">
+                            <img src={getOptimizedAvatar(user.avatar)} alt={user.name} className="w-full h-full object-cover" />
+                        </div>
+                        {user.status === 'Online' && (
+                            <div className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-[#22C55E] border-2 border-[#060A10]" />
+                        )}
+                        <div className="absolute -top-1.5 -left-1.5 w-6 h-6 rounded bg-[#0D6EFD] flex items-center justify-center text-[8px] font-bold text-white shadow-lg">
+                            L{stats.level}
                         </div>
                     </div>
 
-                    {/* Badges */}
-                    <div className="bg-surface border border-glass rounded-[1.5rem] p-6">
-                        <h3 className="text-[11px] font-black text-tertiary uppercase tracking-widest mb-4 flex items-center gap-2">
-                            <Award className="w-4 h-4 text-theme" />
-                            Achievements
-                        </h3>
-                        {stats.badges?.length > 0 ? (
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                                {stats.badges.map((badge, idx) => (
-                                    <div key={idx} className="flex items-start gap-4 p-4 rounded-xl bg-sunken/50 border border-glass hover:bg-theme/5 hover:border-theme/30 transition-all">
-                                        <div className="w-10 h-10 rounded-xl bg-theme/10 text-theme flex items-center justify-center shrink-0 shadow-inner">
-                                            {/* Generic medal icon, or matched dynamically if we extend it */}
-                                            <Award className="w-5 h-5" />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="text-xs font-black text-primary truncate leading-tight mb-1">{badge.name}</div>
-                                            <div className="text-[10px] text-tertiary font-medium line-clamp-2 leading-relaxed">{badge.description}</div>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="flex flex-col items-center justify-center py-6 text-center border border-dashed border-glass rounded-xl opacity-50">
-                                <Award className="w-8 h-8 text-tertiary mb-2" />
-                                <span className="text-[10px] font-black text-tertiary uppercase tracking-widest">No Achievements Yet</span>
+                    <div className="space-y-1.5">
+                        <h2 className="text-[15px] font-bold text-[#E8EDF5] tracking-tight leading-tight">{user.name}</h2>
+                        <div className="flex flex-wrap gap-1.5">
+                            <span className="text-[8px] font-semibold text-[#0D6EFD] bg-[#0D6EFD]/10 border border-[#0D6EFD]/20 px-2 py-0.5 rounded uppercase tracking-[0.12em]">
+                                {user.role}
+                            </span>
+                            {user.location && (
+                                <span className="inline-flex items-center gap-1 text-[8px] font-medium text-[#3D4A5C]">
+                                    <MapPin className="w-2 h-2" />{user.location}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+
+                    <Divider />
+
+                    {user.bio && (
+                        <div className="bg-[#0C1118] border border-[#1A2333] p-3 rounded-lg relative italic overflow-hidden">
+                            <div className="absolute top-0 left-0 w-1 h-full bg-[#0D6EFD]/30" />
+                            <p className="text-[10px] text-[#5A6478] leading-relaxed opacity-80">"{user.bio}"</p>
+                        </div>
+                    )}
+
+                    {user._id !== reqUser?._id && (
+                        <button 
+                            onClick={handleStartChat}
+                            className="w-full py-2.5 bg-[#0D6EFD] text-white rounded-lg font-bold text-[10px] uppercase tracking-[0.15em] hover:bg-[#0B5ED7] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        >
+                            <MessageSquare className="w-3 h-3" />
+                            Send Message
+                        </button>
+                    )}
+
+                    <div className="space-y-2 mt-auto">
+                        {user.department && (
+                            <div className="flex items-center gap-2 text-[9px] text-[#3D4A5C]">
+                                <Users className="w-3 h-3 shrink-0" />
+                                <span className="truncate">{user.department}</span>
                             </div>
                         )}
+                        {user.joinedDate && (
+                            <div className="flex items-center gap-2 text-[9px] text-[#3D4A5C]">
+                                <Clock className="w-3 h-3 shrink-0" />
+                                <span>Joined {user.joinedDate}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 text-[9px] text-[#3D4A5C]">
+                            <Circle className="w-2 h-2 shrink-0 fill-current" style={{ color: user.status === 'Online' ? '#22C55E' : '#3D4A5C' }} />
+                            <span>{user.status || 'Offline'}</span>
+                        </div>
                     </div>
                 </div>
             </div>
-        );
-    };
 
-    return (
-        <AnimatePresence>
-            <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                onClick={onClose}
-                className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-md p-4 sm:p-6"
-            >
-                <motion.div
-                    initial={{ scale: 0.95, opacity: 0, y: 20 }}
-                    animate={{ scale: 1, opacity: 1, y: 0 }}
-                    exit={{ scale: 0.95, opacity: 0, y: 20 }}
-                    transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                    onClick={(e) => e.stopPropagation()}
-                    className="w-full max-w-2xl bg-base rounded-[2.5rem] border border-glass shadow-2xl overflow-hidden relative"
-                >
-                    {/* Background glow effects */}
-                    <div className="absolute top-0 right-0 w-96 h-96 bg-theme/5 rounded-full blur-[80px] pointer-events-none" />
-                    
-                    <button
-                        onClick={onClose}
-                        className="absolute top-6 right-6 p-2 rounded-xl text-tertiary hover:bg-glass hover:text-primary transition-all z-20"
-                    >
-                        <X className="w-5 h-5" />
-                    </button>
+            {/* ── Right panel ──────────────────────────────────────────── */}
+            <div className="flex-1 flex flex-col min-w-0">
 
-                    {renderContent()}
-                </motion.div>
-            </motion.div>
-        </AnimatePresence>
+                {/* Tab bar */}
+                <div className="flex items-center gap-0 border-b border-[#1A2333] px-5 pt-4">
+                    {tabs.map((tab) => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setActiveTab(tab.id)}
+                            className={cn(
+                                "relative px-4 py-2.5 text-[9px] font-semibold uppercase tracking-[0.15em] transition-all",
+                                activeTab === tab.id
+                                    ? "text-[#E8EDF5]"
+                                    : "text-[#3D4A5C] hover:text-[#8A95A8]"
+                            )}
+                        >
+                            {tab.label}
+                            {activeTab === tab.id && (
+                                <motion.div
+                                    layoutId="tab-indicator"
+                                    className="absolute bottom-0 inset-x-0 h-[2px] bg-[#0D6EFD] rounded-t-full"
+                                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                />
+                            )}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab content */}
+                <div className="flex-1 overflow-y-auto p-5 max-h-[480px]"
+                    style={{ scrollbarWidth: 'thin', scrollbarColor: '#1A2333 transparent' }}>
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={activeTab}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -4 }}
+                            transition={{ duration: 0.15 }}
+                        >
+                            {tabContent[activeTab]?.()}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
+
+                {/* Footer */}
+                <div className="flex items-center justify-between px-5 py-3 border-t border-[#1A2333] bg-[#060A10]">
+                    <div className="flex items-center gap-2 text-[8px] font-medium text-[#2D3848] uppercase tracking-[0.15em]">
+                        <Shield className="w-2.5 h-2.5" />
+                        Verified Member
+                    </div>
+                    <div className="text-[8px] font-mono text-[#2D3848]">ID #{userId?.slice(0, 8).toUpperCase()}</div>
+                </div>
+            </div>
+        </div>
     );
 }

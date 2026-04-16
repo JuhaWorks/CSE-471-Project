@@ -3,8 +3,8 @@ import { cn } from './ProfileUtils';
 
 const WEEKS = 52;
 const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const TYPES = ['Bug', 'Feature', 'Maintenance', 'Task', 'Research'];
-const FILTERS = ['All activity', 'Bug', 'Feature', 'Maintenance', 'Task'];
+const TYPES = ['Strategic', 'Engineering', 'Sustainability', 'Operations'];
+const FILTERS = ['All activity', 'Strategic', 'Engineering', 'Sustainability', 'Operations'];
 
 function intensity(n) {
     if (!n || n === 0) return 0;
