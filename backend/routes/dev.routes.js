@@ -114,18 +114,6 @@ router.get('/inspect', async (req, res, next) => {
     }
 });
 
-    res.status(200).json({
-        status: 'success',
-        message: 'Radar data seeded successfully.',
-        data: {
-            userId: user._id,
-            projectId: project._id,
-            tasksCreated: tasksToCreate.length,
-            newSpecialties: Object.fromEntries(newSpecialties)
-        }
-    });
-}));
-
 /**
  * GET /api/dev/prime
  * Triggers a manual re-calculation of specialties if needed.
