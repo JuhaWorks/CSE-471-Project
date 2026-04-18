@@ -14,7 +14,7 @@ const logger = {
 let redisClient;
 const initRedis = async () => {
     if (!process.env.REDIS_URL && process.env.NODE_ENV === 'production') {
-        logger.error('❌ REDIS_URL missing in production');
+        logger.warn('⚠️ REDIS_URL missing in production. Caching layer is DISABLED. To improve performance, add a Redis instance and provide the REDIS_URL environment variable.');
         return;
     }
     redisClient = redis.createClient({ url: process.env.REDIS_URL || 'redis://localhost:6379' });

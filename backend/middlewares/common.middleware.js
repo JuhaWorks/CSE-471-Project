@@ -31,6 +31,7 @@ const globalErrorHandler = (err, req, res, next) => {
     const statusCode = (res.statusCode && res.statusCode !== 200) 
         ? res.statusCode 
         : (error.statusCode || err.statusCode || 500);
+    
     if (statusCode !== 404) {
         logger.error(`${statusCode} - ${error.message} - ${req.originalUrl} - ${req.method} - ${req.ip}`);
     }
@@ -55,7 +56,8 @@ const globalErrorHandler = (err, req, res, next) => {
         error.statusCode = 401;
     }
 
-    const finalStatusCode = error.statusCode || 500;
+    // Capture the final determined status code from either the specialized blocks or the initial fallback
+    const finalStatusCode = error.statusCode || statusCode;
     res.status(finalStatusCode).json({
         status: 'error',
         message: error.message || 'Server Error',
