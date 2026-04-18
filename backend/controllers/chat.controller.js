@@ -1,13 +1,11 @@
 const Chat = require('../models/chat.model');
 const Message = require('../models/message.model');
 const User = require('../models/user.model');
-const socketUtil = require('../utils/socket');
-const notificationService = require('../services/notification.service');
-const logger = require('../utils/logger');
+const { getIO } = require('../utils/service.utils');
+const { logger } = require('../utils/system.utils');
 
-// @desc    Get all chats for current user
-// @route   GET /api/chat
-// @access  Private
+const notificationService = require('../services/notification.service');
+const { catchAsync } = require('../utils/core.utils');
 const getUserChats = async (req, res, next) => {
     try {
         const chats = await Chat.find({ participants: req.user._id })
@@ -135,14 +133,16 @@ const sendMessage = async (req, res, next) => {
         ]);
 
         // 4. Emit via Socket.io
-        if (socketUtil.isInitialized()) {
-            const io = socketUtil.getIO();
+        try {
+            const io = getIO();
             chat.participants.forEach(pId => {
                 io.to(pId.toString()).emit('newMessage', {
                     chat: targetChatId,
                     message: populatedMessage
                 });
             });
+        } catch (sErr) {
+            logger.warn(`Socket dispatch failed for newMessage: ${sErr.message}`);
         }
 
         // 5. Create Database Notifications
@@ -186,17 +186,19 @@ const unsendMessage = async (req, res, next) => {
         await message.save();
 
         // Broadcast deletion to all participants in the chat
-        if (socketUtil.isInitialized()) {
-            const io = socketUtil.getIO();
-            const chat = await require('../models/chat.model').findById(message.chat);
+        try {
+            const io = getIO();
+            const chat = await Chat.findById(message.chat);
             if (chat) {
                 chat.participants.forEach(pId => {
                     io.to(pId.toString()).emit('messageDeleted', {
-                        chatId: message.chat.toString(),
-                        messageId: message._id.toString()
+                        chat: message.chat,
+                        messageId: messageId
                     });
                 });
             }
+        } catch (sErr) {
+            logger.warn(`Socket dispatch failed for messageDeleted: ${sErr.message}`);
         }
 
         res.status(200).json({ status: 'success', messageId: message._id });

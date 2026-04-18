@@ -1,8 +1,9 @@
 const User = require('../models/user.model');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const { logSecurityEvent } = require('../utils/activityLogger');
-const { getFrontendUrl, formatUserResponse, sendStandardEmail, getCookieOptions } = require('../utils/helpers');
+const { logSecurityEvent } = require('../utils/system.utils');
+const { getFrontendUrl, formatUserResponse, getCookieOptions } = require('../utils/core.utils');
+const { sendStandardEmail } = require('../utils/service.utils');
 
 // Generate JWT Access Token (Short-lived)
 const generateAccessToken = (id) => {

@@ -1,8 +1,7 @@
 const Notification = require('../models/notification.model');
 const User = require('../models/user.model');
-const sendEmail = require('../utils/sendEmail');
-const socketUtil = require('../utils/socket');
-const logger = require('../utils/logger');
+const { sendEmail, getIO } = require('../utils/service.utils');
+const { logger } = require('../utils/system.utils');
 
 /**
  * Service to manage centralized notifications
@@ -80,7 +79,7 @@ class NotificationService {
                 const isSelf = senderId?.toString() === recipientId?.toString();
 
                 if (inAppGlobal && isInAppEnabled && !isSelf) {
-                    const io = socketUtil.getIO();
+                    const io = getIO();
                     if (io) {
                         io.to(`user_${recipientId}`).emit('newNotification', {
                             ...notification.toObject(),

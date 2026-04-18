@@ -2,7 +2,7 @@ const Task = require('../models/task.model');
 const Audit = require('../models/audit.model');
 const ProjectSnapshot = require('../models/projectSnapshot.model');
 const mongoose = require('mongoose');
-const catchAsync = require('../utils/catchAsync');
+const { catchAsync } = require('../utils/core.utils');
 
 /**
  * 🚀 Professional Analytics Engine (Hybrid Intelligence Edition)

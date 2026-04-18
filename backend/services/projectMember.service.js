@@ -3,8 +3,9 @@ const Project = require('../models/project.model');
 const User = require('../models/user.model');
 const ProjectInvitation = require('../models/projectInvitation.model');
 const crypto = require('crypto');
-const { logActivity } = require('../utils/activityLogger');
-const { sendStandardEmail, getFrontendUrl } = require('../utils/helpers');
+const { logActivity } = require('../utils/system.utils');
+const { sendStandardEmail } = require('../utils/service.utils');
+const { catchAsync, getFrontendUrl } = require('../utils/core.utils');
 const notificationService = require('./notification.service');
 
 /**

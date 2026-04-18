@@ -95,7 +95,7 @@ const taskSchema = new mongoose.Schema(
     }
 );
 
-const { DOMAIN_MAPPING } = require('../utils/constants');
+const { DOMAIN_MAPPING } = require('../utils/core.utils');
 
 taskSchema.pre('save', function() {
     if (this.isModified('type') || this.isNew || !this.domain) {

@@ -1,8 +1,8 @@
 const User = require('../models/user.model');
 const Audit = require('../models/audit.model');
-const socketUtil = require('../utils/socket');
-const logger = require('../utils/logger');
-const { DOMAIN_MAPPING } = require('../utils/constants');
+const { sendEmail, getIO } = require('../utils/service.utils');
+const { logger } = require('../utils/system.utils');
+const { DOMAIN_MAPPING } = require('../utils/core.utils');
 
 const LEVEL_THRESHOLDS = {
     1: 0,

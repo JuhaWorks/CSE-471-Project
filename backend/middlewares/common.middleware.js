@@ -1,5 +1,5 @@
 const morgan = require('morgan');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/system.utils');
 
 /**
  * 1. Request Logging Middleware (Morgan)

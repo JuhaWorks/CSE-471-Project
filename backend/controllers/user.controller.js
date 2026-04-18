@@ -1,11 +1,14 @@
 const User = require('../models/user.model');
+const Notification = require('../models/notification.model');
 const axios = require('axios');
 const { z } = require('zod');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const { cloudinary } = require('../config/cloudinary');
-const { getFrontendUrl, formatUserResponse, sendStandardEmail } = require('../utils/helpers');
-const { logSecurityEvent } = require('../utils/activityLogger');
+const { getFrontendUrl, formatUserResponse } = require('../utils/core.utils');
+const { sendStandardEmail } = require('../utils/service.utils');
+const { logSecurityEvent } = require('../utils/system.utils');
+const { catchAsync } = require('../utils/core.utils');
 
 // ─── Zod Schemas ────────────────────────────────────────────────────────────
 
@@ -24,6 +27,7 @@ const updateProfileSchema = z.object({
         showWeather: z.boolean().optional(),
         showApod: z.boolean().optional()
     }).optional(),
+    customMessage: z.string().max(250, 'Status message must be 250 characters or fewer').optional(),
 });
 
 const changePasswordSchema = z.object({
@@ -172,6 +176,7 @@ const updateProfile = async (req, res, next) => {
         if (req.body.bio !== undefined) updates.bio = req.body.bio;
         if (req.body.skills !== undefined) updates.skills = req.body.skills;
         if (req.body.coverImage !== undefined) updates.coverImage = req.body.coverImage;
+        if (req.body.customMessage !== undefined) updates.customMessage = req.body.customMessage.substring(0, 250);
 
         if (req.body.interfacePrefs) {
             if (req.body.interfacePrefs.showTeamClock !== undefined) {
@@ -636,6 +641,148 @@ const getWorkspaceMembers = async (req, res, next) => {
     }
 };
 
+// ─── Account Lifecycle & Security ──────────────────────────────────────────
+
+// @desc    Deactivate user account
+const deactivateAccount = async (req, res, next) => {
+    try {
+        const { duration } = req.body;
+        await User.deactivateAndCleanUp(req.user.id, duration);
+
+        const isProd = process.env.NODE_ENV === 'production';
+        res.clearCookie('token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
+
+        res.status(200).json({ status: 'success', message: 'Account successfully deactivated' });
+    } catch (error) { next(error); }
+};
+
+// @desc    Update user security details (Legacy all-in-one support)
+const updateSecurity = async (req, res, next) => {
+    try {
+        const { email, currentPassword, newPassword } = req.body;
+        const user = await User.findById(req.user.id).select('+password');
+        if (!user) { res.status(404); return next(new Error('User not found')); }
+
+        let changesMade = false;
+        if (email && email !== user.email) {
+            const emailExists = await User.findOne({ email });
+            if (emailExists) { res.status(400); return next(new Error('Email is already in use')); }
+            user.email = email;
+            changesMade = true;
+        }
+        if (currentPassword && newPassword) {
+            const isMatch = await user.matchPassword(currentPassword);
+            if (!isMatch) { res.status(400); return next(new Error('Incorrect current password')); }
+            user.password = newPassword;
+            changesMade = true;
+        }
+        if (changesMade) await user.save();
+        res.status(200).json({ status: 'success', message: 'Security settings updated' });
+    } catch (error) { next(error); }
+};
+
+// @desc    Delete user account and clean up associations
+const deleteAccount = async (req, res, next) => {
+    try {
+        await User.deleteAndCleanUp(req.user.id);
+
+        const isProd = process.env.NODE_ENV === 'production';
+        res.clearCookie('token', { httpOnly: true, secure: isProd, sameSite: isProd ? 'none' : 'lax' });
+
+        res.status(200).json({ status: 'success', message: 'Account and associated references successfully deleted' });
+    } catch (error) { next(error); }
+};
+
+// ─── Notification Controllers (Consolidated) ────────────────────────────────
+
+// @desc    Get user notifications
+const getNotifications = catchAsync(async (req, res) => {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const unreadOnly = req.query.unread === 'true';
+
+    const query = { recipient: req.user._id, isArchived: false };
+    if (unreadOnly) query.isRead = false;
+
+    const notifications = await Notification.find(query)
+        .populate('sender', 'name avatar')
+        .sort('-createdAt')
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .lean();
+
+    const total = await Notification.countDocuments(query);
+    const unreadCount = await Notification.countDocuments({ recipient: req.user._id, isRead: false, isArchived: false });
+
+    res.status(200).json({
+        status: 'success',
+        unreadCount,
+        pagination: { total, page, pages: Math.ceil(total / limit) },
+        data: notifications
+    });
+});
+
+const markAsRead = catchAsync(async (req, res) => {
+    const notification = await Notification.findOneAndUpdate(
+        { _id: req.params.id, recipient: req.user._id },
+        { isRead: true },
+        { new: true }
+    );
+    if (!notification) { res.status(404); throw new Error('Notification not found'); }
+    res.status(200).json({ status: 'success', data: notification });
+});
+
+const markAllAsRead = catchAsync(async (req, res) => {
+    await Notification.updateMany({ recipient: req.user._id, isRead: false }, { isRead: true });
+    res.status(200).json({ status: 'success', message: 'All notifications marked as read' });
+});
+
+const archiveNotification = catchAsync(async (req, res) => {
+    const notification = await Notification.findOneAndUpdate(
+        { _id: req.params.id, recipient: req.user._id },
+        { isArchived: true },
+        { new: true }
+    );
+    if (!notification) { res.status(404); throw new Error('Notification not found'); }
+    res.status(200).json({ status: 'success', data: notification });
+});
+
+const archiveAll = catchAsync(async (req, res) => {
+    await Notification.updateMany({ recipient: req.user._id, isArchived: false }, { isArchived: true });
+    res.status(200).json({ status: 'success', message: 'All notifications archived' });
+});
+
+const deleteNotification = catchAsync(async (req, res) => {
+    const notification = await Notification.findOneAndDelete({ _id: req.params.id, recipient: req.user._id });
+    if (!notification) { res.status(404); throw new Error('Notification not found'); }
+    res.status(200).json({ status: 'success', message: 'Notification deleted' });
+});
+
+const updateNotificationPreferences = catchAsync(async (req, res) => {
+    const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { notificationPrefs: req.body },
+        { new: true, runValidators: true }
+    ).select('notificationPrefs');
+    res.status(200).json({ status: 'success', data: user.notificationPrefs });
+});
+
+const sendTestNotification = catchAsync(async (req, res) => {
+    const notificationService = require('../services/notification.service');
+    const { type } = req.body;
+    await notificationService.notify({
+        recipientId: req.user._id,
+        senderId: req.user._id,
+        type: 'Mention',
+        priority: 'Medium',
+        title: 'Diagnostic System',
+        message: `Your ${type} notification layer is active.`,
+        link: '/settings/notifications',
+        metadata: { projectName: 'System' }
+    });
+    res.status(200).json({ status: 'success', message: `Test ${type} dispatched` });
+});
+
 module.exports = {
     uploadAvatar,
     uploadCoverImage,
@@ -647,5 +794,16 @@ module.exports = {
     confirmEmailChange,
     getPublicProfile,
     getHeatmap,
-    getWorkspaceMembers
+    getWorkspaceMembers,
+    deactivateAccount,
+    deleteAccount,
+    getNotifications,
+    markAsRead,
+    markAllAsRead,
+    archiveNotification,
+    archiveAll,
+    deleteNotification,
+    updateNotificationPreferences,
+    sendTestNotification,
+    updateSecurity
 };

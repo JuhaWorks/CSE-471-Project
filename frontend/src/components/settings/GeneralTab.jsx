@@ -17,6 +17,7 @@ const cn = (...inputs) => twMerge(clsx(inputs));
 
 const generalSchema = z.object({
     name: z.string().min(2, 'Name must be at least 2 characters'),
+    customMessage: z.string().max(250, 'Status message must be 250 characters or fewer').optional(),
     interfacePrefs: z.object({
         showTeamClock: z.boolean().default(true),
         showWeather: z.boolean().default(true),
@@ -38,6 +39,7 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
         resolver: zodResolver(generalSchema),
         defaultValues: {
             name: user?.name || '',
+            customMessage: user?.customMessage || '',
             interfacePrefs: {
                 showTeamClock: user?.interfacePrefs?.showTeamClock ?? true,
                 showWeather: user?.interfacePrefs?.showWeather ?? true,
@@ -290,6 +292,20 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                             />
                                         </div>
                                         {errors.name && <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-rose-500 font-semibold mt-1.5">{errors.name.message}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="block font-mono text-[9px] tracking-[0.16em] uppercase text-tertiary font-semibold mb-2">Status Message</label>
+                                        <div className="relative group">
+                                            <BadgeCheck size={13} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-disabled pointer-events-none group-focus-within:text-theme transition-colors" />
+                                            <input
+                                                type="text"
+                                                placeholder="What's happening?"
+                                                {...register('customMessage')}
+                                                className="w-full bg-surface border border-default rounded-lg pl-9 pr-4 py-2.5 text-primary text-sm font-medium placeholder:text-disabled outline-none transition-all focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500/40"
+                                            />
+                                        </div>
+                                        {errors.customMessage && <p className="font-mono text-[9px] tracking-[0.12em] uppercase text-rose-500 font-semibold mt-1.5">{errors.customMessage.message}</p>}
                                     </div>
                                 </div>
 

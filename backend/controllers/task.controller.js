@@ -1,11 +1,11 @@
 const Task = require('../models/task.model');
 const Project = require('../models/project.model');
 const Audit = require('../models/audit.model');
-const socket = require('../utils/socket');
-const { logActivity } = require('../utils/activityLogger');
+const { getIO } = require('../utils/service.utils');
+const { logActivity, logger } = require('../utils/system.utils');
 const notificationService = require('../services/notification.service');
 const gamification = require('../services/gamification.service');
-const { DOMAIN_MAPPING } = require('../utils/constants');
+const { DOMAIN_MAPPING } = require('../utils/core.utils');
 
 /**
  * Helper to detect circular dependencies
@@ -204,7 +204,7 @@ const createTask = async (req, res, next) => {
 
         // Emit real-time WebSocket event
         const room = task.project?._id?.toString() || task.project?.toString();
-        socket.getIO().to(room).emit('taskUpdated', populatedTask);
+        getIO().to(room).emit('taskUpdated', populatedTask);
 
         // --- Notification Logic ---
         // Notify all assignees about new task
@@ -349,14 +349,14 @@ const updateTask = async (req, res, next) => {
                 const other = await Task.findByIdAndUpdate(id, { $addToSet: { 'dependencies.blocking': task._id } }, { returnDocument: 'after' }).select('dependencies project');
                 if (other) {
                     const roomId = other.project?._id?.toString() || other.project?.toString() || task.project?._id?.toString() || task.project?.toString();
-                    socket.getIO().to(roomId).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+                    getIO().to(roomId).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
                 }
             }
             for (const id of removedBlockedBy) {
                 const other = await Task.findByIdAndUpdate(id, { $pull: { 'dependencies.blocking': task._id } }, { returnDocument: 'after' }).select('dependencies project');
                 if (other) {
                     const roomId = other.project?._id?.toString() || other.project?.toString() || task.project?._id?.toString() || task.project?.toString();
-                    socket.getIO().to(roomId).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+                    getIO().to(roomId).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
                 }
             }
 
@@ -366,11 +366,11 @@ const updateTask = async (req, res, next) => {
 
             for (const id of addedBlocking) {
                 const other = await Task.findByIdAndUpdate(id, { $addToSet: { 'dependencies.blockedBy': task._id } }, { returnDocument: 'after' }).select('dependencies');
-                if (other) socket.getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+                if (other) getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
             }
             for (const id of removedBlocking) {
                 const other = await Task.findByIdAndUpdate(id, { $pull: { 'dependencies.blockedBy': task._id } }, { returnDocument: 'after' }).select('dependencies');
-                if (other) socket.getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
+                if (other) getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
             }
 
             task.dependencies.blockedBy = newBlockedBy;
@@ -435,7 +435,7 @@ const updateTask = async (req, res, next) => {
 
         // Emit real-time WebSocket event
         const projectRoom = task.project?._id?.toString() || task.project?.toString();
-        socket.getIO().to(projectRoom).emit('taskUpdated', task);
+        getIO().to(projectRoom).emit('taskUpdated', task);
 
         // --- Notification Logic (Matured Metadata Tracking) ---
         const statusChanged = req.body.status && oldStatus !== req.body.status;
@@ -591,7 +591,7 @@ const deleteTask = async (req, res, next) => {
         }, 'Task', task._id);
 
         // Emit real-time WebSocket deletion signal (passing deleted ID)
-        socket.getIO().to(task.project.toString()).emit('taskDeleted', task._id);
+        getIO().to(task.project.toString()).emit('taskDeleted', task._id);
 
         res.status(200).json({ status: 'success', data: {} });
     } catch (error) {
@@ -710,7 +710,7 @@ const bulkUpdateTasks = async (req, res, next) => {
         const { calculateTaskXP, awardXP } = require('../services/gamification.service');
         
         for (const task of updatedTasks) {
-            socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+            getIO().to(task.project.toString()).emit('taskUpdated', task);
             
             const originalTask = tasks.find(t => t._id.toString() === task._id.toString());
             const isNowCompleted = originalTask && originalTask.status !== 'Completed' && task.status === 'Completed';
@@ -804,7 +804,7 @@ const startTimer = async (req, res, next) => {
         });
         await task.save();
 
-        socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+        getIO().to(task.project.toString()).emit('taskUpdated', task);
 
         // Log Timer Start
         await logActivity(task.project.toString(), req.user._id, 'TimerStart', {
@@ -845,20 +845,179 @@ const stopTimer = async (req, res, next) => {
             totalActualTime: task.actualTime
         }, 'Task', task._id);
 
-        socket.getIO().to(task.project.toString()).emit('taskUpdated', task);
+        getIO().to(task.project.toString()).emit('taskUpdated', task);
 
         res.status(200).json({ status: 'success', data: { duration, actualTime: task.actualTime } });
     } catch (error) { next(error); }
 };
 
+/**
+ * @desc    Get single task
+ * @route   GET /api/tasks/:id
+ * @access  Private
+ */
+const getTask = async (req, res, next) => {
+    try {
+        const task = await Task.findById(req.params.id)
+            .populate('assignees', 'name email avatar')
+            .populate('assignee', 'name email avatar')
+            .populate('project', 'name color members')
+            .populate({ path: 'dependencies.blockedBy', select: 'title status' })
+            .populate({ path: 'dependencies.blocks', select: 'title status' })
+            .lean();
+
+        if (!task) { res.status(404); throw new Error('Task not found'); }
+
+        const project = task.project;
+        const isMember = project?.members?.some(m => m.userId?.toString() === req.user._id.toString() && m.status === 'active');
+        if (!isMember && req.user.role !== 'Admin') {
+            res.status(403);
+            throw new Error('User not authorized to access this task');
+        }
+
+        res.status(200).json({ status: 'success', data: task });
+    } catch (error) { next(error); }
+};
+
+/**
+ * @desc    Update task status specifically
+ * @route   PATCH /api/tasks/:id/status
+ * @access  Private
+ */
+const updateTaskStatus = async (req, res, next) => {
+    try {
+        const { status } = req.body;
+        if (!status) { res.status(400); throw new Error('Status is required'); }
+
+        const task = await Task.findById(req.params.id);
+        if (!task) { res.status(404); throw new Error('Task not found'); }
+
+        const oldStatus = task.status;
+        task.status = status;
+        await task.save();
+
+        // Audit & Socket
+        await logActivity(task.project.toString(), req.user._id, 'StatusUpdate', {
+            title: task.title,
+            from: oldStatus,
+            to: status
+        }, 'Task', task._id);
+
+        getIO().to(task.project.toString()).emit('taskUpdated', task);
+
+        // Gamification logic for completion
+        if (oldStatus !== 'Completed' && status === 'Completed') {
+            const xp = gamification.calculateTaskXP(task);
+            const assignees = task.assignees?.length > 0 ? task.assignees : [req.user._id];
+            for (const u of assignees) {
+                gamification.awardXP(u._id || u, xp, task).catch(err => logger.error(`XP Error: ${err.message}`));
+            }
+        }
+
+        res.status(200).json({ status: 'success', data: task });
+    } catch (error) { next(error); }
+};
+
+// ─── Task Comment Methods (Merged) ──────────────────────────────────────────
+
+const getTaskComments = async (req, res, next) => {
+    try {
+        const comments = await TaskComment.find({ task: req.params.taskId })
+            .populate('user', 'name email avatar')
+            .sort('-createdAt')
+            .lean();
+        res.status(200).json({ status: 'success', data: comments });
+    } catch (error) { next(error); }
+};
+
+const addTaskComment = async (req, res, next) => {
+    try {
+        const { content, mentions, attachments } = req.body;
+        const taskId = req.params.taskId;
+        const task = await Task.findById(taskId);
+        if (!task) { res.status(404); throw new Error('Task not found'); }
+
+        const comment = await TaskComment.create({
+            task: taskId, user: req.user._id, content, mentions, attachments
+        });
+
+        const populatedComment = await TaskComment.findById(comment._id).populate('user', 'name email avatar').lean();
+        
+        getIO().to(task.project.toString()).emit('commentAdded', { taskId, comment: populatedComment });
+
+        await logActivity(task.project.toString(), req.user._id, 'CommentAdded', {
+            title: task.title, summary: `Added comment: "${content.substring(0, 30)}..."`
+        }, 'Task', taskId);
+
+        if (mentions?.length > 0) {
+            for (const recipientId of mentions) {
+                if (recipientId.toString() === req.user._id.toString()) continue;
+                await notificationService.notify({
+                    recipientId, senderId: req.user._id, type: 'Mention',
+                    title: 'New Mention', message: `${req.user.name} mentioned you on "${task.title}"`,
+                    link: `/tasks?project=${task.project}`,
+                    metadata: { taskId: task._id, projectId: task.project }
+                }).catch(e => logger.error(`Notify Error: ${e.message}`));
+            }
+        }
+
+        gamification.awardXP(req.user._id, 10, task).catch(err => logger.error(`Comment XP Error: ${err.message}`));
+        res.status(201).json({ status: 'success', data: populatedComment });
+    } catch (error) { next(error); }
+};
+
+const deleteTaskComment = async (req, res, next) => {
+    try {
+        const comment = await TaskComment.findById(req.params.commentId);
+        if (!comment) { res.status(404); throw new Error('Comment not found'); }
+        if (comment.user.toString() !== req.user._id.toString() && req.user.role !== 'Admin') {
+            res.status(401); throw new Error('Unauthorized');
+        }
+        await comment.deleteOne();
+        res.status(200).json({ status: 'success', data: {} });
+    } catch (error) { next(error); }
+};
+
+const toggleReaction = async (req, res, next) => {
+    try {
+        const { emoji } = req.body;
+        const comment = await TaskComment.findById(req.params.commentId);
+        if (!comment) { res.status(404); throw new Error('Comment not found'); }
+
+        const userId = req.user._id.toString();
+        const existingReaction = comment.reactions.find(r => r.emoji === emoji);
+
+        if (existingReaction) {
+            const idx = existingReaction.users.findIndex(u => u.toString() === userId);
+            if (idx !== -1) existingReaction.users.splice(idx, 1);
+            else existingReaction.users.push(req.user._id);
+            if (existingReaction.users.length === 0) comment.reactions = comment.reactions.filter(r => r.emoji !== emoji);
+        } else {
+            comment.reactions.push({ emoji, users: [req.user._id] });
+        }
+
+        await comment.save();
+        const task = await Task.findById(comment.task).select('project').lean();
+        getIO().to(task?.project?.toString() || '').emit('commentReacted', { commentId: comment._id, reactions: comment.reactions });
+
+        res.status(200).json({ status: 'success', data: comment.reactions });
+    } catch (error) { next(error); }
+};
+
 module.exports = {
     getTasks,
+    getTask,
     createTask,
     updateTask,
+    updateTaskStatus,
     deleteTask,
     getTaskActivity,
     bulkUpdateTasks,
     startTimer,
-    stopTimer
+    stopTimer,
+    getTaskComments,
+    addTaskComment,
+    deleteTaskComment,
+    toggleReaction
 };
 

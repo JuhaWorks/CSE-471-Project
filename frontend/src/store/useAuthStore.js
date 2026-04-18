@@ -2,14 +2,22 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import axios from 'axios';
 const getBaseUrl = () => {
+    // 1. Check for manual override in dev (e.g. testing against a remote dev server)
     const envUrl = import.meta.env.VITE_API_URL;
-    if (envUrl) return `${envUrl.replace(/\/$/, '')}/api`;
-
-    // Auto-detect local development
-    if (import.meta.env.DEV) {
-        return '/api';
+    
+    // Logic: In Production (Vercel), we ALMOST ALWAYS want to use the relative '/api' 
+    // to benefit from the Vercel rewrite/proxy. This makes the request "Same-Site" 
+    // and fixes Safari's Intelligent Tracking Prevention (ITP) issues.
+    if (import.meta.env.PROD) {
+        // If the user hasn't explicitly set VITE_FORCE_ABSOLUTE_API, we use relative.
+        if (import.meta.env.VITE_FORCE_ABSOLUTE_API !== 'true') {
+            return '/api';
+        }
     }
 
+    if (envUrl) return `${envUrl.replace(/\/$/, '')}/api`;
+
+    // 2. Default auto-detect
     return '/api';
 };
 

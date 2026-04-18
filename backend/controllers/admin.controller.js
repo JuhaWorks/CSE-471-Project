@@ -1,9 +1,8 @@
 const User = require('../models/user.model');
 const Project = require('../models/project.model');
 const Task = require('../models/task.model');
-const { logSecurityEvent, logActivity } = require('../utils/activityLogger');
-const SystemConfig = require('../models/systemConfig.model');
-const { checkMaintenanceStatus } = require('../utils/helpers');
+const { logSecurityEvent, logActivity } = require('../utils/system.utils');
+const { checkMaintenanceStatus } = require('../utils/core.utils');
 
 // @desc    Get all users with pagination and search
 // @route   GET /api/admin/users
@@ -239,7 +238,7 @@ const toggleMaintenance = async (req, res, next) => {
 
         // Broadcast to every connected client so browsers can react instantly
         try {
-            const { getIO } = require('../utils/socket');
+            const { getIO } = require('../utils/service.utils');
             const event = !!enabled ? 'maintenance:started' : 'maintenance:ended';
             getIO().emit(event, {
                 isUnderMaintenance: !!enabled,

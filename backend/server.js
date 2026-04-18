@@ -8,7 +8,8 @@ try {
 
 const express = require('express');
 const http = require('http');
-const logger = require('./utils/logger');
+const { logger, initRedis } = require('./utils/system.utils');
+const { initSocket } = require('./utils/service.utils');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -18,16 +19,11 @@ const { morganMiddleware, globalErrorHandler } = require('./middlewares/common.m
 const { securityMiddleware, sanitizationMiddleware, apiLimiter } = require('./middlewares/security.middleware');
 
 const passport = require('./config/passport');
-const startGarbageCollection = require('./cron/gc');
-const startDeadlineChecker = require('./cron/deadlineCheck');
-const startSocialCleanup = require('./cron/socialCleanup');
-const startRedundancyCleanup = require('./cron/redundancyCleanup');
-const { captureGlobalSnapshots, startSnapshotCron } = require('./cron/projectSnapshotter');
-const startDigestCron = require('./cron/digest.cron');
-const startTaskDeadlineChecker = require('./cron/taskDeadlineCheck');
+const startMaintenanceHub = require('./cron/maintenance.cron');
+const startDeadlineHub = require('./cron/deadline.cron');
+const { startReportingHub, captureGlobalSnapshots } = require('./cron/reporting.cron');
 
 // 1. Redis Initialization (Optional performance enhancement)
-const { initRedis } = require('./utils/redis');
 const app = express();
 
 // Initialize Redis if configured, but don't let it block startup
@@ -43,7 +39,7 @@ app.set('trust proxy', 1);
 const server = http.createServer(app);
 
 // 2. Initialize Socket.io with JWT Security
-const io = require('./utils/socket').init(server);
+const io = initSocket(server);
 
 // 3. Fast allowed origins lookup O(1)
 const allowedOrigins = new Set([
@@ -82,7 +78,7 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
-  exposedHeaders: ['set-cookie']
+  exposedHeaders: ['Authorization'] // Removing set-cookie as it's handled by credentials: true
 }));
 
 // Apply global rate limit to API routes
@@ -140,25 +136,38 @@ app.use((req, res, next) => {
 // Global Security & Maintenance Check
 app.use(securityMiddleware);
 
-// 5. Routes
+// 5. Consolidated Routes
 app.get('/', (req, res) => res.status(200).json({ status: 'success', message: 'API is running successfully.' }));
 
-app.use('/api/auth', require('./routes/auth.routes'));
-app.use('/api/projects', require('./routes/project.routes'));
-app.use('/api/tasks', require('./routes/task.routes'));
-app.use('/api/users', require('./routes/user.routes'));
-app.use('/api/settings', require('./routes/settings.routes'));
-app.use('/api/search', require('./routes/search.routes'));
-app.use('/api/audit', require('./routes/audit.routes'));
-app.use('/api/admin', require('./routes/admin.routes'));
-app.use('/api/connections', require('./routes/connection.routes'));
-app.use('/api/endorsements', require('./routes/endorsement.routes'));
-app.use('/api/tools', require('./routes/tool.routes'));
-app.use('/api/notifications', require('./routes/notification.routes'));
-app.use('/api/analytics', require('./routes/analytics.routes'));
-app.use('/api/chats', require('./routes/chat.routes'));
+const { authRouter, userRouter, settingsRouter } = require('./routes/identity.routes');
+const { projectRouter, taskRouter, whiteboardRouter } = require('./routes/work.routes');
+const { connectionRouter, endorsementRouter, notificationRouter, chatRouter } = require('./routes/social.routes');
+const { adminRouter, analyticsRouter, searchRouter, toolRouter } = require('./routes/system.routes');
+
+app.use('/api/auth', authRouter);
+app.use('/api/projects', projectRouter);
+app.use('/api/tasks', taskRouter);
+app.use('/api/users', userRouter);
+app.use('/api/settings', settingsRouter);
+app.use('/api/search', searchRouter);
+app.use('/api/admin', adminRouter);
+app.use('/api/connections', connectionRouter);
+app.use('/api/endorsements', endorsementRouter);
+app.use('/api/tools', toolRouter);
+app.use('/api/notifications', notificationRouter);
+app.use('/api/analytics', analyticsRouter);
+app.use('/api/chats', chatRouter);
+
+// Audit and other system-level routes mounted within hubs
+// Note: Whiteboard is mounted as a sub-route in project.routes.js but also accessible here if needed
+app.use('/api/whiteboard', whiteboardRouter);
+
 if (process.env.NODE_ENV !== 'production') {
-  app.use('/api/dev', require('./routes/dev.routes'));
+  try {
+    app.use('/api/dev', require('./routes/dev.routes'));
+  } catch (e) {
+    logger.warn('⚠️ Dev routes not found, skipping...');
+  }
 }
 
 const cluster = require('cluster');
@@ -198,15 +207,13 @@ if (enableCluster && (cluster.isPrimary || cluster.isMaster)) {
     logger.info(`✅ MongoDB Connected in Worker ${process.pid}!`);
 
     if (!enableCluster || cluster.worker.id === 1) {
-      startGarbageCollection();
-      startDeadlineChecker();
-      startRedundancyCleanup();
-      startSocialCleanup(); 
-      startSnapshotCron();
-      startDigestCron();
-      startTaskDeadlineChecker();
+      // Initialize Consolidated Cron Hubs (Consolidating GC, Deadlines, Social, FS, Snapshots, and Digests)
+      // These 3 Hubs replace the 7 legacy cron files for better maintainability and observability.
+      startMaintenanceHub();
+      startDeadlineHub();
+      startReportingHub();
       
-      // Trigger an immediate capture for development reality
+      // Trigger an immediate capture for real-time analytics parity
       captureGlobalSnapshots().catch(err => logger.error(`Initial Snapshot Error: ${err.message}`));
     }
 

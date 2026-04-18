@@ -1,16 +1,15 @@
 const Project = require('../models/project.model');
 const Audit = require('../models/audit.model');
 const Task = require('../models/task.model');
-const { logActivity } = require('../utils/activityLogger');
+const { logActivity } = require('../utils/system.utils');
 const { cloudinary } = require('../config/cloudinary');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/system.utils');
 const mongoose = require('mongoose');
 const ProjectMemberService = require('../services/projectMember.service');
 const { ensureProjectChat } = require('./chat.controller');
-const catchAsync = require('../utils/catchAsync');
-const { checkSingleProject } = require('../cron/deadlineCheck');
-const { clearUserCache } = require('../utils/redis');
-const { getFrontendUrl } = require('../utils/helpers');
+const { catchAsync, getFrontendUrl } = require('../utils/core.utils');
+const { checkSingleProject } = require('../cron/deadline.cron');
+const { clearUserCache } = require('../utils/system.utils');
 const notificationService = require('../services/notification.service');
 
 // --- Core Project Operations ---
