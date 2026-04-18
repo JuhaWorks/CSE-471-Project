@@ -14,6 +14,7 @@ const COLORS = [
 const StickyNote = ({
     note,
     onUpdate,
+    onMove,
     onDelete,
     onVote,
     onConvertToTask,
@@ -24,6 +25,7 @@ const StickyNote = ({
     const [isTyping, setIsTyping] = useState(false);
     const [isDragging, setIsDragging] = useState(false);
     const syncTimeoutRef = useRef(null);
+    const lastEmitRef = useRef(0);
     const lastLocalUpdate = useRef({ x: note.x, y: note.y });
     
     // ── Pure Transform Engine ──
@@ -73,6 +75,18 @@ const StickyNote = ({
             onDragStart={() => {
                 setIsDragging(true);
                 handleFocus();
+            }}
+            onDrag={(e, info) => {
+                // Throttled real-time position broadcast
+                const now = Date.now();
+                if (now - lastEmitRef.current > 50) { // 50ms throttle (20fps)
+                    const x = Math.round(mvX.get());
+                    const y = Math.round(mvY.get());
+                    
+                    // Emit moving event via a new prop we'll add to are ProjectWhiteboard
+                    if (onMove) onMove(note._id, x, y);
+                    lastEmitRef.current = now;
+                }
             }}
             onDragEnd={() => {
                 setIsDragging(false);

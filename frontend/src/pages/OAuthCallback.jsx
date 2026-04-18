@@ -6,22 +6,27 @@ import { motion } from 'framer-motion';
 const OAuthCallback = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { setAccessToken, checkAuth } = useAuthStore();
+    const { oauthExchange } = useAuthStore();
     const [error, setError] = useState(null);
 
     useEffect(() => {
         const handleOAuthCallback = async () => {
             try {
-                // Safari Fix: Wait briefly for the browser to register the HttpOnly cookie 
-                // injected by the backend redirect before triggering the auth check.
-                await new Promise(resolve => setTimeout(resolve, 500));
+                // 1. Extract the temporary verification token from the URL
+                const params = new URLSearchParams(location.search);
+                const token = params.get('token');
 
-                console.log("[AUTH] Starting OAuth session verification...");
+                if (!token) {
+                    throw new Error("Missing verification token. Please try logging in again.");
+                }
+
+                console.log("[AUTH] Exchanging one-time token for secure session...");
                 
-                // 2. Fetch the user profile from the backend to populate the UI
-                await checkAuth();
+                // 2. Perform the exchange. Since this is a proxied POST request, 
+                // the cookies set by the backend will be First-Party for the browser.
+                await oauthExchange(token);
 
-                console.log("[AUTH] OAuth session verified. Redirecting to dashboard...");
+                console.log("[AUTH] Session secured successfully. Redirecting...");
                 
                 // 3. Navigate instantly to the dashboard
                 navigate('/');
@@ -30,13 +35,13 @@ const OAuthCallback = () => {
                 const msg = err.response?.data?.message || err.message || "An unexpected error occurred during authentication.";
                 setError(msg);
                 
-                // Auto-redirect back to login on failure so the user isn't stuck
+                // Auto-redirect back to login on failure
                 setTimeout(() => navigate('/login'), 5000);
             }
         };
 
         handleOAuthCallback();
-    }, [location, navigate, checkAuth]);
+    }, [location, navigate, oauthExchange]);
 
 
     // Error State

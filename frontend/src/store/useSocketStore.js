@@ -142,6 +142,17 @@ export const useSocketStore = create((set, get) => ({
         // This surgical approach avoids full refetches, preventing flickering 
         // and cursor jumps while teammates are collaborating.
         
+        socket.on('whiteboard:noteMoved', ({ noteId, projectId, x, y }) => {
+            const queryClient = get().queryClient;
+            if (!queryClient) return;
+            
+            // Surgically update the coordinate in the cache
+            queryClient.setQueryData(['whiteboard-notes', projectId], (oldNotes) => {
+                if (!oldNotes) return [];
+                return oldNotes.map(n => n._id === noteId ? { ...n, x, y } : n);
+            });
+        });
+
         socket.on('whiteboard:noteCreated', (newNote) => {
             const queryClient = get().queryClient;
             if (!queryClient) return;
@@ -185,6 +196,17 @@ export const useSocketStore = create((set, get) => ({
 
         socket.on('typing', ({ chat, userId, isTyping }) => {
             useChatStore.getState().setTyping(chat, userId, isTyping);
+        });
+        
+        // --- REAL-TIME CHAT SYNCHRONIZATION ---
+        socket.on('newMessage', ({ chat, message }) => {
+            console.log('📬 New real-time message received:', chat);
+            useChatStore.getState().addIncomingMessage(chat, message);
+        });
+
+        socket.on('messageDeleted', ({ chat, messageId }) => {
+            console.log('🗑️ Message unsend event received:', messageId);
+            useChatStore.getState().handleMessageDeleted(chat, messageId);
         });
 
         socket.on('newNotification', (notification) => {

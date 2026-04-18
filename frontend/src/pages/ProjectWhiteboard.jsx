@@ -200,6 +200,13 @@ const ProjectWhiteboard = () => {
         }
     };
 
+    const handleMoveNote = (id, x, y) => {
+        const { socket } = useSocketStore.getState();
+        if (socket && projectId && !String(id).startsWith('temp-')) {
+            socket.emit('whiteboard:noteMoved', { projectId, noteId: id, x, y });
+        }
+    };
+
     const handleSmartStack = () => {
         if (!notes.length) return;
         const padding = 40;
@@ -454,6 +461,7 @@ const ProjectWhiteboard = () => {
                                 currentUserId={user?._id}
                                 isGridActive={isGridActive}
                                 onUpdate={handleUpdateNote}
+                                onMove={handleMoveNote}
                                 onFocus={() => handleBringToFront(note._id)}
                                 onDelete={(id) => deleteMutation.mutate(id)}
                                 onVote={(id) => voteMutation.mutate(id)}

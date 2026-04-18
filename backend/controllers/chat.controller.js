@@ -135,11 +135,21 @@ const sendMessage = async (req, res, next) => {
         // 4. Emit via Socket.io
         try {
             const io = getIO();
+            // High-performance broadcast to the dedicated chat room
+            io.to(`chat_${targetChatId}`).emit('newMessage', {
+                chat: targetChatId,
+                message: populatedMessage
+            });
+            
+            // Legacy/Push fallback to individual user rooms (for notifications)
             chat.participants.forEach(pId => {
-                io.to(pId.toString()).emit('newMessage', {
-                    chat: targetChatId,
-                    message: populatedMessage
-                });
+                const sId = pId.toString();
+                if (sId !== req.user._id.toString()) {
+                    io.to(`user_${sId}`).emit('newMessage', {
+                        chat: targetChatId,
+                        message: populatedMessage
+                    });
+                }
             });
         } catch (sErr) {
             logger.warn(`Socket dispatch failed for newMessage: ${sErr.message}`);
@@ -190,8 +200,15 @@ const unsendMessage = async (req, res, next) => {
             const io = getIO();
             const chat = await Chat.findById(message.chat);
             if (chat) {
+                // Room broadcast
+                io.to(`chat_${message.chat}`).emit('messageDeleted', {
+                    chat: message.chat,
+                    messageId: messageId
+                });
+
+                // Individual user room fallback
                 chat.participants.forEach(pId => {
-                    io.to(pId.toString()).emit('messageDeleted', {
+                    io.to(`user_${pId.toString()}`).emit('messageDeleted', {
                         chat: message.chat,
                         messageId: messageId
                     });

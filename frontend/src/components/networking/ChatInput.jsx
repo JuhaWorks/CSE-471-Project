@@ -62,16 +62,13 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
     const isTypingRef = useRef(false);
 
     // Typing emission logic
+    const { sendTypingIndicator } = useChatStore();
+    
     const emitTyping = useCallback((isTyping) => {
-        if (!socket || !activeChat) return;
-        const participantIds = activeChat.participants.map(p => p._id || p);
-        socket.emit('typing', {
-            chatId: activeChat._id,
-            isTyping,
-            participantIds
-        });
+        if (!activeChat) return;
+        sendTypingIndicator(activeChat._id, isTyping);
         isTypingRef.current = isTyping;
-    }, [socket, activeChat]);
+    }, [activeChat, sendTypingIndicator]);
 
     useEffect(() => {
         if (!input.trim()) {

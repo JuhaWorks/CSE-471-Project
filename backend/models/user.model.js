@@ -223,6 +223,10 @@ const userSchema = new mongoose.Schema(
                 createdAt: { type: Date, default: Date.now }
             }
         ],
+        
+        // --- OAuth Secure Exchange (Safari Fix) ---
+        tempAuthToken: { type: String, select: false },
+        tempAuthTokenExpires: { type: Date, select: false },
     },
     {
         timestamps: true, // Automatically add createdAt and updatedAt fields

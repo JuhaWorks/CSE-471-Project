@@ -329,6 +329,28 @@ export const useAuthStore = create(
                     user: state.user ? { ...state.user, email: newEmail } : null
                 }));
             },
+
+            // 8.5. Manual state update (for settings etc)
+            setUser: (user) => set({ user }),
+
+            // 9. OAuth Token Exchange (Safari Fix)
+            oauthExchange: async (token) => {
+                set({ isLoading: true, error: null });
+                try {
+                    const response = await api.post('/auth/oauth/exchange', { token });
+                    set({
+                        user: response.data.data,
+                        accessToken: response.data.accessToken,
+                        isAuthenticated: true,
+                        isLoading: false
+                    });
+                    return response.data;
+                } catch (error) {
+                    const errorMessage = error.response?.data?.message || 'Authentication failed';
+                    set({ error: errorMessage, isLoading: false });
+                    throw error;
+                }
+            },
         }),
         {
             name: 'klivra-auth-storage',

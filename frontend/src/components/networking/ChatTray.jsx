@@ -101,8 +101,8 @@ const ChatTray = () => {
                 socket.on('typing', ({ chat, userId, isTyping }) => {
                     setTyping(chat, userId, isTyping);
                 });
-                socket.on('messageDeleted', ({ chatId, messageId }) => {
-                    handleMessageDeleted(chatId, messageId);
+                socket.on('messageDeleted', ({ chat, messageId }) => {
+                    handleMessageDeleted(chat, messageId);
                 });
             }
         }
@@ -891,11 +891,21 @@ const ChatBox = ({ chat, onBack, isBubbleMode }) => {
                             className="flex items-center gap-3 px-8 mt-4"
                         >
                             <div className="flex gap-1 bg-sunken rounded-full px-3 py-2 border border-glass shadow-sm">
-                                <div className="w-1.5 h-1.5 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                <div className="w-1.5 h-1.5 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                <div className="w-1.5 h-1.5 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+                                <div className="w-1 h-1 bg-theme rounded-full animate-bounce [animation-delay:-0.3s]" />
+                                <div className="w-1 h-1 bg-theme rounded-full animate-bounce [animation-delay:-0.15s]" />
+                                <div className="w-1 h-1 bg-theme rounded-full animate-bounce" />
                             </div>
-                            <span className="text-[10px] font-bold text-tertiary opacity-40 uppercase tracking-widest">typing...</span>
+                            <span className="text-[10px] font-black text-theme uppercase tracking-widest opacity-80">
+                                {(() => {
+                                    const names = typers.map(id => {
+                                        const p = chat.participants.find(p => (p._id || p) === id);
+                                        return p?.name?.split(' ')[0] || 'Someone';
+                                    });
+                                    if (names.length === 1) return `${names[0]} is typing...`;
+                                    if (names.length === 2) return `${names[0]} and ${names[1]} are typing...`;
+                                    return `${names[0]} and ${names.length - 1} others are typing...`;
+                                })()}
+                            </span>
                         </motion.div>
                     )}
                 </AnimatePresence>

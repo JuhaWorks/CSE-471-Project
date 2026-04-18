@@ -330,40 +330,54 @@ const refreshTokenUser = async (req, res, next) => {
 // @route   GET /api/auth/:provider/callback
 // @access  Public
 const oauthCallback = async (req, res) => {
-    // req.user is populated by passport
     const user = req.user;
-
-    // Set status to Online on OAuth login
-    user.status = 'Online';
-    
-    // Support Token Rotation for OAuth users too
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
-    const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
-
-    user.refreshTokens.push({ token: hashedToken });
-    if (user.refreshTokens.length > 10) user.refreshTokens.shift();
-    
+    // Advanced Safari/ITP Fix: Token Exchange Flow
+    // Instead of setting the refreshToken cookie here (which Safari blocks on cross-domain redirects),
+    // we generate a short-lived, one-time verification token.
+    const tempToken = crypto.randomBytes(32).toString('hex');
+    user.tempAuthToken = crypto.createHash('sha256').update(tempToken).digest('hex');
+    user.tempAuthTokenExpires = Date.now() + 5 * 60 * 1000; // 5 minutes
     await user.save();
 
-    await logSecurityEvent(user._id, 'AuthLogin', {
-        method: 'oauth',
-        ipAddress: req.ip
-    });
+    // Redirect to frontend with the temp token
+    res.redirect(`${getFrontendUrl()}/oauth/callback?token=${tempToken}`);
+};
 
-    const options = getCookieOptions(true);
-    // Explicitly set 7-day expiry for OAuth sessions to match generateRefreshToken
-    options.expires = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
-    
-    res.cookie('refreshToken', refreshToken, options);
+// @desc    Step 2 of OAuth: Exchange one-time token for a real session
+// @route   POST /api/auth/oauth/exchange
+// @access  Public
+const oauthExchange = async (req, res, next) => {
+    try {
+        const { token } = req.body;
+        if (!token) {
+            res.status(400);
+            return next(new Error('Verification token is required'));
+        }
 
-    // Safari Fix: Prevent the browser from caching the "logged out" state or the redirect itself.
-    res.header('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.header('Pragma', 'no-cache');
-    res.header('Expires', '0');
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-    res.redirect(`${getFrontendUrl()}/oauth/callback`);
+        // Find user by temporary token
+        const user = await User.findOne({
+            tempAuthToken: hashedToken,
+            tempAuthTokenExpires: { $gt: Date.now() }
+        });
 
+        if (!user) {
+            res.status(401);
+            return next(new Error('Invalid or expired authentication link. Please try logging in again.'));
+        }
+
+        // Token found! Establish session and clear the temp token (One-time use)
+        user.tempAuthToken = undefined;
+        user.tempAuthTokenExpires = undefined;
+        
+        // sendTokenResponse handles generating accessToken, refreshToken, hashing it, and setting the cookie.
+        // Because this request is made FROM the frontend proxy, the cookie will be First-Party.
+        await sendTokenResponse(user, 200, res, true);
+
+    } catch (error) {
+        next(error);
+    }
 };
 
 // @desc    Verify email address
@@ -505,5 +519,6 @@ module.exports = {
     verifyEmail,
     resendVerification,
     getMe,
-    updateStatus
+    updateStatus,
+    oauthExchange
 };

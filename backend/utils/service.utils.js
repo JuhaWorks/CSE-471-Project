@@ -44,6 +44,38 @@ const socketService = {
                 logger.info(`📂 User ${socket.user.id} joined project room: ${projectId}`);
             });
 
+            socket.on('joinProject', (projectId) => {
+                socket.join(`project_${projectId}`);
+                logger.info(`📂 User ${socket.user.id} joined project room (compat): ${projectId}`);
+            });
+
+            socket.on('leaveProject', (projectId) => {
+                socket.leave(`project_${projectId}`);
+                logger.info(`📂 User ${socket.user.id} left project room: ${projectId}`);
+            });
+            
+            // --- WHITEBOARD SYNC ---
+            socket.on('whiteboard:noteMoved', ({ projectId, noteId, x, y }) => {
+                // Broadcast dragging position to everyone else in the project room
+                socket.to(`project_${projectId}`).emit('whiteboard:noteMoved', { noteId, projectId, x, y });
+            });
+            
+            // --- ADVANCED CHAT SYNC (Room-based) ---
+            socket.on('join_chat', (chatId) => {
+                socket.join(`chat_${chatId}`);
+                logger.debug(`💬 User ${socket.user.id} joined chat room: ${chatId}`);
+            });
+
+            socket.on('leave_chat', (chatId) => {
+                socket.leave(`chat_${chatId}`);
+                logger.debug(`💬 User ${socket.user.id} left chat room: ${chatId}`);
+            });
+
+            socket.on('typing', ({ chatId, isTyping }) => {
+                // Secure broadcasting: only send to users joined to THIS specific chat room
+                socket.to(`chat_${chatId}`).emit('typing', { chat: chatId, userId: socket.user.id, isTyping });
+            });
+
             socket.on('disconnect', () => {
                 logger.info(`🔌 Socket Disconnected: ${socket.id}`);
             });

@@ -27,6 +27,7 @@ authRouter.get('/google', passport.authenticate('google', { scope: ['profile', '
 authRouter.get('/google/callback', passport.authenticate('google', { failureRedirect: '/login', session: false }), authCtrl.oauthCallback);
 authRouter.get('/github', passport.authenticate('github', { scope: ['user:email'] }));
 authRouter.get('/github/callback', passport.authenticate('github', { failureRedirect: '/login', session: false }), authCtrl.oauthCallback);
+authRouter.post('/oauth/exchange', authCtrl.oauthExchange);
 
 // Profile (Write)
 authRouter.put('/profile', protect, userCtrl.updateProfile);
@@ -61,6 +62,7 @@ settingsRouter.get('/email/confirm/:token', userCtrl.confirmEmailChange);
 settingsRouter.use(protect);
 settingsRouter.put('/profile', userCtrl.updateProfile);
 settingsRouter.put('/security', userCtrl.updateSecurity);
+settingsRouter.put('/notifications', userCtrl.updateNotificationPreferences);
 settingsRouter.put('/deactivate', userCtrl.deactivateAccount);
 settingsRouter.delete('/delete', userCtrl.deleteAccount);
 

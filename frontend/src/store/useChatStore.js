@@ -23,6 +23,12 @@ export const useChatStore = create((set, get) => ({
             
             const bubbledChatIds = chats.filter(c => c.isBubbled).map(c => c._id);
             
+            // Join socket rooms for all active chats for real-time sync
+            const socket = useSocketStore.getState().socket;
+            if (socket && socket.connected) {
+                chats.forEach(chat => socket.emit('join_chat', chat._id));
+            }
+
             set({ chats, unreadTotal, bubbledChatIds, isLoading: false });
         } catch (error) {
             set({ isLoading: false });
@@ -121,7 +127,12 @@ export const useChatStore = create((set, get) => ({
                 };
             });
 
-            if (!chatId) get().fetchChats();
+            if (!chatId) {
+                // Join the newly created chat room
+                const socket = useSocketStore.getState().socket;
+                if (socket && socket.connected) socket.emit('join_chat', newMessage.chat);
+                get().fetchChats();
+            }
             return newMessage;
         } catch (error) {
             if (chatId) {
@@ -203,7 +214,11 @@ export const useChatStore = create((set, get) => ({
 
             return {
                 messages: newMessages,
-                chats: updatedChats,
+                chats: updatedChats.sort((a, b) => {
+                    const timeA = a.lastMessage?.createdAt || a.updatedAt;
+                    const timeB = b.lastMessage?.createdAt || b.updatedAt;
+                    return new Date(timeB) - new Date(timeA);
+                }),
                 unreadTotal: newUnreadTotal
             };
         });
@@ -220,6 +235,13 @@ export const useChatStore = create((set, get) => ({
                 typingUsers: { ...state.typingUsers, [chatId]: updated }
             };
         });
+    },
+
+    sendTypingIndicator: (chatId, isTyping) => {
+        const socket = useSocketStore.getState().socket;
+        if (socket && socket.connected) {
+            socket.emit('typing', { chatId, isTyping });
+        }
     },
 
     setDrawerOpen: (isOpen) => set({ isDrawerOpen: isOpen }),
