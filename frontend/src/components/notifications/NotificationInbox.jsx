@@ -18,7 +18,7 @@ const formatRelativeTime = (date) => {
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 };
 import api from '../../utils/api';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 import { useSocketStore } from '../../store/useSocketStore';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';

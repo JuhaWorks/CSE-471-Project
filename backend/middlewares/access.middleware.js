@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user.model');
 const Project = require('../models/project.model');
+const Task = require('../models/task.model');
 
 /**
  * Ensures user is authenticated via JWT.
@@ -97,10 +98,19 @@ const verifyAdmin = (req, res, next) => {
  */
 const isNotArchived = async (req, res, next) => {
     try {
-        const projectId = req.params.id || req.params.projectId;
+        let projectId = req.params.id || req.params.projectId;
         if (!projectId) return next();
 
-        const project = await Project.findById(projectId);
+        let project = await Project.findById(projectId);
+        
+        // If not a project, check if it's a task and get its project
+        if (!project) {
+            const task = await Task.findById(projectId).select('project');
+            if (task) {
+                project = await Project.findById(task.project);
+            }
+        }
+
         if (project && project.status === 'Archived') {
             res.status(403);
             return next(new Error('Archived projects are strictly read-only.'));
@@ -116,12 +126,20 @@ const isNotArchived = async (req, res, next) => {
  */
 const authorizeProjectAccess = (roles = []) => async (req, res, next) => {
     try {
-        const projectId = req.params.id || req.params.projectId;
-        const project = await Project.findById(projectId);
+        let projectId = req.params.projectId || req.params.id;
+        let project = await Project.findById(projectId);
+
+        // If not a project, check if it's a task and resolve its project
+        if (!project && projectId) {
+            const task = await Task.findById(projectId).select('project');
+            if (task) {
+                project = await Project.findById(task.project);
+            }
+        }
 
         if (!project) {
             res.status(404);
-            return next(new Error('Project not found'));
+            return next(new Error('Project context not found'));
         }
 
         const member = project.members.find(m => m.userId.toString() === req.user._id.toString());

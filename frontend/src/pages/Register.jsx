@@ -8,11 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { User, Mail, Lock, Eye, EyeOff, UserPlus, AlertCircle, CheckCircle2, Chrome, Github } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import DecryptedText from '../components/ui/DecryptedText';
-import BorderGlow from '../components/ui/BorderGlow';
-import GlassSurface from '../components/ui/GlassSurface';
+import { Button, Input } from '../components/ui/BaseUI';
+import { DecryptedText, BorderGlow, GlassSurface } from '../components/ui/Aesthetics';
 
 const schema = z.object({
     name: z.string().min(2, 'At least 2 characters'),

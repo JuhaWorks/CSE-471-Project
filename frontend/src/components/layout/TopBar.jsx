@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-    Search, Bell, Menu, User, Settings, LogOut, Command, ChevronDown
+    Search, Bell, Menu, User, Settings, LogOut, Command, ChevronDown, Users2
 } from 'lucide-react';
 import { useAuthStore } from '../../store/useAuthStore';
 import { useUIStore } from '../../store/useUIStore';
@@ -10,7 +10,7 @@ import { useTheme, MODES } from '../../store/useTheme';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 import { API_BASE } from '../auth/AuthLayout';
 import { getOptimizedAvatar } from '../../utils/avatar';
 import NotificationInbox from '../notifications/NotificationInbox';
@@ -69,31 +69,52 @@ const TopBar = () => {
 
     return (
         <header className="h-16 transition-all duration-300 relative z-50 rounded-b-[3.15rem]">
-            <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[3.15rem] backdrop-blur-2xl bg-base/40">
+            <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[3.15rem] backdrop-blur-xl bg-base/40">
                 <GlassSurface width="100%" height="100%" borderRadius="0 0 3.15rem 3.15rem" displace={0.5} distortionScale={-20} backgroundOpacity={isDark ? 0.04 : 0.3} opacity={0.93} />
             </div>
             
-            <div className="w-full h-full flex items-center justify-between px-4 sm:px-6 lg:px-10 relative z-10">
-                <div className="flex items-center gap-2 sm:gap-4 flex-1 pr-4">
-                    <button
-                        onClick={toggleSidebar}
-                        className={twMerge(clsx(
-                            "p-2.5 text-tertiary hover:text-primary rounded-2xl transition-all active:scale-90",
-                            isMobile ? "bg-theme/10 text-theme" : "hover:bg-sunken",
-                            isMobile && isSidebarExpanded && "opacity-0 pointer-events-none"
-                        ))}
-                    >
-                        <Menu className="w-5 h-5" />
-                    </button>
+            <div className="w-full h-full flex items-center justify-between pr-4 sm:pr-6 lg:pr-10 pl-0 relative z-10">
+                <div className="flex items-center flex-1 pr-4">
+                    {/* Sidebar Toggle & Alignment Box */}
+                    <div className="w-[80px] flex justify-center shrink-0">
+                        <button
+                            onClick={toggleSidebar}
+                            className={twMerge(clsx(
+                                "p-2.5 text-tertiary hover:text-primary rounded-xl transition-all active:scale-95",
+                                isMobile ? "bg-theme/10 text-theme" : "hover:bg-sunken",
+                                isMobile && isSidebarExpanded && "opacity-0 pointer-events-none"
+                            ))}
+                        >
+                            <Menu className="w-5 h-5" />
+                        </button>
+                    </div>
 
+                    {/* Brand Logo */}
+                    <Link to="/" className="flex items-center gap-3 shrink-0 group mr-8 outline-none rounded-xl">
+                        <div className="shrink-0 w-8 h-8 rounded-xl overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.1)] border border-white/5 transition-transform duration-300 group-hover:scale-105">
+                            <img 
+                                src="/logo.png" alt="Klivra logo" 
+                                width={32} height={32} 
+                                fetchPriority="high" 
+                                className="w-full h-full object-cover" 
+                            />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-[17px] font-black tracking-tight text-primary leading-none mt-0.5 transition-colors duration-200 group-hover:text-theme">
+                                klivra
+                            </span>
+                        </div>
+                    </Link>
+
+                    {/* Search Field */}
                     <div className="relative hidden md:flex max-w-sm w-full group">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-theme transition-colors" />
+                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-tertiary group-focus-within:text-theme transition-colors duration-200" />
                         <input
                             type="text"
                             placeholder="Search workspace..."
                             className={twMerge(clsx(
-                                "w-full pl-11 pr-4 py-2 bg-sunken border border-default rounded-2xl text-sm text-primary placeholder-tertiary outline-none font-bold",
-                                "focus:border-theme/30 focus:ring-4 focus:ring-theme/5 transition-all"
+                                "w-full pl-11 pr-4 py-2 bg-sunken border border-default rounded-2xl text-sm text-primary placeholder-tertiary outline-none font-medium",
+                                "focus:border-theme/30 focus:ring-4 focus:ring-theme/5 transition-all duration-200"
                             ))}
                         />
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-1 px-1.5 py-0.5 rounded-lg border border-default bg-surface text-[10px] font-black text-tertiary">
@@ -101,13 +122,6 @@ const TopBar = () => {
                             <span>K</span>
                         </div>
                     </div>
-                    
-                    {/* Brand name for very small mobile screens when sidebar is hidden */}
-                    {isMobile && (
-                        <div className="flex items-center gap-2 overflow-hidden">
-                            <span className="text-xl font-black tracking-tighter text-primary truncate">klvira</span>
-                        </div>
-                    )}
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
@@ -167,7 +181,7 @@ const TopBar = () => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[100] overflow-hidden rounded-[2.5rem] border border-white/10 backdrop-blur-3xl bg-black/60"
+                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[100] overflow-hidden rounded-[2.5rem] border border-white/10 backdrop-blur-xl bg-black/60"
                                 >
                                     <div className="absolute inset-0 z-0 pointer-events-none">
                                         <GlassSurface 

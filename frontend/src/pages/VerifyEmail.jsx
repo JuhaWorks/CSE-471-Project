@@ -3,8 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { api, useAuthStore } from '../store/useAuthStore';
 import { CheckCircle2, XCircle, ArrowRight, RotateCcw, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import BorderGlow from '../components/ui/BorderGlow';
-import GlassSurface from '../components/ui/GlassSurface';
+import { BorderGlow, GlassSurface } from '../components/ui/Aesthetics';
 
 // ─── Circular countdown ring ──────────────────────────────────────────────────
 

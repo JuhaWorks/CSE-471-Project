@@ -3,7 +3,7 @@ import { Settings, User, Mail, MapPin, MessageSquare, X, CheckCircle2 } from 'lu
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn, STATUSES, STATUS_CONFIG } from './ProfileUtils';
 import { SectionLabel, FieldWrapper } from './ProfileHelpers';
-import Button from '../ui/Button';
+import { Button } from '../ui/BaseUI';
 
 const GeneralTab = ({ 
     user, 

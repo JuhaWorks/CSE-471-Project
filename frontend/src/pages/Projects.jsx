@@ -1,6 +1,7 @@
 import React, { useState, useTransition, useMemo, memo, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, api } from '../store/useAuthStore';
+import { useSocketStore } from '../store/useSocketStore';
 import { 
     Plus, 
     Search, 
@@ -15,21 +16,127 @@ import {
     Box, 
     Target,
     ChevronRight,
-    SearchX
+    SearchX,
+    Users2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useSearchParams } from 'react-router-dom';
 import ProjectCreationModal from '../components/projects/ProjectCreationModal';
 import { ProjectImage, DeadlinePopup } from '../components/projects/ProjectShared';
 import { toast } from 'react-hot-toast';
-import Button from '../components/ui/Button';
-import Card from '../components/ui/Card';
-import Input from '../components/ui/Input';
-import GlassSurface from '../components/ui/GlassSurface';
-import { Skeleton } from '../components/ui/PremiumLoaders';
+import { Button, Card, Input } from '../components/ui/BaseUI';
+import { GlassSurface } from '../components/ui/Aesthetics';
+import {  Skeleton  } from '../components/ui/Loaders';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { getOptimizedAvatar } from '../utils/avatar';
 
+
+// ── MEMOIZED PROJECT CARD ──
+const ProjectCard = memo(({ project, user, onlineUsers, toggleGlobalPresence, respondMutation, view, EASE, getStatusStyles }) => {
+    const onlineMembersCount = project.members?.filter(m => 
+        onlineUsers.some(u => u.userId === (m.userId?._id || m.userId))
+    ).length || 0;
+
+    return (
+        <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={EASE}
+            className="group relative flex flex-col h-full rounded-[2rem] hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all duration-300 p-2"
+        >
+            <div className="relative mb-5 aspect-[16/10] overflow-hidden rounded-[1.5rem] border border-white/5">
+                <ProjectImage
+                    project={project}
+                    className="w-full h-full object-cover grayscale-[0.2] group-hover:grayscale-0 transition-all duration-700 group-hover:scale-105"
+                />
+                <div className="absolute top-3 right-3 flex flex-col items-end gap-2">
+                    <div className={twMerge(clsx(
+                        "px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border backdrop-blur-xl transition-all",
+                        getStatusStyles(project.status)
+                    ))}>
+                        {project.status || 'Active'}
+                    </div>
+                    {user?.interfacePrefs?.showGlobalPresence !== false && onlineMembersCount > 0 && (
+                        <button 
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleGlobalPresence(true, project._id); }}
+                            className="flex items-center gap-1.5 px-2 py-1 bg-success/20 border border-success/30 backdrop-blur-md rounded-lg group/presence"
+                        >
+                            <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                            <span className="text-[8px] font-black text-success uppercase tracking-widest">{onlineMembersCount} Live</span>
+                        </button>
+                    )}
+                </div>
+            </div>
+
+            <div className="px-2 pb-4 space-y-4 flex-1 flex flex-col">
+                <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-primary tracking-tight group-hover:text-theme transition-colors line-clamp-1">
+                        {project.name}
+                    </h3>
+                    <p className="text-tertiary text-[11px] font-medium line-clamp-2 opacity-40 leading-relaxed min-h-[32px]">
+                        {project.description}
+                    </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-4 border-t border-white/5">
+                    <div className="flex items-center gap-4">
+                        <div className="flex items-center gap-1.5 opacity-40">
+                            <Calendar className="w-3 h-3" />
+                            <span className="text-[10px] font-bold font-mono">
+                                {new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                            </span>
+                        </div>
+                        <div className="flex -space-x-1.5 overflow-hidden">
+                            {(project.members || []).slice(0, 3).map((member, i) => (
+                                <div key={i} className="w-5 h-5 rounded-full border border-[#0a0a0a] bg-white/[0.05] overflow-hidden flex-shrink-0">
+                                    <img
+                                        src={getOptimizedAvatar(member.userId?.avatar || member.avatar, 'xs')}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${member.userId?.name || 'User'}&background=random`; }}
+                                    />
+                                </div>
+                            ))}
+                            {project.members?.length > 3 && (
+                                <div className="w-5 h-5 rounded-full border border-[#0a0a0a] bg-white/[0.05] flex items-center justify-center text-[7px] font-black text-tertiary">
+                                    +{project.members.length - 3}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {view === 'invitations' ? (
+                            <div className="flex gap-2">
+                                <button onClick={() => respondMutation.mutate({ id: project._id, status: 'rejected' })} className="text-[10px] font-black uppercase text-tertiary hover:text-danger px-2">Decline</button>
+                                <button onClick={() => respondMutation.mutate({ id: project._id, status: 'active' })} className="text-[10px] font-black uppercase text-theme px-3 py-1 bg-theme/10 rounded-md">Accept</button>
+                            </div>
+                        ) : (
+                            <div className="flex items-center gap-2">
+                                <Link 
+                                    to={`/projects/${project._id}/settings`} 
+                                    className="p-2.5 rounded-xl bg-white/[0.03] border border-white/5 text-tertiary hover:text-primary hover:bg-white/[0.08] transition-all"
+                                    title="Settings"
+                                >
+                                    <Settings className="w-3.5 h-3.5" />
+                                </Link>
+                                <Link 
+                                    to={`/tasks?project=${project._id}`}
+                                    className="group/btn flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black bg-theme/10 text-theme hover:bg-theme hover:text-white transition-all uppercase tracking-[0.1em]"
+                                >
+                                    <span>Enter</span>
+                                    <ChevronRight className="w-3 h-3 transition-transform group-hover/btn:translate-x-0.5" />
+                                </Link>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </motion.div>
+    );
+});
 
 const Projects = () => {
     const { user } = useAuthStore();
@@ -39,6 +146,8 @@ const Projects = () => {
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [searchParams, setSearchParams] = useSearchParams();
+    const { onlineUsers, toggleGlobalPresence } = useSocketStore();
+    const EASE = { type: 'spring', stiffness: 300, damping: 30 };
 
     // ── NOTIFICATION HANDLER (From Email Links) ──
     useEffect(() => {
@@ -135,28 +244,22 @@ const Projects = () => {
         <div className="w-full space-y-8 sm:space-y-12 pb-20 max-w-[2000px] mx-auto overflow-x-hidden">
             <DeadlinePopup projects={activeProjects} user={user} />
             {/* Header Area */}
-            <header className="relative -mx-4 sm:-mx-6 lg:-mx-12 px-4 sm:px-8 lg:px-12 pt-6 sm:pt-10 pb-10 sm:pb-16 overflow-hidden border-b border-default rounded-b-[2.5rem] sm:rounded-b-[5rem] mb-8 sm:mb-12">
-                <div className="absolute inset-0 z-0">
-                    <GlassSurface width="100%" height="100%" borderRadius={0} displace={0.5} distortionScale={-40} backgroundOpacity={0.06} opacity={0.93} blur={30} />
-                </div>
-                
-                <div className="absolute -top-10 left-0 w-64 h-64 bg-theme/5 rounded-full blur-[100px] pointer-events-none" />
-                
-                <div className="relative z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-10">
-                    <div className="space-y-4 sm:space-y-6">
-                        <div className="flex items-center gap-3 text-theme font-black text-[9px] sm:text-[10px] uppercase tracking-[0.4em]">
-                            <LayoutGrid className="w-3.5 h-3.5 text-theme/60" />
-                            <span>Project Workspace</span>
+            <header className="relative pt-8 sm:pt-12 pb-8 border-b border-default mb-10">
+                <div className="relative z-10 flex flex-col xl:flex-row xl:items-end justify-between gap-8">
+                    <div className="space-y-3">
+                        <div className="flex items-center gap-2.5 text-theme font-black text-[9px] uppercase tracking-[0.3em] opacity-60">
+                            <LayoutGrid className="w-3 h-3" />
+                            <span>Workspace</span>
                         </div>
-                        <h1 className="text-4xl sm:text-7xl font-black text-primary tracking-tighter leading-[0.9]">Projects</h1>
-                        <p className="text-secondary font-medium text-sm sm:text-xl max-w-xl leading-relaxed opacity-80">
-                            Collaborate and manage project tasks within a professional shared workspace.
+                        <h1 className="text-3xl sm:text-5xl font-black text-primary tracking-tighter leading-none">Projects</h1>
+                        <p className="text-tertiary font-medium text-xs sm:text-sm max-w-lg opacity-60">
+                            Collaborative project workspace for shared tasks and team management.
                         </p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-4 sm:gap-6">
-                        {/* Segmented Control */}
-                        <div className="flex p-1.5 glass-2 bg-sunken border-glass rounded-[1.75rem] sm:rounded-[2rem] overflow-x-auto no-scrollbar max-w-full">
+                    <div className="flex flex-wrap items-center gap-8">
+                        {/* Minimalist Tabs */}
+                        <div className="flex items-center gap-8 px-1">
                             {[
                                 { id: 'active', label: 'Active', count: activeProjects.length || 0, icon: Box },
                                 { id: 'archived', label: 'Archived', count: archivedProjects.length || 0, icon: Trash2 },
@@ -166,33 +269,29 @@ const Projects = () => {
                                     key={tab.id}
                                     onClick={() => startTransition(() => setView(tab.id))}
                                     className={twMerge(clsx(
-                                        "flex items-center gap-2 sm:gap-3 px-3.5 sm:px-6 py-2.5 rounded-2xl text-[10px] sm:text-xs font-black transition-all relative overflow-hidden shrink-0",
-                                        view === tab.id ? "text-theme" : "text-tertiary hover:text-secondary"
+                                        "relative flex items-center gap-2 pb-3 text-[10px] font-black uppercase tracking-[0.2em] transition-all",
+                                        view === tab.id ? "text-primary" : "text-tertiary hover:text-secondary"
                                     ))}
                                 >
+                                    <span>{tab.label}</span>
+                                    <span className="opacity-40 font-mono text-[9px]">({tab.count})</span>
                                     {view === tab.id && (
                                         <motion.div 
-                                            layoutId="project-tab"
-                                            className="absolute inset-0 bg-surface border border-glass rounded-2xl shadow-glass"
-                                            transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                                            layoutId="project-tab-line"
+                                            className="absolute bottom-[-1px] left-0 right-0 h-[1.5px] bg-theme"
+                                            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
                                         />
                                     )}
-                                    <tab.icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 relative z-10" />
-                                    <span className="relative z-10 uppercase tracking-widest">{tab.label}</span>
-                                    <span className={twMerge(clsx(
-                                        "relative z-10 px-1.5 py-0.5 rounded-lg text-[9px] font-mono",
-                                        view === tab.id ? "bg-theme/10 text-theme" : "bg-glass text-tertiary"
-                                    ))}>{tab.count}</span>
                                 </button>
                             ))}
                         </div>
 
                         {user?.role !== 'Admin' && (
                             <Button
-                                size="lg"
+                                size="md"
                                 onClick={() => setIsCreateModalOpen(true)}
                                 leftIcon={Plus}
-                                className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-theme-slight w-full sm:w-auto"
+                                className="rounded-xl px-6 h-11"
                             >
                                 New Project
                             </Button>
@@ -202,14 +301,14 @@ const Projects = () => {
             </header>
 
             {/* Filter Bar */}
-            <div className="flex flex-col md:flex-row gap-6 items-center justify-between px-1">
-                <div className="w-full md:w-[450px]">
+            <div className="flex flex-col md:flex-row gap-6 items-center justify-between px-1 mb-8">
+                <div className="w-full md:w-[320px]">
                     <Input
-                        placeholder="Search project archives..."
+                        placeholder="Search workspace..."
                         leftIcon={Search}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="rounded-2xl sm:rounded-[2.5rem] h-12 sm:h-14 bg-surface border-glass"
+                        className="rounded-xl h-11 bg-surface border-glass text-xs"
                     />
                 </div>
             </div>
@@ -222,158 +321,25 @@ const Projects = () => {
                     ))}
                 </div>
             ) : filteredProjects.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 4xl:grid-cols-5 gap-8 px-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 3xl:grid-cols-4 gap-10 px-1">
                     <AnimatePresence mode="popLayout">
-                        {filteredProjects.map((project) => {
-                            const isOwner = (project.createdBy ? project.createdBy === user?._id : (project.members?.[0]?.userId?._id === user?._id || project.members?.[0]?.userId === user?._id)) || user?.role === 'Admin';
-                            
-                            return (
-                                <Card 
-                                    key={project._id} 
-                                    className="group h-full flex flex-col rounded-[2.5rem] sm:rounded-[3.15rem] overflow-hidden border-glass hover:border-theme/30 transition-all duration-500"
-                                    padding="p-0"
-                                >
-
-                                <div className="p-1.5 flex flex-col h-full">
-                                    <div className="relative mb-4 sm:mb-8">
-                                        <ProjectImage
-                                            project={project}
-                                            className="rounded-[2rem] sm:rounded-[2.5rem] border border-glass aspect-video object-cover"
-                                        />
-                                        <div className="absolute top-3 right-3 sm:top-4 sm:right-4">
-                                            <div className={twMerge(clsx(
-                                                "px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl text-[9px] sm:text-[10px] font-black uppercase tracking-[0.2em] border backdrop-blur-xl shadow-2xl transition-all group-hover:scale-105",
-                                                getStatusStyles(project.status)
-                                            ))}>
-                                                {project.status || 'Active'}
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="px-3 sm:px-6 space-y-4 mb-6 sm:mb-8">
-                                        <div className="space-y-1.5">
-                                            <h3 className="text-xl sm:text-3xl font-black text-primary tracking-tighter group-hover:text-theme transition-colors line-clamp-1">
-                                                {project.name}
-                                            </h3>
-                                            <p className="text-tertiary text-[11px] sm:text-sm font-medium line-clamp-2 leading-relaxed min-h-[36px] sm:min-h-[40px] opacity-80">
-                                                {project.description}
-                                            </p>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4 sm:gap-8 pt-4 border-t border-glass">
-                                            <div className="space-y-1">
-                                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Deadline</span>
-                                                <div className="flex items-center gap-2 text-primary">
-                                                    <Calendar className="w-3.5 h-3.5 text-theme/60" />
-                                                    <span className="text-[11px] sm:text-sm font-bold font-mono">
-                                                        {new Date(project.endDate).toLocaleDateString([], { month: 'short', day: 'numeric', year: '2-digit' })}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest block opacity-60">Team Members</span>
-                                                <div className="flex items-center gap-2 text-primary">
-                                                    <Users className="w-3.5 h-3.5 text-theme/60" />
-                                                    <span className="text-[11px] sm:text-sm font-bold font-mono truncate">{(project.members?.length || 0)} MEMBERS</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="mt-auto px-4 sm:px-8 py-4 sm:py-8 border-t border-glass bg-glass-heavy flex items-center justify-between gap-4">
-                                        <div className="flex -space-x-2.5">
-                                            {project.members?.slice(0, 4).map((m, i) => (
-                                                <div key={i} className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-base bg-glass flex items-center justify-center overflow-hidden transition-all group-hover:scale-110 hover:z-10 shadow-lg">
-                                                    {m.userId?.avatar ? (
-                                                        <img src={m.userId.avatar} alt="" loading="lazy" decoding="async" className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        <span className="text-[10px] sm:text-xs font-black text-gray-400">{m.userId?.name?.charAt(0)}</span>
-                                                    )}
-                                                </div>
-                                            ))}
-                                            {project.members?.length > 4 && (
-                                                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border-2 border-base bg-sunken flex items-center justify-center text-[10px] font-black text-tertiary shadow-lg">
-                                                    +{project.members.length - 4}
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <div className="flex items-center gap-3">
-                                            {view === 'invitations' ? (
-                                                <>
-                                                    <button onClick={() => respondMutation.mutate({ id: project._id, status: 'rejected' })} disabled={respondMutation.isPending} className="text-[10px] font-black uppercase tracking-widest text-secondary hover:text-danger transition-colors">
-                                                        Decline
-                                                    </button>
-                                                    <Button size="md" onClick={() => respondMutation.mutate({ id: project._id, status: 'active' })} rightIcon={ChevronRight} disabled={respondMutation.isPending} className="rounded-xl">
-                                                        Accept
-                                                    </Button>
-                                                </>
-                                            ) : project.status === 'Archived' ? (
-                                                <div className="flex items-center gap-3">
-                                                    {isOwner && (
-                                                        <>
-                                                            <Button
-                                                                size="md"
-                                                                variant="danger"
-                                                                onClick={() => {
-                                                                    if (window.confirm('IRREVERSIBLE: Are you absolutely sure you want to permanently delete this project and all its data?')) {
-                                                                        purgeMutation.mutate(project._id);
-                                                                    }
-                                                                }}
-                                                                leftIcon={Trash2}
-                                                                isLoading={purgeMutation.isPending}
-                                                                className="w-10 h-10 p-0 flex items-center justify-center rounded-xl bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border-rose-500/20"
-                                                            />
-                                                            <Button
-                                                                size="md"
-                                                                variant="secondary"
-                                                                onClick={() => restoreMutation.mutate(project._id)}
-                                                                leftIcon={RefreshCw}
-                                                                isLoading={restoreMutation.isPending}
-                                                                className="rounded-xl"
-                                                            >
-                                                                Restore
-                                                            </Button>
-                                                        </>
-                                                    )}
-                                                    {!isOwner && (
-                                                        <span className="text-[10px] font-black uppercase tracking-widest text-tertiary/50 italic px-4 py-2 bg-glass rounded-lg border border-glass">
-                                                            Archived (ReadOnly)
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            ) : (
-                                                <>
-                                                    <Button
-                                                        variant="secondary"
-                                                        size="md"
-                                                        as={Link}
-                                                        to={`/projects/${project._id}/settings`}
-                                                        className="w-10 sm:w-12 h-10 sm:h-12 p-0 flex items-center justify-center rounded-xl"
-                                                    >
-                                                        <Settings className="w-5 h-5" />
-                                                    </Button>
-                                                    <Button
-                                                        size="md"
-                                                        as={Link}
-                                                        to={`/tasks?project=${project._id}`}
-                                                        rightIcon={ChevronRight}
-                                                        className="px-6 rounded-xl"
-                                                    >
-                                                        Enter
-                                                    </Button>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </Card>
-                        );})}
-
+                        {filteredProjects.map((project) => (
+                            <ProjectCard 
+                                key={project._id}
+                                project={project}
+                                user={user}
+                                onlineUsers={onlineUsers}
+                                toggleGlobalPresence={toggleGlobalPresence}
+                                respondMutation={respondMutation}
+                                view={view}
+                                EASE={EASE}
+                                getStatusStyles={getStatusStyles}
+                            />
+                        ))}
                     </AnimatePresence>
                 </div>
             ) : (
-                <div className="flex flex-col items-center justify-center py-40 sm:py-60 text-center glass-2 border-dashed border-glass rounded-[5rem] sm:rounded-[8rem] px-8">
+                <div className="flex flex-col items-center justify-center py-40 sm:py-60 text-center bg-white/[0.02] border-dashed border-white/10 rounded-[5rem] sm:rounded-[8rem] px-8">
                     <div className="w-24 h-24 sm:w-32 sm:h-32 rounded-[3rem] sm:rounded-[4rem] bg-glass border border-glass flex items-center justify-center mb-10 sm:mb-12 shadow-inner">
                         <SearchX className="w-10 h-10 sm:w-14 sm:h-14 text-tertiary/40" />
                     </div>

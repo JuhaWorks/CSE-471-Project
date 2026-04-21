@@ -39,9 +39,9 @@ export const useSocketStore = create((set, get) => ({
 
         const startHeartbeat = () => {
             if (syncInterval) clearInterval(syncInterval);
-            // Re-request presence every 20s as a client-side safety net
+            // Re-request presence every 20s but only when the tab is visible
             syncInterval = setInterval(() => {
-                if (socket.connected) {
+                if (socket.connected && !document.hidden) {
                     socket.emit('requestPresenceSync');
                 }
             }, 20000);

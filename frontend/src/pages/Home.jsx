@@ -15,10 +15,8 @@ import GlobalClockWidget from '../components/tools/Widgets/GlobalClockWidget';
 import QuoteWidget from '../components/tools/Widgets/QuoteWidget';
 import IntelligenceWidget from '../components/tools/Widgets/IntelligenceWidget';
 import { useSocketStore } from '../store/useSocketStore';
-import Button from '../components/ui/Button';
+import { Button, Card, Counter } from '../components/ui/BaseUI';
 import { DeadlinePopup } from '../components/projects/ProjectShared';
-import Card from '../components/ui/Card';
-import Counter from '../components/ui/Counter';
 import { cn } from '../utils/cn';
 import TaskDetailModal from '../components/Kanban/TaskDetailModal';
 import { toast } from 'react-hot-toast';
@@ -46,13 +44,13 @@ const styles = `
     --ent-accent-dim: var(--accent-bg);
 
     /* Vibrant Brand Palette */
-    --v-emerald:      oklch(0.72 0.18 162);
-    --v-cyan:         oklch(0.70 0.15 200);
-    --v-amber:        oklch(0.82 0.18 75);
-    --v-orange:       oklch(0.65 0.20 45);
-    --v-blue:         oklch(0.60 0.18 240);
-    --v-indigo:       oklch(0.55 0.20 270);
-    --v-rose:         oklch(0.65 0.22 15);
+    --v-emerald:      hsl(162, 70%, 55%);
+    --v-cyan:         hsl(200, 65%, 55%);
+    --v-amber:        hsl(75, 75%, 65%);
+    --v-orange:       hsl(45, 80%, 55%);
+    --v-blue:         hsl(240, 70%, 55%);
+    --v-indigo:       hsl(270, 70%, 55%);
+    --v-rose:         hsl(15, 80%, 60%);
     
     font-family: var(--ent-font);
     font-feature-settings: 'ss01', 'ss02', 'cv01';
@@ -80,9 +78,10 @@ const styles = `
     width: 40vw;
     height: 40vw;
     border-radius: 50%;
-    filter: blur(140px);
-    opacity: 0.08;
+    filter: blur(80px);
+    opacity: 0.05;
     pointer-events: none;
+    will-change: filter;
     z-index: 0;
   }
 

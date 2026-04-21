@@ -17,7 +17,7 @@ import { useAuthStore } from '../../store/useAuthStore';
 import { useSocketStore } from '../../store/useSocketStore';
 import { useProjectSocket } from '../../hooks/projects/useProjectSocket';
 import { motion, AnimatePresence } from 'framer-motion';
-import Button from '../ui/Button';
+import { Button } from '../ui/BaseUI';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -30,7 +30,7 @@ import DangerZoneTab from './DangerZoneTab';
 import InsightsTab from './InsightsTab';
 // Shared UI Components
 import { ProjectImage, AvatarGroup } from './ProjectShared';
-import { Skeleton } from '../ui/PremiumLoaders';
+import {  Skeleton  } from '../ui/Loaders';
 
 /**
  * Modern 2026 Project Settings Dashboard

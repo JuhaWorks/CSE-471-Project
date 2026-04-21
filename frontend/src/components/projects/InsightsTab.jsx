@@ -13,8 +13,8 @@ import {
     BrainCircuit
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Card from '../ui/Card';
-import { Skeleton } from '../ui/PremiumLoaders';
+import { Card } from '../ui/BaseUI';
+import {  Skeleton  } from '../ui/Loaders';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

@@ -13,6 +13,7 @@ import RequireVerification from './components/auth/RequireVerification';
 import { Toaster } from 'react-hot-toast';
 import TaskTimer from './components/tools/Widgets/TaskTimer';
 import ChatTray from './components/networking/ChatTray';
+import GlobalPresence from './components/layout/GlobalPresence';
 
 // Code-split only secondary pages — entry pages must load instantly
 const Register = lazy(() => import('./pages/Register'));
@@ -31,7 +32,7 @@ const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
 const Home = lazy(() => import('./pages/Home'));
 const Networking = lazy(() => import('./pages/Networking'));
 
-import { GlobalLoadingScreen, PageLoader } from './components/ui/Loading';
+import { GlobalLoadingScreen, PageLoader } from './components/ui/Loaders';
 import { registerServiceWorker, subscribeToNotifications } from './utils/push';
 
 // Protected Route Wrapper Component
@@ -52,7 +53,7 @@ const ProtectedRoute = ({ children }) => {
 useTheme.getState().initTheme();
 
 function App() {
-  const { checkAuth, isCheckingAuth, isAuthenticated } = useAuthStore();
+  const { checkAuth, isCheckingAuth, isAuthenticated, user } = useAuthStore();
   const queryClient = useQueryClient();
   const { setQueryClient } = useSocketStore();
 
@@ -88,6 +89,7 @@ function App() {
       <CommandPalette />
       <TaskTimer />
       <ChatTray />
+      {user?.interfacePrefs?.showGlobalPresence !== false && <GlobalPresence />}
       <MaintenanceNotice />
       <Suspense fallback={<PageLoader />}>
         <Routes>

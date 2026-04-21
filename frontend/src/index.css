@@ -21,7 +21,7 @@
 @property --shadow-color {
   syntax: "<color>";
   inherits: true;
-  initial-value: oklch(0 0 0 / 0.15);
+  initial-value: rgba(0, 0, 0, 0.15);
 }
 
 @property --glow-radius {
@@ -45,23 +45,23 @@
 @property --text-shadow-color {
   syntax: "<color>";
   inherits: true;
-  initial-value: oklch(0 0 0 / 0.18);
+  initial-value: rgba(0, 0, 0, 0.18);
 }
 
 /* Core Theme variable registration for smooth transitions */
-@property --accent-500 { syntax: "<color>"; inherits: true; initial-value: oklch(0.65 0.19 162); }
-@property --bg-base { syntax: "<color>"; inherits: true; initial-value: oklch(0.985 0.002 247); }
-@property --bg-surface { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.85); }
-@property --bg-elevated { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.98); }
-@property --bg-sunken { syntax: "<color>"; inherits: true; initial-value: oklch(0.94 0.003 247 / 0.60); }
-@property --text-primary { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247); }
-@property --text-secondary { syntax: "<color>"; inherits: true; initial-value: oklch(0.28 0.012 247); }
-@property --text-tertiary { syntax: "<color>"; inherits: true; initial-value: oklch(0.42 0.010 247); }
-@property --border-default { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.04); }
-@property --border-strong { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.08); }
-@property --border-subtle { syntax: "<color>"; inherits: true; initial-value: oklch(0.12 0.008 247 / 0.02); }
-@property --bg-shimmer { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.5); }
-@property --bg-glass-heavy { syntax: "<color>"; inherits: true; initial-value: oklch(1 0 0 / 0.7); }
+@property --accent-500 { syntax: "<color>"; inherits: true; initial-value: hsl(162, 70%, 55%); }
+@property --bg-base { syntax: "<color>"; inherits: true; initial-value: hsl(240, 10%, 98%); }
+@property --bg-surface { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.85); }
+@property --bg-elevated { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.98); }
+@property --bg-sunken { syntax: "<color>"; inherits: true; initial-value: hsla(240, 10%, 94%, 0.6); }
+@property --text-primary { syntax: "<color>"; inherits: true; initial-value: hsl(240, 10%, 12%); }
+@property --text-secondary { syntax: "<color>"; inherits: true; initial-value: hsl(240, 10%, 28%); }
+@property --text-tertiary { syntax: "<color>"; inherits: true; initial-value: hsl(240, 10%, 42%); }
+@property --border-default { syntax: "<color>"; inherits: true; initial-value: rgba(0, 0, 0, 0.04); }
+@property --border-strong { syntax: "<color>"; inherits: true; initial-value: rgba(0, 0, 0, 0.08); }
+@property --border-subtle { syntax: "<color>"; inherits: true; initial-value: rgba(0, 0, 0, 0.02); }
+@property --bg-shimmer { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.5); }
+@property --bg-glass-heavy { syntax: "<color>"; inherits: true; initial-value: rgba(255, 255, 255, 0.7); }
 @property --accent-bg { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --accent-border { syntax: "<color>"; inherits: true; initial-value: transparent; }
 @property --accent-glow { syntax: "<color>"; inherits: true; initial-value: transparent; }
@@ -104,10 +104,10 @@
   --color-neutral-950: oklch(0.075 0.003 247);
 
   /* Semantic status */
-  --color-success: oklch(0.72 0.18 142);
-  --color-warning: oklch(0.82 0.18 75);
-  --color-danger: oklch(0.65 0.22 25);
-  --color-info: oklch(0.70 0.15 240);
+  --color-success: hsl(142, 70%, 45%);
+  --color-warning: hsl(45, 85%, 50%);
+  --color-danger: hsl(0, 80%, 55%);
+  --color-info: hsl(210, 80%, 60%);
 
   /* Precise Responsive Breakpoints */
   --breakpoint-2xs: 375px;
@@ -501,7 +501,6 @@ body {
   overflow-x: hidden;
   /* Performance: Promote background to its own layer to avoid layout shifts/repaints */
   transform: translateZ(0);
-  will-change: background-color, background-image;
   position: relative;
 }
 

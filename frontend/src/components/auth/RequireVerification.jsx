@@ -4,8 +4,8 @@ import toast from 'react-hot-toast';
 import { api } from '../../store/useAuthStore';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button, Card } from '../ui/BaseUI';
+;
 
 /**
  * Modern 2026 RequireVerification Middleware

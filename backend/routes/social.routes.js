@@ -14,11 +14,15 @@ const connectionRouter = express.Router();
 connectionRouter.use(protect);
 
 connectionRouter.get('/', socialCtrl.getMyConnections);
+connectionRouter.get('/pending', socialCtrl.getPendingRequests);
+connectionRouter.get('/sent', socialCtrl.getSentRequests);
 connectionRouter.get('/stats', socialCtrl.getStats);
 connectionRouter.get('/suggestions', socialCtrl.getSuggestions);
-connectionRouter.post('/request/:targetId', socialCtrl.sendRequest);
-connectionRouter.post('/respond/:requestId', socialCtrl.respondToRequest);
-connectionRouter.delete('/:targetId', socialCtrl.removeConnection);
+connectionRouter.get('/search', socialCtrl.searchUsers);
+connectionRouter.post('/request', socialCtrl.sendRequest);
+connectionRouter.put('/respond', socialCtrl.respondToRequest);
+connectionRouter.delete('/withdraw/:connectionId', socialCtrl.withdrawRequest);
+connectionRouter.delete('/:connectionId', socialCtrl.removeConnection);
 
 // ─── 2. Endorsements (Skills) ──────────────────────────────────────────────
 const endorsementRouter = express.Router();

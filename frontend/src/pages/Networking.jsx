@@ -11,9 +11,7 @@ import {
 import { api } from '../store/useAuthStore';
 import { useAuthStore } from '../store/useAuthStore';
 import { useSocketStore } from '../store/useSocketStore';
-import Card from '../components/ui/Card';
-import Counter from '../components/ui/Counter';
-import Button from '../components/ui/Button';
+import { Card, Counter, Button } from '../components/ui/BaseUI';
 import toast from 'react-hot-toast';
 import NetworkingSkeleton from '../components/networking/NetworkingSkeleton';
 import UserProfileModal from '../components/networking/UserProfileModal';
@@ -97,22 +95,20 @@ const Avatar = ({ user, size = 'md' }) => {
 
 // ── Shared UI Patterns (matching Home Dashboard) ─────────────────────────
 const HeaderMetric = ({ label, value, unit, color1, color2 }) => (
-    <div className="ent-h-metric">
-        <span className="ent-label" style={{ marginBottom: 6, fontSize: 11, opacity: 0.8 }}>{label}</span>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+    <div className="flex flex-col items-start px-8 border-r border-default last:border-r-0">
+        <span className="text-[9px] font-black uppercase tracking-widest text-tertiary mb-1">{label}</span>
+        <div className="flex items-baseline gap-1.5">
             <span style={{ 
                 fontFamily: 'var(--ent-mono)', 
-                fontSize: 32, 
-                fontWeight: 600, 
-                lineHeight: 1,
+                fontSize: 22, 
+                fontWeight: 700, 
                 background: `linear-gradient(to bottom right, ${color1}, ${color2})`,
                 WebkitBackgroundClip: 'text',
                 WebkitTextFillColor: 'transparent',
-                letterSpacing: '-0.02em'
             }}>
                 <Counter value={value} />
             </span>
-            {unit && <span style={{ fontFamily: 'var(--ent-mono)', fontSize: 12, color: 'var(--ent-text-3)', marginLeft: 1 }}>{unit}</span>}
+            {unit && <span className="text-[10px] font-medium text-tertiary/60">{unit}</span>}
         </div>
     </div>
 );
@@ -127,12 +123,12 @@ const BackgroundGlow = () => (
 
 const RoleBadge = ({ role }) => {
     const styles = {
-        Admin: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
-        Manager: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
-        Developer: 'bg-theme/10 text-theme border-theme/20',
+        Admin: 'text-rose-500/80 border-rose-500/10 bg-rose-500/[0.02]',
+        Manager: 'text-amber-500/80 border-amber-500/10 bg-amber-500/[0.02]',
+        Developer: 'text-theme/70 border-theme/10 bg-theme/[0.02]',
     };
     return (
-        <span className={`inline-flex items-center px-2 py-0.5 rounded-lg text-[10px] font-black uppercase tracking-widest border ${styles[role] || styles.Developer}`}>
+        <span className={`inline-flex items-center px-1.5 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest border ${styles[role] || styles.Developer}`}>
             {role}
         </span>
     );
@@ -142,10 +138,10 @@ const SocialStats = ({ count }) => {
     if (count === undefined || count === null) return null;
     const displayCount = Math.max(0, count);
     return (
-        <div className="flex items-center gap-1 mt-1">
-            <Users2 className="w-3 h-3 text-tertiary" />
-            <span className="text-[10px] font-bold text-tertiary uppercase tracking-wider">
-                {displayCount} {displayCount === 1 ? 'Connection' : 'Connections'}
+        <div className="flex items-center gap-1.5 mt-0.5 opacity-40">
+            <Users2 className="w-2.5 h-2.5" />
+            <span className="text-[9px] font-bold uppercase tracking-widest">
+                {displayCount}
             </span>
         </div>
     );
@@ -155,47 +151,44 @@ const SocialStats = ({ count }) => {
 const ConnectionCard = ({ connection, onRemove, onViewProfile }) => {
     const user = connection.user;
     return (
-        <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
-            <Card variant="glass" padding="p-0" className="group hover:border-theme/20 transition-all duration-300 rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
-                <div className="p-2.5 flex items-start gap-3">
-                    <div className="relative cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
-                        <Avatar user={user} size="sm" />
-                        <div className="absolute -bottom-0.5 -right-0.5">
-                            <StatusDot status={user?.status} />
-                        </div>
+        <motion.div layout initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} transition={EASE}>
+            <div className="group relative flex items-start gap-4 p-4 rounded-[2rem] hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all duration-300">
+                <div className="relative shrink-0 cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
+                    <Avatar user={user} size="sm" />
+                    <div className="absolute -bottom-0.5 -right-0.5">
+                        <StatusDot status={user?.status} />
                     </div>
-                    <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-0.5">
-                            <h4 
-                                className="text-[13px] font-black text-primary truncate cursor-pointer hover:text-theme transition-colors"
-                                onClick={() => onViewProfile && onViewProfile(user._id)}
-                            >
-                                {user?.name}
-                            </h4>
-                            <RoleBadge role={user?.role} />
-                        </div>
-                        <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
-                        <SocialStats count={user?.totalConnections} />
-
-                        {connection.labels?.length > 0 && (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                                {connection.labels.map((label, i) => (
-                                    <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-theme/5 text-[9px] font-bold text-theme border border-theme/10">
-                                        <Tag className="w-2 h-2" />{label}
-                                    </span>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                    <button
-                        onClick={() => onRemove(connection._id)}
-                        className="opacity-0 group-hover:opacity-100 p-1.5 rounded-xl text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
-                        title="Remove connection"
-                    >
-                        <Trash2 className="w-3.5 h-3.5" />
-                    </button>
                 </div>
-            </Card>
+                <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1.5">
+                        <h4 
+                            className="text-[13px] font-bold text-primary truncate cursor-pointer hover:text-theme transition-colors tracking-tight"
+                            onClick={() => onViewProfile && onViewProfile(user._id)}
+                        >
+                            {user?.name}
+                        </h4>
+                        <RoleBadge role={user?.role} />
+                    </div>
+                    <p className="text-[11px] text-tertiary truncate font-medium mb-1.5 opacity-60 tracking-tight">{user?.email}</p>
+                    <SocialStats count={user?.totalConnections} />
+
+                    {connection.labels?.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 mt-3">
+                            {connection.labels.map((label, i) => (
+                                <span key={i} className="px-2 py-0.5 rounded-md bg-theme/5 text-[8px] font-black text-theme/40 border border-theme/10 uppercase tracking-widest">
+                                    {label}
+                                </span>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                <button
+                    onClick={() => onRemove(connection._id)}
+                    className="opacity-0 group-hover:opacity-100 p-1 rounded-lg text-tertiary/20 hover:text-danger hover:bg-danger/5 transition-all self-start mt-1"
+                >
+                    <Trash2 className="w-3.5 h-3.5" />
+                </button>
+            </div>
         </motion.div>
     );
 };
@@ -213,51 +206,49 @@ const IncomingRequestCard = ({ request, onRespond }) => {
 
     return (
         <motion.div layout initial={{ opacity: 0, x: -12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 12 }} transition={EASE}>
-            <Card variant="glass" padding="p-0" className="border-l-4 border-l-theme/40 rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
-                <div className="p-3">
-                    <div className="flex items-start gap-3">
-                        <Avatar user={user} size="sm" />
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                                <h4 className="text-[13px] font-black text-primary truncate">{user?.name}</h4>
-                                <RoleBadge role={user?.role} />
-                            </div>
-                            <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
-                            <SocialStats count={user?.totalConnections} />
+            <div className="group relative flex flex-col p-4 rounded-[2rem] hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all duration-300">
+                <div className="flex items-start gap-4">
+                    <Avatar user={user} size="sm" />
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-[13px] font-bold text-primary truncate tracking-tight">{user?.name}</h4>
+                            <RoleBadge role={user?.role} />
                         </div>
-                        <span className="text-[10px] text-tertiary font-mono opacity-60">
-                            {new Date(request.createdAt).toLocaleDateString()}
-                        </span>
+                        <p className="text-[11px] text-tertiary truncate font-medium opacity-60 mb-1">{user?.email}</p>
+                        <SocialStats count={user?.totalConnections} />
                     </div>
-                    {request.note && (
-                        <div className="mt-2.5 p-2.5 rounded-xl bg-sunken border border-default">
-                            <div className="flex items-center gap-1.5 mb-0.5">
-                                <MessageSquare className="w-2.5 h-2.5 text-tertiary" />
-                                <span className="text-[9px] font-black text-tertiary uppercase tracking-widest">Note</span>
-                            </div>
-                            <p className="text-[11px] text-secondary leading-relaxed line-clamp-2">"{request.note}"</p>
-                        </div>
-                    )}
-                    <div className="flex gap-2 mt-3.5">
-                        <button
-                            onClick={() => handleRespond('accept')}
-                            disabled={loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-black bg-theme text-white hover:bg-theme/90 shadow-lg shadow-theme/15 disabled:opacity-50 active:scale-[0.98] transition-all"
-                        >
-                            {loading === 'accept' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
-                            Accept
-                        </button>
-                        <button
-                            onClick={() => handleRespond('decline')}
-                            disabled={loading}
-                            className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-xs font-bold text-secondary border border-default bg-sunken hover:bg-default disabled:opacity-50 active:scale-[0.98] transition-all"
-                        >
-                            {loading === 'decline' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
-                            Decline
-                        </button>
-                    </div>
+                    <span className="text-[9px] text-tertiary/40 font-mono">
+                        {new Date(request.createdAt).toLocaleDateString()}
+                    </span>
                 </div>
-            </Card>
+                {request.note && (
+                    <div className="mt-3 p-3 rounded-2xl bg-white/[0.03] border border-white/5">
+                        <div className="flex items-center gap-2 mb-1">
+                            <MessageSquare className="w-2.5 h-2.5 text-theme/60" />
+                            <span className="text-[8px] font-black text-tertiary/60 uppercase tracking-widest">Note</span>
+                        </div>
+                        <p className="text-[11px] text-secondary leading-relaxed line-clamp-2">"{request.note}"</p>
+                    </div>
+                )}
+                <div className="flex gap-2 mt-4">
+                    <button
+                        onClick={() => handleRespond('accept')}
+                        disabled={loading}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-[11px] font-black bg-theme text-white hover:bg-theme/90 transition-all active:scale-[0.98]"
+                    >
+                        {loading === 'accept' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserCheck className="w-3.5 h-3.5" />}
+                        Accept
+                    </button>
+                    <button
+                        onClick={() => handleRespond('decline')}
+                        disabled={loading}
+                        className="flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl text-[11px] font-bold text-tertiary hover:text-primary bg-white/[0.03] hover:bg-white/[0.06] transition-all active:scale-[0.98]"
+                    >
+                        {loading === 'decline' ? <Loader2 className="w-3 h-3 animate-spin" /> : <UserX className="w-3.5 h-3.5" />}
+                        Decline
+                    </button>
+                </div>
+            </div>
         </motion.div>
     );
 };
@@ -267,28 +258,25 @@ const SentRequestCard = ({ request, onWithdraw }) => {
     const user = request.recipient;
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
-            <Card variant="glass" padding="p-0" className="rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
-                <div className="p-2.5 flex items-center gap-3">
-                    <Avatar user={user} size="sm" />
-                    <div className="flex-1 min-w-0">
-                        <h4 className="text-[13px] font-bold text-primary truncate leading-tight">{user?.name}</h4>
-                        <p className="text-[11px] text-tertiary truncate">{user?.email}</p>
-                        <SocialStats count={user?.totalConnections} />
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span className="flex items-center gap-1 text-[9px] text-amber-500 font-bold uppercase tracking-tight">
-                            <Clock className="w-2.5 h-2.5" /> Pending
-                        </span>
-                        <button
-                            onClick={() => onWithdraw(request._id)}
-                            className="p-1.5 rounded-xl text-tertiary hover:text-danger hover:bg-danger/5 transition-all"
-                            title="Withdraw request"
-                        >
-                            <X className="w-3 h-3" />
-                        </button>
-                    </div>
+            <div className="group relative flex items-center gap-4 p-4 rounded-[2rem] hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all duration-300">
+                <Avatar user={user} size="sm" />
+                <div className="flex-1 min-w-0">
+                    <h4 className="text-[13px] font-bold text-primary truncate tracking-tight">{user?.name}</h4>
+                    <p className="text-[11px] text-tertiary truncate opacity-60">{user?.email}</p>
+                    <SocialStats count={user?.totalConnections} />
                 </div>
-            </Card>
+                <div className="flex items-center gap-3">
+                    <span className="flex items-center gap-1.5 text-[9px] text-amber-500/60 font-black uppercase tracking-widest">
+                        <Clock className="w-2.5 h-2.5" /> Pending
+                    </span>
+                    <button
+                        onClick={() => onWithdraw(request._id)}
+                        className="p-1.5 rounded-lg text-tertiary/20 hover:text-danger transition-all"
+                    >
+                        <X className="w-3.5 h-3.5" />
+                    </button>
+                </div>
+            </div>
         </motion.div>
     );
 };
@@ -339,39 +327,35 @@ const DiscoverCard = ({ user, onConnect, onViewProfile }) => {
 
     return (
         <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={EASE}>
-            <Card variant="glass" padding="p-0" className="hover:border-theme/15 transition-all duration-300 rounded-[1.75rem] sm:rounded-[2rem] overflow-hidden">
-                <div className="p-2.5">
-                    <div className="flex items-start gap-3">
-                        <div className="relative cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
-                            <Avatar user={user} size="sm" />
-                            <div className="absolute -bottom-0.5 -right-0.5">
-                                <StatusDot status={user?.status} />
-                            </div>
+            <div className="group relative flex flex-col p-4 rounded-[2rem] hover:bg-white/[0.02] border border-transparent hover:border-white/5 transition-all duration-300">
+                <div className="flex items-start gap-4">
+                    <div className="relative shrink-0 cursor-pointer" onClick={() => onViewProfile && onViewProfile(user._id)}>
+                        <Avatar user={user} size="sm" />
+                        <div className="absolute -bottom-0.5 -right-0.5">
+                            <StatusDot status={user?.status} />
                         </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-0.5">
-                                <h4 
-                                    className="text-[13px] font-black text-primary truncate cursor-pointer hover:text-theme transition-colors"
-                                    onClick={() => onViewProfile && onViewProfile(user._id)}
-                                >
-                                    {user?.name}
-                                </h4>
-                                <RoleBadge role={user?.role} />
-                            </div>
-                            <p className="text-[11px] text-tertiary truncate font-medium">{user?.email}</p>
-                            <SocialStats count={user?.totalConnections} />
-
-                            {user?.reason && (
-                                <div className="flex items-start gap-1.5 mt-2 p-1.5 rounded-lg bg-theme/5 border border-theme/10">
-                                    <Sparkles className="w-2.5 h-2.5 text-theme shrink-0 mt-0.5" />
-                                    <p className="text-[9px] text-theme font-bold leading-tight uppercase tracking-tight">
-                                        {user.reason}
-                                    </p>
-                                </div>
-                            )}
-                        </div>
-                        {getActionButton()}
                     </div>
+                    <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                            <h4 
+                                className="text-[13px] font-bold text-primary truncate cursor-pointer hover:text-theme transition-colors tracking-tight"
+                                onClick={() => onViewProfile && onViewProfile(user._id)}
+                            >
+                                {user?.name}
+                            </h4>
+                            <RoleBadge role={user?.role} />
+                        </div>
+                        <p className="text-[11px] text-tertiary truncate font-medium opacity-60 mb-1">{user?.email}</p>
+                        <SocialStats count={user?.totalConnections} />
+
+                        {user?.reason && (
+                            <div className="mt-2.5 text-[9px] text-theme/60 font-black uppercase tracking-widest">
+                                {user.reason}
+                            </div>
+                        )}
+                    </div>
+                    {getActionButton()}
+                </div>
 
                     <AnimatePresence>
                         {showNote && (
@@ -414,8 +398,7 @@ const DiscoverCard = ({ user, onConnect, onViewProfile }) => {
                             </motion.div>
                         )}
                     </AnimatePresence>
-                </div>
-            </Card>
+            </div>
         </motion.div>
     );
 };
@@ -730,17 +713,17 @@ const Networking = () => {
                 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
                 
                 :root {
-                  --ent-text-1: oklch(0.98 0 0);
-                  --ent-text-2: oklch(0.85 0 0);
-                  --ent-text-3: oklch(0.6 0 0);
-                  --ent-border: oklch(0.25 0 0);
-                  --ent-mono: 'JetBrains Mono', monospace;
-                  --v-emerald: oklch(0.7 0.25 150);
-                  --v-rose: oklch(0.7 0.25 10);
-                  --v-cyan: oklch(0.7 0.2 210);
-                  --v-amber: oklch(0.7 0.2 70);
-                  --v-blue: oklch(0.7 0.2 250);
-                }
+                   --ent-text-1: hsl(0, 0%, 98%);
+                   --ent-text-2: hsl(0, 0%, 85%);
+                   --ent-text-3: hsl(0, 0%, 65%);
+                   --ent-border: hsl(0, 0%, 25%);
+                   --ent-mono: 'JetBrains Mono', monospace;
+                   --v-emerald: hsl(150, 70%, 55%);
+                   --v-rose: hsl(10, 80%, 60%);
+                   --v-cyan: hsl(200, 65%, 55%);
+                   --v-amber: hsl(70, 75%, 65%);
+                   --v-blue: hsl(250, 70%, 55%);
+                 }
 
                 .net-root { font-family: 'Sora', system-ui, sans-serif; --mono: 'JetBrains Mono', monospace; }
                 .ent-label {
@@ -781,32 +764,29 @@ const Networking = () => {
                 <div className="relative z-10 w-full">
                     {/* Header with Integrated HUD */}
                     <header style={{
-                        padding: '48px 0 32px',
+                        padding: '32px 0 24px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         borderBottom: '1px solid var(--ent-border)',
-                        marginBottom: 48,
-                        gap: 40,
+                        marginBottom: 40,
+                        gap: 32,
                     }}>
-                        <div className="ent-greeting-area" style={{ display: 'flex', alignItems: 'baseline', gap: 48, flexWrap: 'wrap' }}>
-                            <div style={{ paddingRight: 48, borderRight: '1px solid var(--ent-border)' }}>
-                                <div className="flex items-center gap-3 mb-4">
-                                    <div className="w-6 h-6 rounded-lg bg-theme/10 flex items-center justify-center">
-                                        <Users2 className="w-3.5 h-3.5 text-theme" />
-                                    </div>
-                                    <span className="ent-label" style={{ fontSize: 9 }}>Professional Network</span>
+                        <div className="flex items-center gap-12 flex-wrap">
+                            <div className="pr-12 border-r border-default">
+                                <div className="flex items-center gap-2 mb-2">
+                                    <Users2 className="w-3.5 h-3.5 text-theme/60" />
+                                    <span className="text-[8px] font-black uppercase tracking-[0.3em] text-tertiary/60">Registry</span>
                                 </div>
-                                <h1 style={{ fontSize: 48, fontWeight: 600, color: 'var(--ent-text-1)', margin: 0, letterSpacing: '-0.04em', whiteSpace: 'nowrap' }}>
-                                    <span style={{ color: 'var(--ent-text-1)' }}>Networking</span>
+                                <h1 style={{ fontSize: 28, fontWeight: 650, color: 'var(--ent-text-1)', margin: 0, letterSpacing: '-0.04em' }}>
+                                    Networking
                                 </h1>
                             </div>
 
-                            {/* HUD / Metrics */}
-                            <div className="ent-header-hud" style={{ display: 'flex', alignItems: 'baseline', gap: 0 }}>
-                                <HeaderMetric label="Connections" value={stats.connectionCount} color1="var(--v-emerald)" color2="var(--v-cyan)" />
-                                <HeaderMetric label="Received" value={stats.pendingCount} color1="var(--v-amber)" color2="var(--v-rose)" />
-                                <HeaderMetric label="Sent Requests" value={stats.sentCount} color1="var(--v-blue)" color2="var(--v-rose)" />
+                            <div className="flex items-center">
+                                <HeaderMetric label="Connections" value={stats.connectionCount ?? 0} color1="var(--v-emerald)" color2="var(--v-cyan)" />
+                                <HeaderMetric label="Received" value={stats.pendingCount ?? 0} color1="var(--v-rose)" color2="var(--v-orange)" />
+                                <HeaderMetric label="Sent Requests" value={stats.sentCount ?? 0} color1="var(--v-blue)" color2="var(--v-indigo)" />
                             </div>
                         </div>
                     </header>
@@ -814,7 +794,7 @@ const Networking = () => {
 
 
                     {/* Minimalist Tabs */}
-                    <div className="flex flex-wrap items-center gap-8 mb-12 px-2 border-b border-default w-full">
+                    <div className="flex flex-wrap items-center gap-10 mb-10 px-2 border-b border-default w-full">
                         {TABS.map((tab) => {
                             const isActive = activeTab === tab.key;
                             const count = tab.key === 'pending' ? pending.length : tab.key === 'sent' ? sent.length : tab.key === 'network' ? connections.length : 0;
@@ -822,26 +802,24 @@ const Networking = () => {
                                 <button
                                     key={tab.key}
                                     onClick={() => setActiveTab(tab.key)}
-                                    className={`relative flex items-center gap-3 pb-4 text-[10px] sm:text-xs font-black transition-all duration-300 uppercase tracking-[0.2em] ${
+                                    className={`relative flex items-center gap-2 pb-5 text-[10px] font-black transition-all duration-300 uppercase tracking-[0.25em] ${
                                         isActive ? 'text-primary' : 'text-tertiary hover:text-secondary'
                                     }`}
                                 >
-                                    <div className="flex items-center gap-2.5">
-                                        <tab.icon className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${isActive ? 'text-theme' : 'text-tertiary'}`} />
-                                        <span className="hidden xs:inline">{tab.label}</span>
+                                    <div className="flex items-center gap-2">
+                                        <tab.icon className={`w-3.5 h-3.5 transition-colors ${isActive ? 'text-theme' : 'text-tertiary/60'}`} />
+                                        <span>{tab.label}</span>
                                         {count > 0 && tab.key !== 'discover' && (
-                                            <span className={`px-1.5 py-0.5 rounded-lg text-[9px] font-mono font-black ${
-                                                isActive ? 'bg-theme/10 text-theme' : 'bg-sunken text-tertiary'
-                                            }`}>
-                                                {count}
+                                            <span className={`text-[9px] font-mono font-medium opacity-40 ml-1`}>
+                                                ({count})
                                             </span>
                                         )}
                                     </div>
                                     {isActive && (
                                         <motion.div
                                             layoutId="activeTabUnderline"
-                                            className="absolute bottom-[-1px] left-0 right-0 h-0.5 bg-theme shadow-[0_0_12px_var(--v-emerald)] rounded-full z-10"
-                                            transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
+                                            className="absolute bottom-[-1.5px] left-0 right-0 h-[1.5px] bg-theme"
+                                            transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
                                         />
                                     )}
                                 </button>
@@ -923,9 +901,9 @@ const Networking = () => {
                                             const rowItems = connections.slice(startIndex, startIndex + 3);
                                             
                                             return (
-                                                <div
-                                                    key={virtualRow.key}
-                                                    className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3"
+                                                        <div
+                                                            key={virtualRow.key}
+                                                            className="absolute top-0 left-0 w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                                                     style={{ 
                                                         transform: `translateY(${virtualRow.start - rowVirtualizer.options.scrollMargin}px)`,
                                                         height: `${virtualRow.size}px`

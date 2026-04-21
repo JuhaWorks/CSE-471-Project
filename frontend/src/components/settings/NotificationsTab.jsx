@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Bell, Mail, ShieldAlert, Zap, Info, RefreshCw } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button, Card } from '../ui/BaseUI';
+;
 import { motion } from 'framer-motion';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 import { toast } from 'react-hot-toast';
 import { cn } from '../../utils/cn';
 

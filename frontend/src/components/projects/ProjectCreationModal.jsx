@@ -8,8 +8,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import Button from '../ui/Button';
-import Input from '../ui/Input';
+import { Button, Input } from '../ui/BaseUI';
+;
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

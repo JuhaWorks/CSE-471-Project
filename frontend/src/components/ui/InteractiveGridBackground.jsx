@@ -43,11 +43,8 @@ const InteractiveGridBackground = ({
   const idleTgtY = useRef(new Float32Array(idleRandomCount));
 
   // Grid geometry — computed once on resize, read every frame
+  // Geo geometry — computed once on resize, read every frame
   const geo = useRef({ width: 0, height: 0, cols: 0, rows: 0, ox: 0, oy: 0, dpr: 1 });
-
-  // Offscreen canvas for trail (avoid main-canvas thrash)
-  const offTrail = useRef(null);
-  const offTrailCtx = useRef(null);
 
   // ─── Dark mode observer ──────────────────────────────────────────────────
   useEffect(() => {
@@ -102,7 +99,7 @@ const InteractiveGridBackground = ({
       : `rgba(${EMERALD_RGB},0.13)`;
 
     const build = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = 1; // Force 1x DPR to save ~60MB of video memory
       const w = container.clientWidth;
       const h = container.clientHeight;
 
@@ -136,15 +133,7 @@ const InteractiveGridBackground = ({
       }
       gCtx.stroke();
 
-      // ── Offscreen trail canvas ───────────────────────────────────────────
-      if (!offTrail.current) offTrail.current = document.createElement("canvas");
-      offTrail.current.width = w * dpr;
-      offTrail.current.height = h * dpr;
-      offTrailCtx.current = offTrail.current.getContext("2d");
-      offTrailCtx.current.setTransform(dpr, 0, 0, dpr, 0, 0);
-      offTrailCtx.current.imageSmoothingEnabled = false;
-
-      // ── Reset idle positions ─────────────────────────────────────────────
+      // ── Draw static grid ONCE ────────────────────────────────────────────
       for (let i = 0; i < idleRandomCount; i++) {
         idleTgtX.current[i] = (Math.random() * cols) | 0;
         idleTgtY.current[i] = (Math.random() * rows) | 0;
@@ -209,8 +198,8 @@ const InteractiveGridBackground = ({
         pushTrail(snX, snY);
       }
 
-      // ── Render trail to offscreen ──────────────────────────────────────
-      const ctx = offTrailCtx.current;
+      // ── Render trail to visible canvas ──────────────────────────────────────
+      const ctx = tCtx;
       if (!ctx) { rafRef.current = requestAnimationFrame(frame); return; }
 
       ctx.clearRect(0, 0, width, height);
@@ -251,14 +240,6 @@ const InteractiveGridBackground = ({
         ctx.shadowBlur = 0;
         ctx.globalCompositeOperation = "source-over";
       }
-
-      // ── Single blit to visible canvas ──────────────────────────────────
-      tCtx.clearRect(0, 0, width, height);
-      tCtx.drawImage(
-        offTrail.current,
-        0, 0, offTrail.current.width, offTrail.current.height,
-        0, 0, width, height
-      );
 
       rafRef.current = requestAnimationFrame(frame);
     };

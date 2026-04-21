@@ -67,19 +67,19 @@ function AvatarStack({ assignees = [], compact = false }) {
     const size = compact ? 'w-5 h-5 text-[6px]' : 'w-6 h-6 text-[8px]';
 
     return (
-        <div className="flex items-center -space-x-1.5">
+        <div className="flex items-center -space-x-1.5 px-0.5">
             {shown.map((a, i) => (
                 <div
                     key={a._id || i}
                     style={{ zIndex: shown.length - i }}
                     className={twMerge(
-                        'relative rounded-full ring-[1.5px] ring-[#141416] overflow-hidden shrink-0 bg-zinc-800',
+                        'relative rounded-full ring-[2px] ring-background overflow-hidden shrink-0 bg-sunken',
                         size
                     )}
                 >
                     {a.avatar
                         ? <img src={getOptimizedAvatar(a.avatar, 'xs')} alt={a.name} className="w-full h-full object-cover" />
-                        : <span className={twMerge('w-full h-full flex items-center justify-center font-semibold text-zinc-400', size)}>
+                        : <span className={twMerge('w-full h-full flex items-center justify-center font-black text-secondary', size)}>
                             {a.name?.charAt(0)?.toUpperCase()}
                         </span>
                     }
@@ -87,7 +87,7 @@ function AvatarStack({ assignees = [], compact = false }) {
             ))}
             {extra > 0 && (
                 <div className={twMerge(
-                    'rounded-full ring-[1.5px] ring-[#141416] bg-zinc-800 flex items-center justify-center font-semibold text-zinc-500 shrink-0',
+                    'rounded-full ring-[2px] ring-background bg-sunken flex items-center justify-center font-black text-tertiary shrink-0',
                     size
                 )}>
                     +{extra}
@@ -212,47 +212,51 @@ const TaskCard = React.memo(({
             {/* Card shell */}
             <div className={twMerge(clsx(
                 'relative overflow-hidden',
-                'bg-[#141416] border',
-                'transition-all duration-200',
+                'border transition-all duration-300',
+                isCompact ? 'bg-[#0f0f11]/90 backdrop-blur-xl rounded-xl max-h-[180px] min-h-[180px] shadow-2xl' : 'bg-glass-heavy backdrop-blur-2xl rounded-2xl',
                 isSelected
-                    ? 'border-blue-500/40 shadow-[0_0_0_1px_rgba(59,130,246,0.2)]'
-                    : 'border-white/[0.07] group-hover:border-white/[0.13]',
-                isBlocked && 'opacity-50 grayscale-[0.4]',
-                isCompact ? 'rounded-2xl max-h-[160px] min-h-[160px]' : 'rounded-[17px]',
+                    ? 'border-theme/40 ring-1 ring-theme/20 shadow-theme-slight'
+                    : 'border-white/[0.04] group-hover:border-white/[0.12]',
+                isBlocked && 'opacity-60 grayscale-[0.2]',
             ))}>
 
-                {/* Priority stripe */}
-                <div className="h-[1.5px] w-full" style={{ background: P.stripe }} />
+                {/* Top Priority Stripe - Restored Feature */}
+                <div 
+                    className="absolute top-0 left-0 right-0 h-[2.5px] opacity-80 group-hover:opacity-100 transition-opacity" 
+                    style={{ background: P.stripe }} 
+                />
+
+                {/* Priority Indicator - Vertical Edge */}
+                <div 
+                    className="absolute left-0 top-0 bottom-0 w-[3px] rounded-r-full opacity-60 group-hover:opacity-100 transition-opacity" 
+                    style={{ backgroundColor: P.dot }} 
+                />
 
                 <div className={twMerge(clsx(
                     'flex flex-col',
-                    isCompact ? 'gap-2 p-2.5' : 'gap-3 p-3.5'
+                    isCompact ? 'gap-2 p-2.5 pl-3.5' : 'gap-2.5 p-3 pl-4.5'
                 ))}>
 
                     {/* Title row */}
-                    <div className="flex items-start gap-2.5">
-                        <div
-                            className="mt-[5px] w-1.5 h-1.5 rounded-full shrink-0"
-                            style={{ backgroundColor: P.dot }}
-                        />
+                    <div className="flex items-start gap-2">
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <h4 className={twMerge(clsx(
-                                    'font-semibold leading-snug text-zinc-100 tracking-[-0.01em]',
-                                    'group-hover:text-white transition-colors duration-150',
-                                    isCompact ? 'text-[11.5px]' : 'text-[13px]'
+                                    'font-black leading-tight text-primary tracking-tight',
+                                    'group-hover:text-theme transition-colors duration-200',
+                                    isCompact ? 'text-[12px]' : 'text-[14px]'
                                 ))}>
                                     {task.title}
                                 </h4>
                                 {isBlocked && (
-                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-red-500/10 border border-red-500/20 text-[8px] font-semibold text-red-400 tracking-wide shrink-0">
+                                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-lg bg-danger/10 border border-danger/20 text-[8px] font-black text-danger uppercase tracking-widest shrink-0">
                                         <AlertCircle className="w-2.5 h-2.5" />
-                                        blocked
+                                        BLOCKED
                                     </span>
                                 )}
                             </div>
                             {task.description && !isCompact && (
-                                <p className="mt-1 text-[10px] text-zinc-600 leading-relaxed line-clamp-2">
+                                <p className="mt-1 text-[10.5px] font-medium text-tertiary opacity-50 leading-relaxed line-clamp-2">
                                     {task.description}
                                 </p>
                             )}
@@ -308,17 +312,17 @@ const TaskCard = React.memo(({
                                 className="w-full flex items-center justify-between group/hd"
                             >
                                 <div className="flex items-center gap-2">
-                                    <span className="text-[9px] font-semibold text-zinc-600 uppercase tracking-[0.12em]">
-                                        Subtasks
+                                    <span className="text-[8px] font-black text-tertiary/40 uppercase tracking-[0.16em]">
+                                        Subtask Execution
                                     </span>
-                                    <span className="text-[9px] font-semibold text-zinc-500 tabular-nums">
+                                    <span className="text-[8px] font-black text-primary/60 tabular-nums font-mono">
                                         {completedSubs}/{totalSubs}
                                     </span>
                                 </div>
                                 <div className="flex items-center gap-1.5">
-                                    <span className="text-[9px] text-zinc-600 tabular-nums">{Math.round(subtaskPct)}%</span>
+                                    <span className="text-[8px] font-black text-theme/60 tabular-nums font-mono">{Math.round(subtaskPct)}%</span>
                                     <ChevronDown className={twMerge(clsx(
-                                        'w-3 h-3 text-zinc-600 transition-transform duration-200 group-hover/hd:text-zinc-400',
+                                        'w-3 h-3 text-tertiary transition-transform duration-300 group-hover/hd:text-primary',
                                         isExpanded && 'rotate-180'
                                     ))} />
                                 </div>
@@ -370,24 +374,21 @@ const TaskCard = React.memo(({
                     )}
 
                     {/* Footer */}
-                    <footer className="flex items-center justify-between pt-2.5 border-t border-white/[0.05]">
+                    <footer className="flex items-center justify-between pt-2 border-t border-white/[0.04]">
                         <AvatarStack assignees={assignees} compact={isCompact} />
 
-                        <div className="flex items-center gap-3 text-zinc-700">
+                        <div className="flex items-center gap-3 text-tertiary/40">
                             {!isCompact && (task.commentsCount ?? 0) > 0 && (
                                 <span className="flex items-center gap-1">
-                                    <MessageSquare className="w-3 h-3" strokeWidth={1.5} />
-                                    <span className="text-[9px] font-medium tabular-nums">{task.commentsCount}</span>
+                                    <MessageSquare className="w-2.5 h-2.5" strokeWidth={2} />
+                                    <span className="text-[8px] font-black tabular-nums font-mono">{task.commentsCount}</span>
                                 </span>
                             )}
                             {!isCompact && totalSubs > 0 && (
                                 <span className="flex items-center gap-1">
-                                    <CheckSquare className="w-3 h-3" strokeWidth={1.5} />
-                                    <span className="text-[9px] font-medium tabular-nums">{completedSubs}/{totalSubs}</span>
+                                    <CheckSquare className="w-2.5 h-2.5" strokeWidth={2} />
+                                    <span className="text-[8px] font-black tabular-nums font-mono">{completedSubs}/{totalSubs}</span>
                                 </span>
-                            )}
-                            {isCompact && subtaskPct > 0 && (
-                                <span className="text-[8px] font-semibold tabular-nums">{Math.round(subtaskPct)}%</span>
                             )}
                         </div>
                     </footer>

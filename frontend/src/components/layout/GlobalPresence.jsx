@@ -39,40 +39,44 @@ const GlobalPresence = () => {
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    initial={{ opacity: 0, x: 300 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 300 }}
-                    className="fixed top-20 right-6 z-[100] w-80 h-fit max-h-[70vh] flex flex-col"
+                    initial={{ opacity: 0, x: 20, scale: 0.98 }}
+                    animate={{ opacity: 1, x: 0, scale: 1 }}
+                    exit={{ opacity: 0, x: 20, scale: 0.98 }}
+                    transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                    className="fixed top-24 right-6 z-[100] w-80 flex flex-col pointer-events-auto"
                 >
-                    <div className="bg-surface/95 backdrop-blur-2xl border border-default rounded-[32px] shadow-elevation overflow-hidden flex flex-col">
+                    <div className="glass-2 border-glass rounded-[2rem] shadow-2xl shadow-black/40 overflow-hidden flex flex-col max-h-[75vh]">
                         {/* Header */}
-                        <div className="p-6 pb-4 border-b border-subtle flex items-center justify-between">
+                        <div className="p-6 pb-4 border-b border-glass flex items-center justify-between bg-white/[0.02]">
                             <div>
-                                <h3 className="text-primary font-black text-lg tracking-tight flex items-center gap-2">
-                                    <Users className="w-5 h-5 text-theme" />
+                                <h3 className="text-primary font-black text-sm tracking-[0.1em] uppercase flex items-center gap-2">
+                                    <Users className="w-4 h-4 text-theme" />
                                     {presenceUsers?.length > 0 ? 'Project Team' : 'Live Presence'}
                                 </h3>
-                                <p className="text-[10px] font-bold text-tertiary uppercase tracking-[0.2em] mt-0.5">
-                                    {presenceUsers?.length > 0 ? 'Project Workspace' : 'Global Network'}
-                                </p>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                                    <p className="text-[10px] font-bold text-tertiary uppercase tracking-widest opacity-60">
+                                        {presenceUsers?.length > 0 ? 'Project Workspace' : 'Global Network'}
+                                    </p>
+                                </div>
                             </div>
                             <button
                                 onClick={() => toggleGlobalPresence()}
-                                className="p-2 hover:bg-sunken rounded-full text-tertiary hover:text-primary transition-colors"
+                                className="p-2 hover:bg-white/5 rounded-xl text-tertiary hover:text-primary transition-all active:scale-95"
                             >
-                                <X className="w-5 h-5" />
+                                <X className="w-4 h-4" />
                             </button>
                         </div>
 
                         {/* List */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2 custom-scrollbar max-h-[400px]">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-1 custom-scrollbar min-h-[100px]">
                             {displayList.length > 0 ? displayList.map((user) => (
                                 <div
                                     key={user.userId}
-                                    className="flex items-center gap-4 p-3 rounded-2xl hover:bg-sunken border border-transparent hover:border-default transition-all group"
+                                    className="flex items-center gap-4 p-3 rounded-2xl hover:bg-white/[0.03] border border-transparent hover:border-white/10 transition-all group"
                                 >
                                     <div className="relative">
-                                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-default bg-sunken flex items-center justify-center">
+                                        <div className="w-11 h-11 rounded-xl overflow-hidden border border-glass bg-white/5 flex items-center justify-center transition-transform group-hover:scale-105">
                                             <img
                                                 src={getOptimizedAvatar(user.avatar, 'sm')}
                                                 className="w-full h-full object-cover"
@@ -80,43 +84,40 @@ const GlobalPresence = () => {
                                                 loading="lazy"
                                             />
                                         </div>
-                                        <div className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-4 border-surface
+                                        <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-[3px] border-[#0a0a0a]
                                             ${user.status === 'Online' || user.status === 'active' ? 'bg-success shadow-[0_0_8px_rgba(16,185,129,0.5)]' :
                                                 user.status === 'Away' || user.status === 'away' ? 'bg-warning' :
                                                     user.status === 'Do Not Disturb' ? 'bg-danger' : 'bg-tertiary'}
                                         `} />
                                     </div>
                                     <div className="flex flex-col flex-1 min-w-0">
-                                        <span className="text-sm font-bold text-primary truncate group-hover:text-theme transition-colors uppercase tracking-tight">{user.name}</span>
+                                        <span className="text-xs font-black text-primary truncate group-hover:text-theme transition-colors uppercase tracking-tight">{user.name}</span>
                                         <div className="flex items-center gap-1.5 mt-0.5">
-                                            <span className={`text-[10px] font-black uppercase tracking-widest
+                                            <span className={`text-[9px] font-black uppercase tracking-[0.2em]
                                                 ${user.status === 'Online' || user.status === 'active' ? 'text-success/80' :
                                                     user.status === 'Away' || user.status === 'away' ? 'text-warning/80' :
                                                         user.status === 'Do Not Disturb' ? 'text-danger' : 'text-tertiary'}
                                             `}>
                                                 {user.status}
                                             </span>
-                                            {(user.status === 'Online' || user.status === 'active') && (
-                                                <span className="w-1 h-1 rounded-full bg-success/40 animate-pulse" />
-                                            )}
                                         </div>
                                     </div>
                                 </div>
                             )) : (
-                                <div className="text-center py-10">
-                                    <p className="text-tertiary text-xs font-bold">No active collaborators found</p>
+                                <div className="text-center py-10 opacity-40">
+                                    <p className="text-[10px] font-black uppercase tracking-widest text-tertiary">No active collaborators</p>
                                 </div>
                             )}
                         </div>
 
                         {/* Footer Stats */}
-                        <div className="p-4 bg-sunken border-t border-subtle flex items-center justify-between">
-                            <span className="text-[10px] font-black text-tertiary uppercase tracking-widest">
-                                {displayList.filter(u => u.status === 'Online' || u.status === 'active' || u.status === 'Away' || u.status === 'Do Not Disturb').length} Active
+                        <div className="p-4 px-6 bg-white/[0.03] border-t border-glass flex items-center justify-between">
+                            <span className="text-[9px] font-black text-tertiary uppercase tracking-[0.2em] opacity-60">
+                                {displayList.filter(u => u.status === 'Online' || u.status === 'active').length} Active Users
                             </span>
-                            <div className="flex items-center gap-1">
-                                <span className="w-1.5 h-1.5 rounded-full bg-success" />
-                                <span className="text-[10px] font-black text-primary uppercase tracking-widest">Live Sync</span>
+                            <div className="flex items-center gap-1.5 grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all">
+                                <span className="w-1 h-1 rounded-full bg-success" />
+                                <span className="text-[9px] font-black text-primary uppercase tracking-widest">Encypted Sync</span>
                             </div>
                         </div>
                     </div>

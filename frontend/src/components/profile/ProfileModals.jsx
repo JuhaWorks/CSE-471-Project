@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, ZoomIn, Zap } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { cn } from './ProfileUtils';
-import Button from '../ui/Button';
+import { Button } from '../ui/BaseUI';
 
 export const CropModal = ({ 
     cropping, 

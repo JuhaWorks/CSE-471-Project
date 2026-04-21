@@ -15,7 +15,7 @@ import GeneralTab from '../components/settings/GeneralTab';
 import SecurityTab from '../components/settings/SecurityTab';
 import NotificationsTab from '../components/settings/NotificationsTab';
 import DangerZoneTab from '../components/settings/DangerZoneTab';
-import GlassSurface from '../components/ui/GlassSurface';
+import { GlassSurface } from '../components/ui/Aesthetics';
 
 const TABS = [
     { id: 'general', label: 'General', icon: User, color: '#10b981' },

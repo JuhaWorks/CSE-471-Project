@@ -10,11 +10,8 @@ import { twMerge } from 'tailwind-merge';
 import { Mail, Lock, User, UserPlus, Eye, EyeOff, LogIn, AlertCircle, ArrowRight, Github, Chrome, Check } from 'lucide-react';
 import { useAuthStore } from '../store/useAuthStore';
 import AuthLayout, { API_BASE } from '../components/auth/AuthLayout';
-import Button from '../components/ui/Button';
-import Input from '../components/ui/Input';
-import DecryptedText from '../components/ui/DecryptedText';
-import BorderGlow from '../components/ui/BorderGlow';
-import GlassSurface from '../components/ui/GlassSurface';
+import { Button, Input } from '../components/ui/BaseUI';
+import { DecryptedText, BorderGlow, GlassSurface } from '../components/ui/Aesthetics';
 
 // Validation Schemas
 const loginSchema = z.object({

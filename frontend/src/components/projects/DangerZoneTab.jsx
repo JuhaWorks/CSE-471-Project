@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuthStore } from '../../store/useAuthStore';
 import { motion } from 'framer-motion';
-import Button from '../ui/Button';
+import { Button } from '../ui/BaseUI';
 
 const DangerZoneTab = ({ project }) => {
     const [confirmName, setConfirmName] = useState('');

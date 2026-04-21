@@ -39,7 +39,8 @@ export const useChatStore = create((set, get) => ({
     fetchMessages: async (chatId) => {
         try {
             const res = await api.get(`/chats/${chatId}/messages`);
-            const history = res.data.data;
+            // Cap stored messages at 200 most-recent to prevent unbounded memory growth
+            const history = (res.data.data || []).slice(-200);
             set((state) => ({
                 messages: { ...state.messages, [chatId]: history }
             }));
@@ -218,8 +219,8 @@ export const useChatStore = create((set, get) => ({
 
             const isCurrentChat = state.activeChat?._id === chatId;
             
-            // 1. Update messages
-            const newHistory = [...chatHistory, message];
+            // 1. Update messages — cap at 200 to prevent unbounded memory growth
+            const newHistory = [...chatHistory, message].slice(-200);
             const newMessages = {
                 ...state.messages,
                 [chatId]: newHistory
@@ -361,10 +362,15 @@ export const useChatStore = create((set, get) => ({
     deleteChat: async (chatId) => {
         try {
             await api.delete(`/chats/${chatId}`);
-            set((state) => ({
-                chats: state.chats.filter(c => c._id !== chatId),
-                activeChat: state.activeChat?._id === chatId ? null : state.activeChat
-            }));
+            set((state) => {
+                // Also free the in-memory message history for this chat
+                const { [chatId]: _, ...remainingMessages } = state.messages;
+                return {
+                    chats: state.chats.filter(c => c._id !== chatId),
+                    activeChat: state.activeChat?._id === chatId ? null : state.activeChat,
+                    messages: remainingMessages,
+                };
+            });
         } catch (error) {
             console.error('Delete chat error:', error);
         }

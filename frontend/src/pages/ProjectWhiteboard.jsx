@@ -11,8 +11,7 @@ import { api, useAuthStore } from '../store/useAuthStore';
 import { useSocketStore } from '../store/useSocketStore';
 import { cn } from '../utils/cn';
 import StickyNote from '../components/whiteboard/StickyNote';
-import Button from '../components/ui/Button';
-import Tooltip from '../components/ui/Tooltip';
+import { Button, Tooltip } from '../components/ui/BaseUI';
 import { toast } from 'react-hot-toast';
 import html2canvas from 'html2canvas';
 import { RefreshCcw } from 'lucide-react';
@@ -448,7 +447,7 @@ const ProjectWhiteboard = () => {
                                 initial={{ opacity: 0 }}
                                 animate={{ opacity: 1 }}
                                 exit={{ opacity: 0 }}
-                                className="absolute inset-0 bg-[linear-gradient(to_right,oklch(from_var(--grid-line)_l_c_h_/_0.4)_1px,transparent_1px),linear-gradient(to_bottom,oklch(from_var(--grid-line)_l_c_h_/_0.4)_1px,transparent_1px)] bg-[length:128px_128px]"
+                                className="absolute inset-0 bg-[linear-gradient(to_right,rgba(128,128,128,0.1)_1px,transparent_1px),linear-gradient(to_bottom,rgba(128,128,128,0.1)_1px,transparent_1px)] bg-[length:128px_128px]"
                             />
                         </>
                     )}

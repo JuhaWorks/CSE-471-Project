@@ -6,7 +6,7 @@ import { api, useAuthStore } from '../../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 
 const STEPS = ['Verify identity', 'New email', 'Done'];
 

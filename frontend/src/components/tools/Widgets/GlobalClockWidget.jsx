@@ -9,7 +9,7 @@ import {
 import { useAuthStore, api } from '../../../store/useAuthStore';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '../../../utils/cn';
-import GlassSurface from '../../ui/GlassSurface';
+import { GlassSurface } from '../../ui/Aesthetics';
 import { getOptimizedAvatar } from '../../../utils/avatar';
 
 /**
@@ -43,10 +43,12 @@ const GlobalClockWidget = () => {
         staleTime: 1000 * 60 * 30,
     });
 
+    // Only tick the clock when the popover is visible — saves CPU/memory when hidden
     useEffect(() => {
+        if (!isPopoverOpen) return;
         const timer = setInterval(() => setCurrentTime(new Date()), 1000);
         return () => clearInterval(timer);
-    }, []);
+    }, [isPopoverOpen]);
 
     const teamTimes = queryData?.data || [];
     const projects = projectsData?.data || [];

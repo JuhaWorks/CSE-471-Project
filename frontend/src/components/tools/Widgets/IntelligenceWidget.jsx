@@ -9,7 +9,7 @@ import { useAuthStore, api } from '../../../store/useAuthStore';
 import { useSocketStore } from '../../../store/useSocketStore';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '../../../utils/cn';
-import Card from '../../ui/Card';
+import { Card } from '../../ui/BaseUI';
 import { renderActivityNarrative } from '../../../utils/activityNarrative';
 
 /**
@@ -57,7 +57,10 @@ const IntelligenceWidget = ({ fixed = false }) => {
     const activity = useMemo(() => {
         const combined = [...liveActivity, ...initialActivity];
         const unique = Array.from(new Map(combined.map(item => [item._id, item])).values());
-        let filtered = unique.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        // Sort and cap at 50 items to prevent unbounded memory growth
+        let filtered = unique
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 50);
 
         if (intelMode === 'personal' && user?._id) {
             filtered = filtered.filter(a => (a.user?._id || a.user) === user._id);

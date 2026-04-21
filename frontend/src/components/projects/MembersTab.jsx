@@ -5,7 +5,7 @@ import { api } from '../../store/useAuthStore';
 import { useProjectMembers } from '../../hooks/projects/useProjectMembers';
 import InviteMemberDialog from './InviteMemberDialog';
 import { MemberRow } from './ProjectShared';
-import Card from '../ui/Card';
+import { Card } from '../ui/BaseUI';
 import { Users, ShieldCheck, Zap, Plus, UserPlus } from 'lucide-react';
 
 /**

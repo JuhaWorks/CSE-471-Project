@@ -5,11 +5,11 @@ import { ShieldAlert, ChevronDown, X, Zap, AlertTriangle, Trash2, LogOut } from 
 import { useNavigate } from 'react-router-dom';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button, Card } from '../ui/BaseUI';
+;
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 
 
 /**

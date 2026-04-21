@@ -8,8 +8,8 @@ import { Save, Loader2, Layout, Upload, Image as ImageIcon, X, Trash2, Calendar,
 import toast from 'react-hot-toast';
 import { LockedInput } from './ProjectShared';
 import { useSocketStore } from '../../store/useSocketStore';
-import Card from '../ui/Card';
-import Button from '../ui/Button';
+import { Card, Button } from '../ui/BaseUI';
+;
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

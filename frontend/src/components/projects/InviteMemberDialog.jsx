@@ -4,7 +4,7 @@ import { X, Plus, Loader2, Mail, Shield, Zap } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { motion } from 'framer-motion';
-import Button from '../ui/Button';
+import { Button } from '../ui/BaseUI';
 
 
 /**

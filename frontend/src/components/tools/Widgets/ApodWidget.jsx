@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../store/useAuthStore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Rocket, Info, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
-import Card from '../../ui/Card';
-import { Skeleton } from '../../ui/PremiumLoaders';
+import { Card } from '../../ui/BaseUI';
+import { Skeleton } from '../../ui/Loaders';
 import { useState, memo } from 'react';
 
 /**
@@ -13,7 +13,7 @@ import { useState, memo } from 'react';
 
 const ApodWidget = () => {
     const [isExpanded, setIsExpanded] = useState(false);
-    
+
     const { data: apodData, isLoading, isError } = useQuery({
         queryKey: ['apod'],
         queryFn: async () => {
@@ -46,17 +46,16 @@ const ApodWidget = () => {
     }
 
     return (
-        <Card 
-            variant="glass" 
-            compact 
-            padding="p-0" 
-            className="group overflow-hidden flex flex-col transition-all duration-500 bg-cyan-500/[0.02]"
+        <Card
+            variant="glass"
+            compact
+            padding="p-0"
+            className="relative group border-none overflow-hidden flex flex-col transition-all duration-500 bg-cyan-500/[0.02]"
         >
             {/* Header Badge */}
             <div className="absolute top-3 left-3 z-30">
                 <div className="px-2 py-1 rounded-lg glass-2 bg-black/60 backdrop-blur-md border border-white/10 flex items-center gap-2">
                     <Rocket className="w-2.5 h-2.5 text-cyan-400" />
-                    <span className="text-[8px] font-black uppercase tracking-widest text-white/80">NASA APOD</span>
                 </div>
             </div>
 
@@ -80,7 +79,7 @@ const ApodWidget = () => {
                         <Calendar className="w-2.5 h-2.5" />
                         <span className="text-[8px] font-black uppercase tracking-[0.2em]">{display.date}</span>
                     </div>
-                    <button 
+                    <button
                         onClick={() => setIsExpanded(!isExpanded)}
                         className="p-1 rounded-md bg-sunken border border-glass hover:text-cyan-400 transition-all flex items-center gap-1.5"
                     >

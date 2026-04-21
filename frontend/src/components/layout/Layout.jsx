@@ -118,8 +118,8 @@ const Layout = ({ checkingAuth }) => {
     // ── GPU-DRIVEN LAYOUT: System Variables ──────────────────────────
     useEffect(() => {
         const root = document.documentElement;
-        // On mobile, the sidebar never pushes content
-        const width = isMobile ? 0 : (isSidebarExpanded ? (isCollapsed ? 80 : 280) : 0);
+        // On mobile, the sidebar never pushes content. On desktop, it is permanently minimal (80px).
+        const width = isMobile ? 0 : (isSidebarExpanded ? 80 : 0);
         root.style.setProperty('--sb-width', `${width}px`);
         root.style.setProperty('--sb-offset', `${width}px`);
     }, [isSidebarExpanded, isCollapsed, isMobile]);
@@ -181,17 +181,17 @@ const Layout = ({ checkingAuth }) => {
 
             {/* ── LAYOUT SHELL ─────────────────────────────────────────── */}
             <div className={twMerge(clsx(
-                "fixed right-0 z-50 transition-all duration-300",
+                "fixed inset-x-0 z-50 transition-all duration-300",
                 showNotice ? "top-11" : "top-0"
-            ))} style={{ left: 'var(--sb-offset)' }}>
+            ))}>
                 <TopBar />
             </div>
 
             <div className={twMerge(clsx(
                 "fixed bottom-0 left-0 transition-all duration-300",
-                isMobile ? "z-[70] inset-0" : "z-40 top-0",
+                isMobile ? "z-[70] inset-0" : "z-40",
                 "pointer-events-none", // Always transparent to events unless children override it
-                showNotice && !isMobile ? "top-11" : ""
+                !isMobile ? (showNotice ? "top-[108px]" : "top-16") : ""
             ))}>
                 <SidebarComponent />
             </div>

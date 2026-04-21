@@ -6,7 +6,7 @@ import {
     AlertCircle, Navigation, Sunrise, Sunset, Gauge
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import Card from '../../ui/Card';
+import { Card } from '../../ui/BaseUI';
 import { cn } from '../../../utils/cn';
 import { motion } from 'framer-motion';
 

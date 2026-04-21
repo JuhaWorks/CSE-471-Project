@@ -1,30 +1,22 @@
 const Task = require('../models/task.model');
 const Project = require('../models/project.model');
 const Audit = require('../models/audit.model');
+const TaskComment = require('../models/taskComment.model');
 const { getIO } = require('../utils/service.utils');
-const { logActivity, logger } = require('../utils/system.utils');
+const { logActivity } = require('../utils/system.utils');
 const notificationService = require('../services/notification.service');
 const gamification = require('../services/gamification.service');
 const { DOMAIN_MAPPING } = require('../utils/core.utils');
-
-/**
- * Helper to detect circular dependencies
- * Uses BFS to check if 'targetId' can reach 'startId'
- */
 const detectCircularDependency = async (startId, targetId) => {
     if (startId.toString() === targetId.toString()) return true;
-    
     const visited = new Set();
     const queue = [targetId];
-    
     while (queue.length > 0) {
         const currentId = queue.shift();
         if (visited.has(currentId.toString())) continue;
         visited.add(currentId.toString());
-        
         const task = await Task.findById(currentId).select('dependencies').lean();
         if (!task || !task.dependencies || !task.dependencies.blockedBy) continue;
-        
         for (const depId of task.dependencies.blockedBy) {
             if (!depId) continue;
             if (depId.toString() === startId.toString()) return true;
@@ -33,41 +25,28 @@ const detectCircularDependency = async (startId, targetId) => {
     }
     return false;
 };
-
 const getTasks = async (req, res, next) => {
     try {
         const { projectId } = req.params;
         let query = { isArchived: false };
-
         if (projectId) {
             const project = await Project.findById(projectId).lean();
             if (!project) {
                 res.status(404);
-                throw new Error('Project not found');
-            }
-
-            // Verify user is in project
+                throw new Error('Project not found');}
             const isMember = project.members.some(
-                (member) => member.userId?.toString() === req.user._id.toString() && member.status === 'active'
-            );
-
+                (member) => member.userId?.toString() === req.user._id.toString() && member.status === 'active');
             if (!isMember && req.user.role !== 'Admin') {
                 res.status(403);
-                throw new Error('User not authorized to access tasks for this project');
-            }
+                throw new Error('User not authorized to access tasks for this project');}
             query.project = projectId;
         } else {
-            // "All Projects" logic: Find projects user is a member of
             let projectQuery = { isArchived: false };
             if (req.user.role !== 'Admin') {
                 projectQuery['members.userId'] = req.user._id;
-                projectQuery['members.status'] = 'active';
-            }
-
+                projectQuery['members.status'] = 'active';}
             const userProjects = await Project.find(projectQuery).select('_id').lean();
             const projectIds = userProjects.map(p => p._id);
-            
-            // Allow fetching tasks if in projects OR specifically assigned to user
             if (req.user.role === 'Admin') {
                 query.project = { $in: projectIds };
             } else {
@@ -78,10 +57,8 @@ const getTasks = async (req, res, next) => {
                 ];
             }
         }
-
-        // Pagination setup
         const page = parseInt(req.query.page, 10) || 1;
-        const limit = parseInt(req.query.limit, 10) || 100; // Larger limit for all projects
+        const limit = parseInt(req.query.limit, 10) || 100;
         const skip = (page - 1) * limit;
 
         const total = await Task.countDocuments(query);
@@ -127,12 +104,12 @@ const getTasks = async (req, res, next) => {
 // @access  Private
 const createTask = async (req, res, next) => {
     try {
-        const { 
-            title, description, status, priority, 
-            assignee, assignees, type, points, 
-            labels, dueDate, startDate, estimatedTime 
+        const {
+            title, description, status, priority,
+            assignee, assignees, type, points,
+            labels, dueDate, startDate, estimatedTime
         } = req.body;
-        
+
         req.body.project = req.params.projectId;
 
         const project = await Project.findById(req.params.projectId).lean();
@@ -194,23 +171,16 @@ const createTask = async (req, res, next) => {
             .populate('project', 'name color')
             .lean();
 
-        // Log Activity
         await logActivity(req.params.projectId, req.user._id, 'EntityCreate', {
             title: task.title,
             priority: task.priority,
             status: task.status,
             type: task.type
         }, 'Task', task._id);
-
-        // Emit real-time WebSocket event
         const room = task.project?._id?.toString() || task.project?.toString();
         getIO().to(room).emit('taskUpdated', populatedTask);
-
-        // --- Notification Logic ---
-        // Notify all assignees about new task
         if (taskAssignees.length > 0) {
             for (const recipientId of taskAssignees) {
-                // Don't notify self (creator)
                 if (recipientId.toString() === req.user._id.toString()) continue;
 
                 await notificationService.notify({
@@ -220,8 +190,8 @@ const createTask = async (req, res, next) => {
                     title: 'New Task Assigned',
                     message: `${req.user.name} assigned you to "${task.title}"`,
                     link: `/tasks?project=${task.project._id || task.project}`,
-                    metadata: { 
-                        taskId: task._id, 
+                    metadata: {
+                        taskId: task._id,
                         projectId: task.project._id || task.project,
                         taskName: task.title,
                         taskType: task.type, // Required for Emergency Command Bypass
@@ -261,9 +231,9 @@ const updateTask = async (req, res, next) => {
         const project = await Project.findById(task.project).lean();
 
         // Check if user is assigned to this task, or is an active manager in the project
-        const isAssignee = (task.assignees && task.assignees.some(a => a?.toString() === req.user._id.toString())) || 
-                         (task.assignee && task.assignee.toString() === req.user._id.toString());
-        
+        const isAssignee = (task.assignees && task.assignees.some(a => a?.toString() === req.user._id.toString())) ||
+            (task.assignee && task.assignee.toString() === req.user._id.toString());
+
         const isManager = project.members.some(
             (m) => m.userId?.toString() === req.user._id.toString() && m.role === 'Manager' && m.status === 'active'
         );
@@ -297,7 +267,7 @@ const updateTask = async (req, res, next) => {
         const oldStatus = task.status;
         const oldPriority = task.priority;
         const oldType = task.type || 'Task';
-        
+
         // Capture XP to revoke BEFORE update if task is being un-completed
         let preUpdateXpData = null;
         if (oldStatus === 'Completed' && req.body.status && req.body.status !== 'Completed') {
@@ -305,18 +275,12 @@ const updateTask = async (req, res, next) => {
         }
         const oldBlockedBy = task.dependencies?.blockedBy?.map(id => id.toString()) || [];
         const oldBlocking = task.dependencies?.blocking?.map(id => id.toString()) || [];
-        
-        // Sync legacy assignee if assignees changed
         if (req.body.assignees) {
             req.body.assignee = req.body.assignees.length > 0 ? req.body.assignees[0] : null;
         }
-
-        // Clean up dependencies if they are coming as IDs
         if (req.body.dependencies) {
             const newBlockedBy = req.body.dependencies.blockedBy || [];
             const newBlocking = req.body.dependencies.blocking || [];
-
-            // 1. Check for circular dependencies in NEW blockedBy links
             for (const depId of newBlockedBy) {
                 if (!depId) continue;
                 if (!oldBlockedBy.includes(depId.toString())) {
@@ -327,9 +291,6 @@ const updateTask = async (req, res, next) => {
                     }
                 }
             }
-
-            // 1.b Check for circular dependencies in NEW blocking links
-            // If Task A blocks Task B, it's the same as Task B being blocked by Task A.
             for (const targetId of newBlocking) {
                 if (!targetId) continue;
                 if (!oldBlocking.includes(targetId.toString())) {
@@ -340,8 +301,6 @@ const updateTask = async (req, res, next) => {
                     }
                 }
             }
-
-            // 2. Handle Reciprocity: added/removed blockedBy
             const addedBlockedBy = newBlockedBy.filter(id => !oldBlockedBy.includes(id.toString()));
             const removedBlockedBy = oldBlockedBy.filter(id => !newBlockedBy.map(d => d.toString()).includes(id));
 
@@ -359,11 +318,8 @@ const updateTask = async (req, res, next) => {
                     getIO().to(roomId).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
                 }
             }
-
-            // 3. Handle Reciprocity: added/removed blocking
             const addedBlocking = newBlocking.filter(id => !oldBlocking.includes(id.toString()));
             const removedBlocking = oldBlocking.filter(id => !newBlocking.map(d => d.toString()).includes(id));
-
             for (const id of addedBlocking) {
                 const other = await Task.findByIdAndUpdate(id, { $addToSet: { 'dependencies.blockedBy': task._id } }, { returnDocument: 'after' }).select('dependencies');
                 if (other) getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
@@ -372,31 +328,18 @@ const updateTask = async (req, res, next) => {
                 const other = await Task.findByIdAndUpdate(id, { $pull: { 'dependencies.blockedBy': task._id } }, { returnDocument: 'after' }).select('dependencies');
                 if (other) getIO().to(task.project.toString()).emit('taskUpdated', { _id: id, dependencies: other.dependencies });
             }
-
             task.dependencies.blockedBy = newBlockedBy;
             task.dependencies.blocking = newBlocking;
             delete req.body.dependencies;
         }
-
-        // 4. Execution: Sync fields and save
-        // We use .save() instead of findByIdAndUpdate to ensure pre-save hooks (like domain automation) trigger.
         Object.assign(task, req.body);
-        
-        // Ensure dependencies are correctly set after reciprocity logic
         if (req.body.dependencies === undefined) {
-             // We already handled reciprocity and adjusted task.dependencies.blockedBy/blocking
-             // No further manual assignment needed if logic above is robust.
         }
-
         await task.save();
-        
-        // Re-populate for consistent response signature
         await task.populate([
             { path: 'assignees', select: 'name email avatar' },
             { path: 'project', select: 'name color' }
         ]);
-
-        // Log state changes
         const changes = [];
         if (req.body.status && oldStatus !== req.body.status) {
             changes.push(`status from ${oldStatus} to ${req.body.status}`);
@@ -404,8 +347,6 @@ const updateTask = async (req, res, next) => {
         if (req.body.priority && task.priority !== req.body.priority) {
             changes.push(`priority to ${req.body.priority}`);
         }
-        
-        // Check for subtask toggles
         if (req.body.subtasks && Array.isArray(req.body.subtasks)) {
             const oldCompleted = task.subtasks?.filter(s => s.completed).length || 0;
             const newCompleted = req.body.subtasks.filter(s => s.completed).length || 0;
@@ -413,7 +354,6 @@ const updateTask = async (req, res, next) => {
                 changes.push(newCompleted > oldCompleted ? 'completed a subtask' : 'unchecked a subtask');
             }
         }
-
         if (changes.length > 0) {
             await logActivity(task.project._id || task.project, req.user._id, 'EntityUpdate', {
                 title: task.title,
@@ -421,10 +361,7 @@ const updateTask = async (req, res, next) => {
                 details: changes
             }, 'Task', task._id);
         }
-        
-        // Also log a dedicated SubtaskToggle event if applicable for specific filtering
         if (req.body.subtasks && JSON.stringify(task.subtasks) !== JSON.stringify(req.body.subtasks)) {
-            // Only log if it was purely a subtask change or part of a targetted update
             if (changes.some(c => c.includes('subtask'))) {
                 await logActivity(task.project._id || task.project, req.user._id, 'SubtaskToggle', {
                     title: task.title,
@@ -432,12 +369,8 @@ const updateTask = async (req, res, next) => {
                 }, 'Task', task._id);
             }
         }
-
-        // Emit real-time WebSocket event
         const projectRoom = task.project?._id?.toString() || task.project?.toString();
         getIO().to(projectRoom).emit('taskUpdated', task);
-
-        // --- Notification Logic (Matured Metadata Tracking) ---
         const statusChanged = req.body.status && oldStatus !== req.body.status;
         const priorityChanged = req.body.priority && oldPriority !== req.body.priority;
         const typeChanged = req.body.type && oldType !== req.body.type;
@@ -445,20 +378,17 @@ const updateTask = async (req, res, next) => {
         if (statusChanged || priorityChanged || typeChanged) {
             const isCompleted = req.body.status === 'Completed';
             const assignees = task.assignees?.map(a => a._id || a) || [];
-            
+
             let managers = [];
             if ((isCompleted || priorityChanged) && project) {
                 managers = project.members
                     .filter(m => m.role === 'Manager' && m.status === 'active')
                     .map(m => (m.userId?._id || m.userId).toString());
             }
-
             const recipients = [...new Set([
-                ...assignees.map(id => id.toString()), 
+                ...assignees.map(id => id.toString()),
                 ...managers
             ])];
-            
-            // Build Contextual Message
             let title = 'Task Updated';
             let message = `${req.user.name} updated "${task.title}": `;
             const changeLog = [];
@@ -479,8 +409,6 @@ const updateTask = async (req, res, next) => {
 
             try {
                 for (const recipientId of recipients) {
-                    // Self-suppression logic is handled within NotificationService.notify if implemented there, 
-                    // but we ensured history is still recorded for the sender in the service logic previously.
                     await notificationService.notify({
                         recipientId,
                         senderId: req.user._id,
@@ -489,8 +417,8 @@ const updateTask = async (req, res, next) => {
                         title,
                         message,
                         link: `/tasks?project=${task.project._id || task.project}`,
-                        metadata: { 
-                            taskId: task._id, 
+                        metadata: {
+                            taskId: task._id,
                             projectId: task.project._id || task.project,
                             taskName: task.title,
                             projectName: project.name || 'Project'
@@ -501,10 +429,6 @@ const updateTask = async (req, res, next) => {
                 logger.error(`[NOTIFICATION_CRASH] Resiliency bypass triggered: ${notifyErr.message}`);
             }
         }
-
-        // --- Gamification Engine Hook ---
-        
-        // 1. Subtask completion XP
         if (req.body.subtasks && Array.isArray(req.body.subtasks)) {
             const oldCompleted = task.subtasks?.filter(s => s.completed).length || 0;
             const newCompleted = req.body.subtasks.filter(s => s.completed).length || 0;
@@ -517,14 +441,14 @@ const updateTask = async (req, res, next) => {
         // 2. Main Task status change XP
         if (oldStatus !== 'Completed' && req.body.status === 'Completed') {
             console.log(`[GAMIFICATION] Task ${task._id} marked COMPLETED. Starting award flow.`);
-            
+
             const wasBlocked = task.dependencies?.blockedBy?.length > 0;
             const xpToAward = gamification.calculateTaskXP(task, { wasBlocked });
             console.log(`[GAMIFICATION] Calculated XP: ${xpToAward} (Was Blocked: ${wasBlocked})`);
-            
+
             // Award to all assignees if multiple, or the single legacy assignee
             let usersToReward = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
-            
+
             // Ensure the user actually doing the work gets the credit!
             const completerId = req.user._id.toString();
             const hasCompleter = usersToReward.some(u => (u._id?.toString() || u.toString()) === completerId);
@@ -537,7 +461,7 @@ const updateTask = async (req, res, next) => {
                 // Pass context to awardXP for tiered roll and milestones
                 gamification.awardXP(userId, xpToAward, task, { wasBlocked }).catch(err => console.error("Gamification Error:", err));
             }
-        } 
+        }
         // Hook for Un-completing tasks
         else if (preUpdateXpData) {
             let usersToRevoke = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
@@ -604,29 +528,29 @@ const getTaskActivity = async (req, res, next) => {
         const { page = 1, limit = 20 } = req.query;
         const skip = (page - 1) * limit;
 
-        const logs = await Audit.find({ 
-            entityId: req.params.id, 
-            entityType: 'Task' 
+        const logs = await Audit.find({
+            entityId: req.params.id,
+            entityType: 'Task'
         })
-        .populate('user', 'name email avatar')
-        .sort('-createdAt')
-        .skip(skip)
-        .limit(parseInt(limit))
-        .lean();
+            .populate('user', 'name email avatar')
+            .sort('-createdAt')
+            .skip(skip)
+            .limit(parseInt(limit))
+            .lean();
 
-        const total = await Audit.countDocuments({ 
-            entityId: req.params.id, 
-            entityType: 'Task' 
+        const total = await Audit.countDocuments({
+            entityId: req.params.id,
+            entityType: 'Task'
         });
 
-        res.status(200).json({ 
-            status: 'success', 
-            results: logs.length, 
-            total, 
-            data: logs 
+        res.status(200).json({
+            status: 'success',
+            results: logs.length,
+            total,
+            data: logs
         });
-    } catch (error) { 
-        next(error); 
+    } catch (error) {
+        next(error);
     }
 };
 
@@ -640,7 +564,7 @@ const bulkUpdateTasks = async (req, res, next) => {
 
         // We fetch all tasks to verify ownership and project membership
         const tasks = await Task.find({ _id: { $in: taskIds } });
-        
+
         if (tasks.length === 0) {
             res.status(404);
             throw new Error('No tasks found for provided IDs');
@@ -649,7 +573,7 @@ const bulkUpdateTasks = async (req, res, next) => {
         const projectIds = [...new Set(tasks.map(t => t.project.toString()))];
         const projects = await Project.find({ _id: { $in: projectIds } }).lean();
         const projectMap = projects.reduce((map, p) => { map[p._id.toString()] = p; return map; }, {});
-        
+
         // Strict Security Verification per Task
         for (const task of tasks) {
             const project = projectMap[task.project.toString()];
@@ -658,8 +582,8 @@ const bulkUpdateTasks = async (req, res, next) => {
                 throw new Error(`Project for task ${task._id} not found`);
             }
 
-            const isAssignee = (task.assignees && task.assignees.some(a => a.toString() === req.user._id.toString())) || 
-                             (task.assignee && task.assignee.toString() === req.user._id.toString());
+            const isAssignee = (task.assignees && task.assignees.some(a => a.toString() === req.user._id.toString())) ||
+                (task.assignee && task.assignee.toString() === req.user._id.toString());
 
             const isManagerOrEditor = project.members.some(
                 (m) => m.userId.toString() === req.user._id.toString() && (m.role === 'Manager' || m.role === 'Editor') && m.status === 'active'
@@ -694,10 +618,10 @@ const bulkUpdateTasks = async (req, res, next) => {
         const updatePromises = taskIds.map(async (id) => {
             const task = await Task.findById(id);
             if (!task) return null;
-            
+
             Object.assign(task, safeUpdates);
             await task.save();
-            
+
             return await Task.findById(task._id)
                 .populate('assignees', 'name email avatar')
                 .populate('project', 'name color')
@@ -708,10 +632,10 @@ const bulkUpdateTasks = async (req, res, next) => {
 
         // Audit, Socket & Notification events
         const { calculateTaskXP, awardXP } = require('../services/gamification.service');
-        
+
         for (const task of updatedTasks) {
             getIO().to(task.project.toString()).emit('taskUpdated', task);
-            
+
             const originalTask = tasks.find(t => t._id.toString() === task._id.toString());
             const isNowCompleted = originalTask && originalTask.status !== 'Completed' && task.status === 'Completed';
             const isNowUncompleted = originalTask && originalTask.status === 'Completed' && task.status !== 'Completed';
@@ -723,12 +647,12 @@ const bulkUpdateTasks = async (req, res, next) => {
                 const managers = project.members
                     .filter(m => m.role === 'Manager' && m.status === 'active')
                     .map(m => m.userId?._id || m.userId);
-                
+
                 const recipients = [...new Set([...assignees, ...managers])];
 
                 for (const recipientId of recipients) {
                     if (recipientId.toString() === req.user._id.toString()) continue;
-                    
+
                     await notificationService.notify({
                         recipientId,
                         senderId: req.user._id,
@@ -737,8 +661,8 @@ const bulkUpdateTasks = async (req, res, next) => {
                         title: 'Task Completed (Bulk)',
                         message: `Task "${task.title}" was marked as completed during a bulk update by ${req.user.name}.`,
                         link: `/tasks?project=${task.project}`,
-                        metadata: { 
-                            taskId: task._id, 
+                        metadata: {
+                            taskId: task._id,
                             projectId: task.project,
                             taskName: task.title,
                             projectName: project.name || 'Project',
@@ -753,7 +677,7 @@ const bulkUpdateTasks = async (req, res, next) => {
                 console.log(`[GAMIFICATION-BULK] Task ${task._id} marked COMPLETED. Starting award flow.`);
                 const xpToAward = calculateTaskXP(task);
                 let usersToReward = task.assignees?.length > 0 ? [...task.assignees] : (task.assignee ? [task.assignee] : []);
-                
+
                 const completerId = req.user._id.toString();
                 const hasCompleter = usersToReward.some(u => (u._id?.toString() || u.toString()) === completerId);
                 if (!hasCompleter) {
@@ -833,8 +757,6 @@ const stopTimer = async (req, res, next) => {
         const duration = Math.round((endedAt.getTime() - openSession.startedAt.getTime()) / 1000); // seconds
         openSession.endedAt = endedAt;
         openSession.duration = duration;
-
-        // Accumulate into actualTime (convert seconds to hours)
         task.actualTime = (task.actualTime || 0) + duration / 3600;
         await task.save();
 
@@ -942,7 +864,7 @@ const addTaskComment = async (req, res, next) => {
         });
 
         const populatedComment = await TaskComment.findById(comment._id).populate('user', 'name email avatar').lean();
-        
+
         getIO().to(task.project.toString()).emit('commentAdded', { taskId, comment: populatedComment });
 
         await logActivity(task.project.toString(), req.user._id, 'CommentAdded', {
@@ -983,10 +905,8 @@ const toggleReaction = async (req, res, next) => {
         const { emoji } = req.body;
         const comment = await TaskComment.findById(req.params.commentId);
         if (!comment) { res.status(404); throw new Error('Comment not found'); }
-
         const userId = req.user._id.toString();
         const existingReaction = comment.reactions.find(r => r.emoji === emoji);
-
         if (existingReaction) {
             const idx = existingReaction.users.findIndex(u => u.toString() === userId);
             if (idx !== -1) existingReaction.users.splice(idx, 1);
@@ -995,15 +915,12 @@ const toggleReaction = async (req, res, next) => {
         } else {
             comment.reactions.push({ emoji, users: [req.user._id] });
         }
-
         await comment.save();
         const task = await Task.findById(comment.task).select('project').lean();
         getIO().to(task?.project?.toString() || '').emit('commentReacted', { commentId: comment._id, reactions: comment.reactions });
-
         res.status(200).json({ status: 'success', data: comment.reactions });
     } catch (error) { next(error); }
 };
-
 module.exports = {
     getTasks,
     getTask,

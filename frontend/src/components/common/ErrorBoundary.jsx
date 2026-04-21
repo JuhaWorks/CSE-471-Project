@@ -2,8 +2,8 @@ import React from 'react';
 import * as Sentry from '@sentry/react';
 import { motion } from 'framer-motion';
 import { AlertTriangle, RefreshCw, Home } from 'lucide-react';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Button, Card } from '../ui/BaseUI';
+;
 
 /**
  * Modern 2026 Error Boundary

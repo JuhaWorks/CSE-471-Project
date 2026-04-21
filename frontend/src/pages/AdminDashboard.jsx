@@ -9,7 +9,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion';
 import { AreaChart, Area, ResponsiveContainer, Tooltip as ReTooltip } from 'recharts';
 import toast from 'react-hot-toast';
-import GlassSurface from '../components/ui/GlassSurface';
+import { GlassSurface } from '../components/ui/Aesthetics';
 import NotificationHistoryWidget from '../components/notifications/NotificationHistoryWidget';
 import { usePlatform } from '../hooks/usePlatform';
 

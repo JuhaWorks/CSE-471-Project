@@ -17,12 +17,14 @@ import { toast } from 'react-hot-toast';
 import { useSocketStore } from '../../store/useSocketStore';
 
 // Sub-components
-import TaskSubtasks from './components/TaskSubtasks';
-import TaskDependencies from './components/TaskDependencies';
-import TaskComments from './components/TaskComments';
-import TaskAssignees from './components/TaskAssignees';
-import TaskMetadata from './components/TaskMetadata';
-import TaskActivity from './components/TaskActivity';
+import { 
+    TaskSubtasks, 
+    TaskDependencies, 
+    TaskComments, 
+    TaskAssignees, 
+    TaskMetadata, 
+    TaskActivity 
+} from './components/TaskDetailElements';
 
 /**
  * High-fidelity TaskDetailModal - Refactored for Modularity & Portal usage

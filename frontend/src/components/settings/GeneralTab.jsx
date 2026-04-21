@@ -8,10 +8,10 @@ import { User, BadgeCheck, Zap, Info, Palette } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import ThemeSelector from './ThemeSelector';
 import ModeSelector from './ModeSelector';
-import Button from '../ui/Button';
+import { Button } from '../ui/BaseUI';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 
 const cn = (...inputs) => twMerge(clsx(inputs));
 
@@ -23,7 +23,8 @@ const generalSchema = z.object({
         showWeather: z.boolean().default(true),
         showQuote: z.boolean().default(true),
         showChatBubbles: z.boolean().default(true),
-        showIntelligence: z.boolean().default(true)
+        showIntelligence: z.boolean().default(true),
+        showGlobalPresence: z.boolean().default(true)
     }).optional()
 });
 
@@ -46,7 +47,8 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                 showApod: user?.interfacePrefs?.showApod ?? true,
                 showQuote: user?.interfacePrefs?.showQuote ?? true,
                 showChatBubbles: user?.interfacePrefs?.showChatBubbles ?? true,
-                showIntelligence: user?.interfacePrefs?.showIntelligence ?? true
+                showIntelligence: user?.interfacePrefs?.showIntelligence ?? true,
+                showGlobalPresence: user?.interfacePrefs?.showGlobalPresence ?? true
             }
         },
     });
@@ -233,6 +235,31 @@ export default function GeneralTab({ showOnlyAppearance = false }) {
                                     <div className={cn(
                                         "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
                                         watch('interfacePrefs.showIntelligence') ? "right-1 bg-primary" : "left-1 bg-tertiary"
+                                    )} />
+                                </button>
+                            </div>
+
+                            {/* Global Presence Toggle */}
+                            <div className="flex items-center justify-between p-4 rounded-xl bg-sunken/[0.3] border border-white/5 group hover:border-theme/30 transition-all">
+                                <div className="space-y-1">
+                                    <p className="text-[11px] font-black text-primary uppercase tracking-widest">Global Presence</p>
+                                    <p className="text-[9px] text-tertiary font-medium">Show real-time collaborator panel</p>
+                                </div>
+                                <button 
+                                    type="button"
+                                    onClick={() => {
+                                        const newVal = !watch('interfacePrefs.showGlobalPresence');
+                                        setValue('interfacePrefs.showGlobalPresence', newVal, { shouldDirty: true });
+                                        onSubmit({ ...watch(), interfacePrefs: { ...watch('interfacePrefs'), showGlobalPresence: newVal } });
+                                    }}
+                                    className={cn(
+                                        "w-10 h-5 rounded-full relative transition-all duration-300",
+                                        watch('interfacePrefs.showGlobalPresence') ? "bg-theme" : "bg-sunken border border-glass"
+                                    )}
+                                >
+                                    <div className={cn(
+                                        "absolute top-1 w-3 h-3 rounded-full transition-all duration-300 shadow-sm",
+                                        watch('interfacePrefs.showGlobalPresence') ? "right-1 bg-primary" : "left-1 bg-tertiary"
                                     )} />
                                 </button>
                             </div>

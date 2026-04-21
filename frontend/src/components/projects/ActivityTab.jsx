@@ -2,8 +2,8 @@ import React from 'react';
 import { History, User as UserIcon, Calendar, Info, Zap, ChevronRight, Activity } from 'lucide-react';
 import { useProjectActivity } from '../../hooks/projects/useProjectQueries';
 import { motion, AnimatePresence } from 'framer-motion';
-import Card from '../ui/Card';
-import { Skeleton } from '../ui/PremiumLoaders';
+import { Card } from '../ui/BaseUI';
+import {  Skeleton  } from '../ui/Loaders';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 

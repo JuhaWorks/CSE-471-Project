@@ -3,8 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Loader2, CheckCircle2, XCircle, ArrowRight } from 'lucide-react';
 import toast from 'react-hot-toast';
-import BorderGlow from '../components/ui/BorderGlow';
-import GlassSurface from '../components/ui/GlassSurface';
+import { BorderGlow, GlassSurface } from '../components/ui/Aesthetics';
 
 const VerifyEmailChangePage = () => {
     const { token } = useParams();

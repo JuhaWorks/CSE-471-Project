@@ -14,6 +14,10 @@ const adminRouter = express.Router();
 adminRouter.get('/system/status', adminCtrl.getSystemStatus); // Public check
 
 adminRouter.use(protect);
+
+// Polymorphic access: users can fetch audit logs for projects they belong to
+adminRouter.get('/audit', adminCtrl.getLogs);
+
 adminRouter.use(verifyAdmin);
 
 adminRouter.get('/users', adminCtrl.getUsers);
@@ -23,7 +27,6 @@ adminRouter.put('/users/:id/ban', adminCtrl.toggleBanUser);
 adminRouter.put('/system/maintenance', adminCtrl.toggleMaintenance);
 adminRouter.get('/system/blocked-ips', adminCtrl.getBlockedIps);
 adminRouter.put('/system/blocked-ips', adminCtrl.updateBlockedIps);
-adminRouter.get('/audit', adminCtrl.getLogs);
 
 // ─── 2. Intelligence & Analytics ──────────────────────────────────────────
 const analyticsRouter = express.Router();

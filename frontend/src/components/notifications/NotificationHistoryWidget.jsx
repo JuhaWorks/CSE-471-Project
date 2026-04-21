@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import api from '../../utils/api';
 import { useSocketStore } from '../../store/useSocketStore';
 import { cn } from '../../utils/cn';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 
 const formatRelativeTime = (date) => {
     const now = new Date();

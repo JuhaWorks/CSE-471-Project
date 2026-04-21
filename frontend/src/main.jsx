@@ -25,10 +25,10 @@ const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      staleTime: 5 * 60 * 1000, 
-      gcTime: 15 * 60 * 1000,   
-      retry: 1, // Don't hang the UI infinitely trying to fetch failing endpoints
-      networkMode: 'offlineFirst', // Allow the UI to render even if the backend is waking up
+      staleTime: 5 * 60 * 1000,  // 5 min: data stays fresh
+      gcTime: 5 * 60 * 1000,    // 5 min: free unused cache aggressively
+      retry: 1,
+      networkMode: 'offlineFirst',
     },
   },
 })

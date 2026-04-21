@@ -13,7 +13,7 @@ import { useUIStore } from '../../store/useUIStore';
 import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { cn } from '../../utils/cn';
 import { useChatStore } from '../../store/useChatStore';
-import GlassSurface from '../ui/GlassSurface';
+import { GlassSurface } from '../ui/Aesthetics';
 import { getOptimizedAvatar } from '../../utils/avatar';
 import { useSocketStore } from '../../store/useSocketStore';
 import { toast } from 'react-hot-toast';
@@ -36,41 +36,40 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
             onClick={onClose}
             onMouseEnter={() => onPrefetch(item.path)}
             className={({ isActive: linkActive }) => cn(
-                "sidebar-nav-item group relative flex items-center transition-all duration-200 select-none",
+                "sidebar-nav-item group relative flex transition-all duration-200 select-none",
                 isCollapsed 
-                    ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
-                    : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                    ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
+                    : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
                 linkActive 
                     ? "text-theme" 
                     : "text-tertiary hover:text-primary"
             )}
         >
-            {/* Active background fill */}
+            {/* Hover background only */}
             <span className={cn(
-                "absolute inset-0 rounded-xl transition-opacity duration-200",
-                isCollapsed ? "rounded-2xl" : "rounded-xl",
-                "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
-                isActive ? "opacity-100" : "opacity-0"
-            )} />
-
-            {/* Hover background */}
-            <span className={cn(
-                "absolute inset-0 transition-opacity duration-150",
-                isCollapsed ? "rounded-2xl" : "rounded-xl",
-                "bg-sunken",
+                "absolute inset-0 transition-opacity duration-150 rounded-xl bg-sunken",
                 isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
             )} />
 
             {/* Icon container */}
             <span className={cn(
-                "relative z-10 flex items-center justify-center shrink-0 transition-all duration-200",
-                isCollapsed ? "w-5 h-5" : "w-5 h-5",
-                isActive ? "text-theme" : "group-hover:text-accent/70"
+                "relative z-10 flex flex-col items-center justify-center shrink-0 transition-all duration-200",
+                isCollapsed ? "w-6 h-6" : "w-5 h-5",
+                isActive ? "text-theme" : "group-hover:opacity-80"
             )}>
-                <Icon strokeWidth={isActive ? 2 : 1.75} className="w-full h-full" />
+                <Icon strokeWidth={isActive ? (isCollapsed ? 1.75 : 2) : 1.5} className="w-full h-full" />
             </span>
 
-            {!isCollapsed && (
+            {isCollapsed ? (
+                // Compact Text
+                <span className={cn(
+                    "relative z-10 text-[9px] leading-tight text-center truncate transition-colors duration-150 px-1 w-full",
+                    isActive ? "font-bold text-theme" : "font-medium truncate opacity-70"
+                )}>
+                    {item.label}
+                </span>
+            ) : (
+                // Desktop Text
                 <span className="relative z-10 flex flex-col min-w-0 flex-1">
                     <span className={cn(
                         "text-sm leading-tight truncate transition-colors duration-150",
@@ -79,22 +78,6 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed }) 
                         {item.label}
                     </span>
                 </span>
-            )}
-
-            {/* Active left accent bar */}
-            {!isCollapsed && (
-                <span className={cn(
-                    "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-theme transition-all duration-200",
-                    isActive ? "h-5 opacity-100" : "h-0 opacity-0"
-                )} />
-            )}
-
-            {/* Collapsed active dot */}
-            {isCollapsed && (
-                <span className={cn(
-                    "absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-theme transition-all duration-200",
-                    isActive ? "opacity-100 scale-100" : "opacity-0 scale-0"
-                )} />
             )}
         </NavLink>
     );
@@ -131,20 +114,61 @@ const SidebarComponent = () => {
             if (data.type === 'xp_gained') {
                 toast.success(`+${data.xpGained} XP Earned!`, { icon: '✨', duration: 3000 });
                 queryClient.invalidateQueries({ queryKey: ['user-heatmap'] });
-                useAuthStore.getState().checkAuth(); // Force update global UI
+                // Surgically patch local state instead of hitting /auth/me again
+                if (data.newXp !== undefined || data.xpGained !== undefined) {
+                    useAuthStore.setState((state) => ({
+                        user: state.user ? {
+                            ...state.user,
+                            gamification: {
+                                ...state.user.gamification,
+                                xp: data.newXp ?? ((state.user.gamification?.xp || 0) + data.xpGained),
+                                level: data.newLevel ?? state.user.gamification?.level,
+                            }
+                        } : null
+                    }));
+                } else {
+                    useAuthStore.getState().checkAuth();
+                }
             } else if (data.type === 'xp_lost') {
                 toast.error(`-${data.xpLost} XP (Reverted Task)`, { icon: '📉', duration: 3000 });
                 if (data.leveledDown) {
                      toast.error(`Leveled Down to L${data.newLevel}`, { icon: '⚠️', duration: 4000 });
                 }
                 queryClient.invalidateQueries({ queryKey: ['user-heatmap'] });
-                useAuthStore.getState().checkAuth(); 
+                // Surgically patch local state instead of hitting /auth/me again
+                if (data.newXp !== undefined || data.xpLost !== undefined) {
+                    useAuthStore.setState((state) => ({
+                        user: state.user ? {
+                            ...state.user,
+                            gamification: {
+                                ...state.user.gamification,
+                                xp: data.newXp ?? Math.max(0, (state.user.gamification?.xp || 0) - data.xpLost),
+                                level: data.newLevel ?? state.user.gamification?.level,
+                            }
+                        } : null
+                    }));
+                } else {
+                    useAuthStore.getState().checkAuth();
+                }
             } else if (data.type === 'level_up') {
                 toast.success(`Level Up! You reached Level ${data.newLevel}`, { icon: '🚀', duration: 5000 });
-                useAuthStore.getState().checkAuth(); 
+                useAuthStore.setState((state) => ({
+                    user: state.user ? {
+                        ...state.user,
+                        gamification: { ...state.user.gamification, level: data.newLevel }
+                    } : null
+                }));
             } else if (data.type === 'badge_earned') {
                 toast.success(`Badge Earned: ${data.badge?.name}!`, { icon: '🏆', duration: 5000 });
-                useAuthStore.getState().checkAuth(); 
+                useAuthStore.setState((state) => ({
+                    user: state.user ? {
+                        ...state.user,
+                        gamification: {
+                            ...state.user.gamification,
+                            badges: [...(state.user.gamification?.badges || []), data.badge].filter(Boolean)
+                        }
+                    } : null
+                }));
             }
         };
         socket.on('gamification_update', handleGamification);
@@ -185,7 +209,7 @@ const SidebarComponent = () => {
         ? navItems.filter(item => item.path === '/')
         : navItems;
 
-    const effectiveCollapsed = isMobile ? false : isCollapsed;
+    const effectiveCollapsed = isMobile ? false : true; // Always clean and minimal on desktop
 
     return (
         <>
@@ -204,7 +228,7 @@ const SidebarComponent = () => {
             <motion.aside
                 initial={false}
                 animate={{ 
-                    width: isMobile ? (isSidebarExpanded ? 272 : 0) : (isSidebarExpanded ? (effectiveCollapsed ? 72 : 272) : 0),
+                    width: isMobile ? (isSidebarExpanded ? 272 : 0) : (isSidebarExpanded ? (effectiveCollapsed ? 80 : 272) : 0),
                     x: isSidebarExpanded ? 0 : -272,
                     opacity: isMobile && !isSidebarExpanded ? 0 : 1
                 }}
@@ -216,97 +240,24 @@ const SidebarComponent = () => {
                     restDelta: 0.001
                 }}
                 className={cn(
-                    "h-full border-r border-default shadow-modal transition-shadow",
-                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2rem]" : "relative rounded-r-[1.75rem]",
+                    "h-full transition-shadow bg-base",
+                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2rem] border-r border-default" : "relative",
                     "flex flex-col overflow-hidden",
                     isSidebarExpanded ? "pointer-events-auto" : "pointer-events-none"
                 )}
-                style={{ borderRightColor: 'var(--border-glass)' }}
             >
-                {/* GLASS BACKGROUND */}
-                <div className="absolute inset-0 z-0">
-                    <GlassSurface 
-                        width="100%" height="100%" borderRadius={0} displace={0.6} distortionScale={-60} 
-                        backgroundOpacity={isDark ? 0.08 : 0.40} opacity={0.96} blur={24}
-                    />
-                </div>
-
-                {/* Subtle vertical gradient accent at top */}
-                <div className="absolute top-0 left-0 right-0 h-48 bg-gradient-to-b from-accent-500/8 via-accent-500/3 to-transparent pointer-events-none z-[1]" />
-                
-                {/* Subtle inner right border glow */}
-                <div className="absolute top-0 right-0 bottom-0 w-px bg-gradient-to-b from-accent-500/20 via-transparent to-transparent pointer-events-none z-[1]" />
-
-                {/* ── Brand Header ── */}
-                <div className={cn(
-                    "h-[4.25rem] flex items-center relative z-10 shrink-0",
-                    effectiveCollapsed ? "justify-center px-0" : "gap-3 px-5"
-                )}>
-                    {/* Logo */}
-                    <div className={cn(
-                        "shrink-0 rounded-xl overflow-hidden transition-all duration-200",
-                        "shadow-elevation border border-glass",
-                        effectiveCollapsed ? "w-9 h-9" : "w-8 h-8"
-                    )}>
-                        <img 
-                            src="/logo.png" alt="Klivra logo" 
-                            width={40} height={40} 
-                            fetchPriority="high" 
-                            className="w-full h-full object-cover" 
-                        />
-                    </div>
-
-                    {!effectiveCollapsed && (
-                        <motion.div 
-                            initial={{ opacity: 0, x: -6 }} 
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.18 }}
-                            className="flex flex-col min-w-0 flex-1"
-                        >
-                            <span className="text-[17px] font-black tracking-tight text-primary leading-none mt-1">
-                                klivra
-                            </span>
-                            <span className="text-[10px] font-semibold text-tertiary uppercase tracking-[0.14em] mt-1.5">
-                                {isAdminSection ? 'Administration' : 'Workspace'}
-                            </span>
-                        </motion.div>
-                    )}
-
-                    {/* Desktop collapse toggle */}
-                    <button 
-                        onClick={toggleCollapse} 
-                        className={cn(
-                            "hidden lg:flex items-center justify-center shrink-0",
-                            "w-7 h-7 rounded-lg transition-all duration-150",
-                            "text-tertiary hover:text-primary hover:bg-sunken",
-                            "border border-transparent hover:border-subtle",
-                            effectiveCollapsed ? "ml-0" : "ml-auto"
-                        )}
-                        aria-label={effectiveCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                    >
-                        <ChevronRight className={cn(
-                            "w-3.5 h-3.5 transition-transform duration-300",
-                            !effectiveCollapsed && "rotate-180"
-                        )} />
-                    </button>
-
-                    {/* Mobile close button */}
-                    {isMobile && isSidebarExpanded && (
+                {/* Mobile close button space (only rendered on mobile) */}
+                {isMobile && isSidebarExpanded && (
+                    <div className={cn("h-[4.25rem] flex items-center justify-end px-5 relative z-10 shrink-0")}>
                         <button 
                             onClick={() => setSidebarExpanded(false)} 
-                            className="p-2 text-tertiary hover:text-primary hover:bg-sunken rounded-xl transition-all active:scale-95 lg:hidden ml-auto"
+                            className="p-2 text-tertiary hover:text-primary hover:bg-sunken rounded-xl transition-all active:scale-95 lg:hidden"
                             aria-label="Close menu"
                         >
-                            <X className="w-4 h-4" />
+                            <X className="w-5 h-5" />
                         </button>
-                    )}
-                </div>
-
-                {/* ── Thin divider ── */}
-                <div className={cn(
-                    "relative z-10 mx-4 shrink-0",
-                    "h-px bg-gradient-to-r from-transparent via-white/8 to-transparent"
-                )} />
+                    </div>
+                )}
 
                 {/* ── Navigation ── */}
                 <nav className={cn(
@@ -332,39 +283,25 @@ const SidebarComponent = () => {
                                 to="/admin" end 
                                 onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
-                                    "group relative flex items-center transition-all duration-200 select-none",
+                                    "group relative flex transition-all duration-200 select-none",
                                     effectiveCollapsed 
-                                        ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
-                                        : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                                        ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
+                                        : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
                                     isActive ? "text-theme" : "text-tertiary hover:text-primary"
                                 )}
                             >
                                 {({ isActive }) => (
                                     <>
                                         <span className={cn(
-                                            "absolute inset-0 transition-opacity duration-200",
-                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                            "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
-                                            isActive ? "opacity-100" : "opacity-0"
-                                        )} />
-                                        <span className={cn(
-                                            "absolute inset-0 transition-opacity duration-150",
-                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                            "bg-white/5",
+                                            "absolute inset-0 transition-opacity duration-150 rounded-xl bg-sunken",
                                             isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
                                         )} />
-                                        <ShieldAlert strokeWidth={isActive ? 2 : 1.75} className="w-5 h-5 relative z-10 shrink-0" />
-                                        {!effectiveCollapsed && (
-                                            <span className={cn(
-                                                "relative z-10 text-sm truncate leading-tight",
-                                                isActive ? "font-semibold" : "font-medium"
-                                            )}>Admin Panel</span>
-                                        )}
-                                        {!effectiveCollapsed && (
-                                            <span className={cn(
-                                                "absolute left-0 top-1/2 -translate-y-1/2 w-[3px] rounded-r-full bg-theme transition-all duration-200",
-                                                isActive ? "h-5 opacity-100" : "h-0 opacity-0"
-                                            )} />
+                                        <ShieldAlert strokeWidth={isActive ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className={cn("relative z-10 shrink-0 transition-all", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} />
+                                        
+                                        {effectiveCollapsed ? (
+                                            <span className={cn("relative z-10 text-[9px] leading-tight text-center truncate px-1 w-full", isActive ? "font-bold text-theme" : "font-medium opacity-70")}>System</span>
+                                        ) : (
+                                            <span className={cn("relative z-10 text-sm truncate leading-tight", isActive ? "font-semibold text-theme" : "font-medium")}>Admin Panel</span>
                                         )}
                                     </>
                                 )}
@@ -374,36 +311,25 @@ const SidebarComponent = () => {
                                 to="/admin/security" 
                                 onClick={() => isMobile && setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
-                                    "group relative flex items-center transition-all duration-200 select-none",
+                                    "group relative flex transition-all duration-200 select-none",
                                     effectiveCollapsed 
-                                        ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
-                                        : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                                        ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
+                                        : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
                                     isActive ? "text-danger" : "text-tertiary hover:text-danger"
                                 )}
                             >
                                 {({ isActive }) => (
                                     <>
                                         <span className={cn(
-                                            "absolute inset-0 transition-opacity duration-200",
-                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                            "bg-gradient-to-r from-danger/12 to-danger/6 border border-danger/20",
-                                            isActive ? "opacity-100" : "opacity-0"
-                                        )} />
-                                        <span className={cn(
-                                            "absolute inset-0 transition-opacity duration-150",
-                                            effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                            "bg-white/5",
+                                            "absolute inset-0 transition-opacity duration-150 rounded-xl bg-sunken",
                                             isActive ? "opacity-0" : "opacity-0 group-hover:opacity-100"
                                         )} />
-                                        <Activity strokeWidth={isActive ? 2 : 1.75} className="w-5 h-5 relative z-10 shrink-0" />
-                                        {!effectiveCollapsed && (
-                                            <span className={cn(
-                                                "relative z-10 text-sm truncate leading-tight",
-                                                isActive ? "font-semibold" : "font-medium"
-                                            )}>Security Feed</span>
-                                        )}
-                                        {!effectiveCollapsed && isActive && (
-                                            <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full bg-danger opacity-100" />
+                                        <Activity strokeWidth={isActive ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className={cn("relative z-10 shrink-0 transition-all", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} />
+                                        
+                                        {effectiveCollapsed ? (
+                                            <span className={cn("relative z-10 text-[9px] leading-tight text-center truncate px-1 w-full", isActive ? "font-bold text-danger" : "font-medium opacity-70")}>Security</span>
+                                        ) : (
+                                            <span className={cn("relative z-10 text-sm truncate leading-tight", isActive ? "font-semibold text-danger" : "font-medium")}>Security Feed</span>
                                         )}
                                     </>
                                 )}
@@ -444,37 +370,37 @@ const SidebarComponent = () => {
                                     if (isMobile) setSidebarExpanded(false);
                                 }}
                                 className={cn(
-                                    "sidebar-nav-item group relative flex items-center transition-all duration-200 select-none",
+                                    "sidebar-nav-item group relative flex transition-all duration-200 select-none",
                                     effectiveCollapsed 
-                                        ? "justify-center h-11 w-11 mx-auto rounded-2xl" 
-                                        : "gap-3 px-3 py-2.5 rounded-xl w-full",
+                                        ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
+                                        : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
                                     isDrawerOpen ? "text-theme" : "text-accent/70 hover:text-theme"
                                 )}
                             >
                                 <span className={cn(
-                                    "absolute inset-0 rounded-xl transition-opacity duration-200",
-                                    effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                    "bg-gradient-to-r from-accent-500/12 to-accent-500/6 border border-accent-500/20",
-                                    isDrawerOpen ? "opacity-100" : "opacity-0"
-                                )} />
-                                <span className={cn(
-                                    "absolute inset-0 transition-opacity duration-150",
-                                    effectiveCollapsed ? "rounded-2xl" : "rounded-xl",
-                                    "bg-sunken",
+                                    "absolute inset-0 transition-opacity duration-150 rounded-xl bg-sunken",
                                     isDrawerOpen ? "opacity-0" : "opacity-0 group-hover:opacity-100"
                                 )} />
                                 <div className={cn(
-                                    "relative z-10 w-5 h-5 flex items-center justify-center transition-all duration-200",
+                                    "relative z-10 flex flex-col items-center justify-center transition-all duration-200",
+                                    effectiveCollapsed ? "w-6 h-6" : "w-5 h-5",
                                     isDrawerOpen ? "text-theme" : "text-accent/70 group-hover:text-theme"
                                 )}>
-                                    <MessageSquare strokeWidth={isDrawerOpen ? 2 : 1.75} className="w-full h-full" />
+                                    <MessageSquare strokeWidth={isDrawerOpen ? (effectiveCollapsed ? 1.75 : 2) : 1.5} className="w-full h-full" />
                                     {unreadTotal > 0 && (
                                         <div className="absolute -top-1 -right-1.5 min-w-[16px] h-[16px] p-0.5 bg-danger rounded-full border border-base text-[8px] font-black text-white flex items-center justify-center shadow-lg">
                                             {unreadTotal > 9 ? '9+' : unreadTotal}
                                         </div>
                                     )}
                                 </div>
-                                {!effectiveCollapsed && (
+                                {effectiveCollapsed ? (
+                                    <span className={cn(
+                                        "relative z-10 text-[9px] leading-tight text-center truncate transition-colors duration-150 px-1 w-full",
+                                        isDrawerOpen ? "font-bold text-theme" : "font-medium opacity-70"
+                                    )}>
+                                        Messages
+                                    </span>
+                                ) : (
                                     <span className={cn(
                                         "relative z-10 text-sm truncate leading-tight transition-colors duration-150 flex-1 text-left",
                                         isDrawerOpen ? "font-semibold text-theme" : "font-medium text-accent/70 group-hover:text-theme"
@@ -545,18 +471,20 @@ const SidebarComponent = () => {
                         <button 
                             onClick={() => startTransition(() => setMode(mode === MODES.DARK ? MODES.LIGHT : MODES.DARK))}
                             className={cn(
-                                "group relative w-full flex items-center transition-all duration-200 select-none text-tertiary hover:text-primary",
+                                "group relative w-full flex transition-all duration-200 select-none text-tertiary hover:text-primary",
                                 effectiveCollapsed 
-                                    ? "justify-center h-10 w-10 mx-auto rounded-xl" 
-                                    : "gap-3 px-3 py-2.5 rounded-xl"
+                                    ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5"
+                                    : "items-center gap-3 px-3 py-2.5 rounded-xl"
                             )}
                         >
-                            <span className="absolute inset-0 rounded-xl transition-opacity duration-150 bg-white/5 opacity-0 group-hover:opacity-100" />
+                            <span className="absolute inset-0 rounded-xl transition-opacity duration-150 bg-sunken opacity-0 group-hover:opacity-100" />
                             {mode === MODES.DARK 
-                                ? <Sun className="w-4 h-4 relative z-10 shrink-0" strokeWidth={1.75} />
-                                : <Moon className="w-4 h-4 relative z-10 shrink-0" strokeWidth={1.75} />
+                                ? <Sun className={cn("relative z-10 shrink-0 transition-all", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} strokeWidth={1.5} />
+                                : <Moon className={cn("relative z-10 shrink-0 transition-all", effectiveCollapsed ? "w-6 h-6" : "w-5 h-5")} strokeWidth={1.5} />
                             }
-                            {!effectiveCollapsed && (
+                            {effectiveCollapsed ? (
+                                <span className="relative z-10 text-[9px] leading-tight text-center truncate opacity-70 font-medium px-1 w-full">Theme</span>
+                            ) : (
                                 <span className="relative z-10 text-sm font-medium">
                                     {mode === MODES.DARK ? 'Light Mode' : 'Dark Mode'}
                                 </span>
@@ -577,8 +505,7 @@ const SidebarComponent = () => {
                             to="/profile" 
                             onClick={() => isMobile && setSidebarExpanded(false)} 
                             className={cn(
-                                "shrink-0 rounded-lg overflow-hidden transition-all duration-150",
-                                "ring-1 ring-white/10 hover:ring-accent-500/40",
+                                "shrink-0 rounded-full overflow-hidden transition-all duration-150",
                                 "w-9 h-9 flex items-center justify-center",
                                 "bg-gradient-to-br from-accent-500/20 to-accent-600/20"
                             )}
@@ -591,7 +518,7 @@ const SidebarComponent = () => {
                                     loading="lazy" decoding="async" 
                                     className="w-full h-full object-cover" 
                                   /> 
-                                : <UserCircle className="w-5 h-5 text-theme" />
+                                : <UserCircle className="w-6 h-6 text-theme" />
                             }
                         </Link>
 

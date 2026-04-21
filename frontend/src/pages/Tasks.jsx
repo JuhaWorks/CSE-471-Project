@@ -8,8 +8,7 @@ import {
     CheckSquare, Filter, Search, Plus, LayoutGrid, List, ChevronDown, Target, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import Button from '../components/ui/Button';
-import Counter from '../components/ui/Counter';
+import { Button, Counter } from '../components/ui/BaseUI';
 import { cn } from '../utils/cn';
 
 // ── Task Physics Configuration ──
@@ -92,7 +91,7 @@ const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activePro
                                 triggerQuickAdd={triggerQuickAdd}
                             />
                         ) : (
-                            <div className="bg-[oklch(100%_0_0/0.02)] border border-[oklch(100%_0_0/0.05)] rounded-[3rem] p-10 flex flex-col items-center justify-center text-center py-40 backdrop-blur-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+                            <div className="bg-white/2 border border-white/5 rounded-[3rem] p-10 flex flex-col items-center justify-center text-center py-40 backdrop-blur-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
                                 <List className="w-16 h-16 text-gray-700 mb-6" />
                                 <h3 className="text-xl font-black text-primary tracking-tight uppercase">List View In Development</h3>
                                 <p className="text-gray-500 text-sm mt-2">Switch back to Kanban for immediate task management.</p>
@@ -204,44 +203,41 @@ export default function Tasks() {
         <article
             className="min-h-screen flex flex-col pb-8 pt-4 px-4 sm:px-6 space-y-4 sm:space-y-6 w-full max-w-[2000px] mx-auto @container overflow-x-hidden"
         >
-            <header className="flex flex-col xl:flex-row xl:items-end justify-between gap-8 z-20 relative">
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-theme font-black text-[10px] uppercase tracking-[0.4em] animate-in fade-in slide-in-from-left duration-700">
-                        <div className="w-8 h-8 rounded-xl bg-theme/10 flex items-center justify-center">
-                            <CheckSquare className="w-4 h-4" />
-                        </div>
-                        <span>Task Management Dashboard</span>
+            <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 z-20 relative px-2">
+                <div className="flex items-center gap-6">
+                    <div className="w-10 h-10 rounded-2xl bg-theme/10 flex items-center justify-center shrink-0">
+                        <CheckSquare className="w-5 h-5 text-theme" />
                     </div>
-                    <div className="space-y-4">
-                        <h1 className="text-4xl sm:text-6xl font-black text-primary tracking-tighter leading-[0.85]">
+                    <div className="flex flex-col">
+                        <h1 className="text-2xl sm:text-3xl font-black text-primary tracking-tighter leading-none">
                             Task <span className="text-theme">Management.</span>
                         </h1>
-                        <p className="text-secondary font-medium text-sm sm:text-xl max-w-xl leading-relaxed opacity-80">
-                            Manage and track project tasks with real-time status updates and team synchronization.
-                        </p>
+                        <span className="text-[10px] sm:text-xs font-medium text-tertiary opacity-40 mt-1 uppercase tracking-widest leading-none">
+                            {activeProject ? activeProject.name : 'Workspace Strategic Oversight'}
+                        </span>
                     </div>
                 </div>
 
-                <nav className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 sm:gap-6" aria-label="Task management controls">
+                <div className="flex items-center gap-4">
                     {/* View Switcher Morphing */}
-                    <div className="flex p-1.5 bg-sunken/50 backdrop-blur-xl rounded-[1.75rem] border border-subtle relative shadow-2xl overflow-x-auto">
+                    <div className="flex p-1 bg-sunken/40 backdrop-blur-xl rounded-2xl border border-subtle relative overflow-x-auto">
                         {['kanban', 'list'].map((mode) => (
                             <button
                                 key={mode}
                                 onClick={() => handleViewChange(mode)}
-                                className={`relative z-10 flex-1 sm:flex-none px-5 py-3 rounded-2xl transition-all duration-500 uppercase text-[10px] font-black tracking-widest ${optimisticView === mode ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}
+                                className={`relative z-10 px-4 py-2 rounded-xl transition-all duration-300 uppercase text-[9px] font-black tracking-widest ${optimisticView === mode ? 'text-primary' : 'text-tertiary hover:text-secondary'}`}
                                 aria-label={`${mode} view`}
                             >
                                 {optimisticView === mode && (
                                     <motion.div
                                         layoutId="view-highlight"
-                                        className="absolute inset-0 bg-surface border border-subtle rounded-2xl shadow-xl -z-10"
+                                        className="absolute inset-0 bg-surface border border-subtle rounded-xl shadow-lg -z-10"
                                         transition={LIQUID_SPRING}
                                     />
                                 )}
                                 <div className="flex items-center justify-center gap-2 relative z-10">
-                                    {mode === 'kanban' ? <LayoutGrid className="w-4 h-4" /> : <List className="w-4 h-4" />}
-                                    <span className="">{mode}</span>
+                                    {mode === 'kanban' ? <LayoutGrid className="w-3.5 h-3.5" /> : <List className="w-3.5 h-3.5" />}
+                                    <span>{mode}</span>
                                 </div>
                             </button>
                         ))}
@@ -250,13 +246,13 @@ export default function Tasks() {
                     <Button
                         variant="vibrant"
                         leftIcon={Plus}
-                        size="lg"
+                        size="md"
                         onClick={() => setTriggerQuickAdd(Date.now())}
-                        className="h-14 sm:h-16 px-6 sm:px-8 rounded-2xl sm:rounded-[2rem] shadow-xl shadow-theme/30"
+                        className="h-11 px-6 rounded-xl shadow-lg shadow-theme/20 uppercase text-[10px] font-black tracking-widest"
                     >
                         New Task
                     </Button>
-                </nav>
+                </div>
             </header>
 
             {/* Management Toolbar */}
@@ -331,34 +327,37 @@ export default function Tasks() {
                     </AnimatePresence>
                 </div>
 
-                {/* Statistics Shaper / Quick Filters */}
-                <div className="hidden lg:flex items-center gap-2 px-6">
+                {/* Management Metrics Integrated */}
+                <div className="flex lg:flex items-center h-10 ml-auto whitespace-nowrap divide-x divide-subtle/20">
                     <button
                         onClick={() => setQuickFilter(quickFilter === 'Active' ? 'All' : 'Active')}
                         className={cn(
-                            "flex flex-col items-center py-1.5 px-3 rounded-2xl transition-all border-2 group",
-                            quickFilter === 'Active' ? "border-theme/40 bg-theme/5 shadow-[inset_0_0_20px_rgba(var(--theme-rgb),0.1)]" : "border-transparent hover:bg-white/[0.02]"
+                            "relative flex items-center gap-2 px-5 h-full transition-all group",
+                            quickFilter === 'Active' ? "text-theme" : "text-tertiary hover:text-primary"
                         )}
-                        title="Filter Active Tasks"
                     >
-                        <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-1 transition-colors", quickFilter === 'Active' ? "text-theme" : "text-tertiary opacity-60 group-hover:opacity-100")}>Active</span>
-                        <span className={cn("text-sm font-black font-mono tracking-tighter px-4 py-1.5 rounded-xl border transition-all", quickFilter === 'Active' ? "text-theme bg-theme/10 border-theme/20 shadow-sm" : "text-accent/70 bg-theme/5 border-theme/5")}>
+                        <span className="text-[12px] font-black uppercase tracking-widest">Active</span>
+                        <span className="text-[18px] font-black font-mono tracking-tighter tabular-nums">
                             <Counter value={activeTasksCount} />
                         </span>
+                        {quickFilter === 'Active' && (
+                            <motion.div layoutId="active-filter" className="absolute bottom-0 left-4 right-4 h-[2px] bg-theme rounded-full" />
+                        )}
                     </button>
-                    <div className="w-px h-10 bg-subtle/50 shadow-sm mx-2" />
                     <button
                         onClick={() => setQuickFilter(quickFilter === 'Risk' ? 'All' : 'Risk')}
                         className={cn(
-                            "flex flex-col items-center py-1.5 px-3 rounded-xl transition-all border-2 group",
-                            quickFilter === 'Risk' ? "border-danger/40 bg-danger/5 shadow-[inset_0_0_20px_rgba(239,68,68,0.1)]" : "border-transparent hover:bg-white/[0.02]"
+                            "relative flex items-center gap-2 px-5 h-full transition-all group",
+                            quickFilter === 'Risk' ? "text-danger" : "text-tertiary hover:text-primary"
                         )}
-                        title="Filter At-Risk Tasks"
                     >
-                        <span className={cn("text-[9px] font-black uppercase tracking-[0.2em] mb-1 transition-colors", quickFilter === 'Risk' ? "text-danger" : "text-tertiary opacity-60 group-hover:opacity-100")}>Risk</span>
-                        <span className={cn("text-sm font-black font-mono tracking-tighter px-4 py-1.5 rounded-xl border transition-all", quickFilter === 'Risk' ? "text-danger bg-danger/10 border-danger/20 shadow-sm" : "text-danger/70 bg-danger/5 border-danger/5")}>
+                        <span className="text-[12px] font-black uppercase tracking-widest">Risk</span>
+                        <span className="text-[18px] font-black font-mono tracking-tighter tabular-nums">
                             <Counter value={riskTasksCount} />
                         </span>
+                        {quickFilter === 'Risk' && (
+                            <motion.div layoutId="active-filter" className="absolute bottom-0 left-4 right-4 h-[2px] bg-danger rounded-full" />
+                        )}
                     </button>
                 </div>
             </nav>

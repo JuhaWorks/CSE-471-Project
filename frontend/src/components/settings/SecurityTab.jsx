@@ -12,9 +12,9 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import EmailUpdateModal from './EmailUpdateModal';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
-import GlassSurface from '../ui/GlassSurface';
+import { Button, Card } from '../ui/BaseUI';
+;
+import { GlassSurface } from '../ui/Aesthetics';
 
 // ---------------------------------------------------------------------------
 // Schema
