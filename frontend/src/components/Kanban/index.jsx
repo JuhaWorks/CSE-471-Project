@@ -107,8 +107,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
         queryFn: async () => {
             const url = projectId ? `/projects/${projectId}/tasks` : '/tasks';
             return (await api.get(url)).data.data;
-        },
-        placeholderData: (previousData) => previousData,
+        }
     });
 
     const blockedTaskIds = useMemo(() => {
@@ -145,14 +144,14 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
             await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
             const snapshot = queryClient.getQueryData(['tasks', projectId]);
             queryClient.setQueryData(['tasks', projectId], (old = []) =>
-                old.map(t => (t._id === id || t.id === id) ? { ...t, ...updates } : t)
+                old.map(t => (String(t._id) === String(id) || String(t.id) === String(id)) ? { ...t, ...updates } : t)
             );
             return { snapshot };
         },
         onSuccess: (res, { id }) => {
             const updatedTask = res.data;
             queryClient.setQueryData(['tasks', projectId], (old = []) =>
-                old.map(t => (t._id === id || t.id === id) ? updatedTask : t)
+                old.map(t => (String(t._id) === String(id) || String(t.id) === String(id)) ? updatedTask : t)
             );
             queryClient.invalidateQueries({ queryKey: ['project-analytics', projectId] });
             queryClient.invalidateQueries({ queryKey: ['workspace-stats'] });

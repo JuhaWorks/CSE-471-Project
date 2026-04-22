@@ -90,17 +90,19 @@ const TopBar = () => {
                     </div>
 
                     {/* Brand Logo */}
-                    <Link to="/" className="flex items-center gap-3 shrink-0 group mr-8 outline-none rounded-xl">
-                        <div className="shrink-0 w-8 h-8 rounded-xl overflow-hidden shadow-[0_2px_10px_rgba(0,0,0,0.1)] border border-white/5 transition-transform duration-300 group-hover:scale-105">
+                    <Link to="/" className="flex items-center gap-3 shrink-0 group mr-6 outline-none rounded-xl">
+                        <div className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.2)] border border-white/10 transition-transform duration-300 group-hover:scale-105 bg-transparent flex items-center justify-center">
                             <img 
                                 src="/logo.png" alt="Klivra logo" 
-                                width={32} height={32} 
                                 fetchPriority="high" 
-                                className="w-full h-full object-cover" 
+                                className={twMerge(clsx(
+                                    "w-full h-full object-contain transition-all duration-300",
+                                    isDark ? "invert" : ""
+                                ))}
                             />
                         </div>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-[17px] font-black tracking-tight text-primary leading-none mt-0.5 transition-colors duration-200 group-hover:text-theme">
+                            <span className="text-2xl font-black tracking-tight text-primary leading-none mt-0.5 transition-colors duration-200 group-hover:text-theme">
                                 klivra
                             </span>
                         </div>

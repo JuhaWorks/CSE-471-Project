@@ -76,7 +76,7 @@ const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activePro
                     </motion.article>
                 ) : (
                     <motion.div
-                        key="initialized"
+                        key={projectId || 'initialized'}
                         initial={{ opacity: 0, scale: 0.98 }}
                         animate={{ opacity: 1, scale: 1 }}
                         exit={{ opacity: 0, scale: 0.98 }}
@@ -148,8 +148,7 @@ export default function Tasks() {
         queryFn: async ({ signal }) => {
             const res = await api.get('/projects', { signal });
             return res.data.data;
-        },
-        staleTime: 300000 // Cache projects for 5 mins
+        }
     });
 
     const activeProject = useMemo(() => {

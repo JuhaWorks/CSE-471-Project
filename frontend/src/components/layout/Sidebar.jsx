@@ -209,7 +209,8 @@ const SidebarComponent = () => {
         ? navItems.filter(item => item.path === '/')
         : navItems;
 
-    const effectiveCollapsed = isMobile ? false : true; // Always clean and minimal on desktop
+    const isHome = location.pathname === '/';
+    const effectiveCollapsed = isMobile ? false : !isSidebarExpanded; // Hamburger expands the drawer
 
     return (
         <>
@@ -228,9 +229,9 @@ const SidebarComponent = () => {
             <motion.aside
                 initial={false}
                 animate={{ 
-                    width: isMobile ? (isSidebarExpanded ? 272 : 0) : (isSidebarExpanded ? (effectiveCollapsed ? 80 : 272) : 0),
-                    x: isSidebarExpanded ? 0 : -272,
-                    opacity: isMobile && !isSidebarExpanded ? 0 : 1
+                    width: isMobile ? (isSidebarExpanded ? 272 : 0) : (isSidebarExpanded ? 250 : (isHome ? 80 : 0)),
+                    x: isMobile ? (isSidebarExpanded ? 0 : -272) : (isHome || isSidebarExpanded ? 0 : -80),
+                    opacity: (isMobile || (!isHome && !isSidebarExpanded)) ? (isSidebarExpanded ? 1 : 0) : 1
                 }}
                 transition={{ 
                     type: "spring", 
@@ -240,10 +241,11 @@ const SidebarComponent = () => {
                     restDelta: 0.001
                 }}
                 className={cn(
-                    "h-full transition-shadow bg-base",
-                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2rem] border-r border-default" : "relative",
+                    "h-full transition-colors duration-300",
+                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2rem] border-r border-default bg-base" : "relative border-r border-default",
+                    (!isMobile && isSidebarExpanded) ? "bg-base/95 backdrop-blur-3xl shadow-2xl absolute left-0 z-[60]" : (!isMobile ? "bg-transparent absolute left-0 z-[60]" : ""),
                     "flex flex-col overflow-hidden",
-                    isSidebarExpanded ? "pointer-events-auto" : "pointer-events-none"
+                    (isMobile || !isHome) && !isSidebarExpanded ? "pointer-events-none" : "pointer-events-auto"
                 )}
             >
                 {/* Mobile close button space (only rendered on mobile) */}
@@ -262,7 +264,7 @@ const SidebarComponent = () => {
                 {/* ── Navigation ── */}
                 <nav className={cn(
                     "flex-1 pt-4 pb-2 space-y-0.5 overflow-y-auto overflow-x-hidden relative z-10 scrollbar-none",
-                    effectiveCollapsed ? "px-2.5" : "px-3"
+                    effectiveCollapsed ? "px-2.5" : "px-4"
                 )}>
 
                     {/* Admin section items */}
@@ -279,17 +281,17 @@ const SidebarComponent = () => {
                             )}
                             {effectiveCollapsed && <div className="h-2" />}
 
-                            <NavLink 
-                                to="/admin" end 
-                                onClick={() => isMobile && setSidebarExpanded(false)}
-                                className={({ isActive }) => cn(
-                                    "group relative flex transition-all duration-200 select-none",
-                                    effectiveCollapsed 
-                                        ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
-                                        : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
-                                    isActive ? "text-theme" : "text-tertiary hover:text-primary"
-                                )}
-                            >
+                                <NavLink 
+                                    to="/admin" end 
+                                    onClick={() => setSidebarExpanded(false)}
+                                    className={({ isActive }) => cn(
+                                        "group relative flex transition-all duration-200 select-none",
+                                        effectiveCollapsed 
+                                            ? "flex-col items-center justify-center py-3.5 w-14 mx-auto rounded-xl gap-1.5" 
+                                            : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
+                                        isActive ? "text-theme" : "text-tertiary hover:text-primary"
+                                    )}
+                                >
                                 {({ isActive }) => (
                                     <>
                                         <span className={cn(
@@ -307,17 +309,17 @@ const SidebarComponent = () => {
                                 )}
                             </NavLink>
 
-                            <NavLink 
-                                to="/admin/security" 
-                                onClick={() => isMobile && setSidebarExpanded(false)}
-                                className={({ isActive }) => cn(
-                                    "group relative flex transition-all duration-200 select-none",
-                                    effectiveCollapsed 
-                                        ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
-                                        : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
-                                    isActive ? "text-danger" : "text-tertiary hover:text-danger"
-                                )}
-                            >
+                                <NavLink 
+                                    to="/admin/security" 
+                                    onClick={() => setSidebarExpanded(false)}
+                                    className={({ isActive }) => cn(
+                                        "group relative flex transition-all duration-200 select-none",
+                                        effectiveCollapsed 
+                                            ? "flex-col items-center justify-center py-3.5 w-14 mx-auto rounded-xl gap-1.5" 
+                                            : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
+                                        isActive ? "text-danger" : "text-tertiary hover:text-danger"
+                                    )}
+                                >
                                 {({ isActive }) => (
                                     <>
                                         <span className={cn(
@@ -356,7 +358,7 @@ const SidebarComponent = () => {
                                 key={item.path} 
                                 item={item} 
                                 isActive={location.pathname === item.path}
-                                onClose={() => isMobile && setSidebarExpanded(false)} 
+                                onClose={() => setSidebarExpanded(false)} 
                                 onPrefetch={handlePrefetch} 
                                 isCollapsed={effectiveCollapsed}
                             />
@@ -372,7 +374,7 @@ const SidebarComponent = () => {
                                 className={cn(
                                     "sidebar-nav-item group relative flex transition-all duration-200 select-none",
                                     effectiveCollapsed 
-                                        ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5" 
+                                        ? "flex-col items-center justify-center py-3.5 w-14 mx-auto rounded-xl gap-1.5" 
                                         : "items-center gap-3 px-3 py-2.5 rounded-xl w-full",
                                     isDrawerOpen ? "text-theme" : "text-accent/70 hover:text-theme"
                                 )}
@@ -422,14 +424,14 @@ const SidebarComponent = () => {
                 {/* ── Footer ── */}
                 <div className={cn(
                     "relative z-10 shrink-0 pt-3 pb-4",
-                    effectiveCollapsed ? "px-2.5" : "px-3"
+                    effectiveCollapsed ? "px-2.5" : "px-4"
                 )}>
                     {/* Settings & theme toggle */}
                     <div className={cn("space-y-0.5 mb-3")}>
                         {!isAdminSection && (
                             <NavLink 
                                 to="/settings" 
-                                onClick={() => isMobile && setSidebarExpanded(false)}
+                                onClick={() => setSidebarExpanded(false)}
                                 className={({ isActive }) => cn(
                                     "group relative flex items-center transition-all duration-200 select-none",
                                     effectiveCollapsed 
@@ -473,7 +475,7 @@ const SidebarComponent = () => {
                             className={cn(
                                 "group relative w-full flex transition-all duration-200 select-none text-tertiary hover:text-primary",
                                 effectiveCollapsed 
-                                    ? "flex-col items-center justify-center py-3.5 w-16 mx-auto rounded-xl gap-1.5"
+                                    ? "flex-col items-center justify-center py-3.5 w-14 mx-auto rounded-xl gap-1.5"
                                     : "items-center gap-3 px-3 py-2.5 rounded-xl"
                             )}
                         >
@@ -503,7 +505,7 @@ const SidebarComponent = () => {
                         {/* Avatar */}
                         <Link 
                             to="/profile" 
-                            onClick={() => isMobile && setSidebarExpanded(false)} 
+                            onClick={() => setSidebarExpanded(false)} 
                             className={cn(
                                 "shrink-0 rounded-full overflow-hidden transition-all duration-150",
                                 "w-9 h-9 flex items-center justify-center",

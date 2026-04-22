@@ -396,13 +396,13 @@ const ChatMessageComponent = ({
                                         </div>
                                     ) : (
                                         <div className={cn(
-                                            'px-4.5 py-2.5 text-[14px] sm:text-[15px] leading-relaxed transition-all shadow-sm border border-glass/10',
+                                            'px-4 py-2.5 text-[14px] sm:text-[14.5px] leading-relaxed transition-all shadow-sm border border-white/5',
                                             bubbleRadius,
                                             isMe
-                                                ? cn('bg-theme text-white font-bold', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
-                                                : cn('bg-surface text-primary font-bold', isError && 'ring-2 ring-danger')
+                                                ? cn('bg-theme text-white font-medium', isSending && 'opacity-70', isError && 'ring-2 ring-danger')
+                                                : cn('bg-elevated text-primary font-medium', isError && 'ring-2 ring-danger')
                                         )}>
-                                            <p className="whitespace-pre-wrap break-words tracking-tight drop-shadow-sm">{message.content}</p>
+                                            <p className="whitespace-pre-wrap break-words tracking-tight opacity-90">{message.content}</p>
                                         </div>
                                     )}
                                 </motion.div>

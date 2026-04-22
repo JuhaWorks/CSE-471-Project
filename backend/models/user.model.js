@@ -220,6 +220,9 @@ const userSchema = new mongoose.Schema(
             showWeather: { type: Boolean, default: true },
             showApod: { type: Boolean, default: true },
             showQuote: { type: Boolean, default: true },
+            showChatBubbles: { type: Boolean, default: true },
+            showIntelligence: { type: Boolean, default: true },
+            showGlobalPresence: { type: Boolean, default: true },
             bubbledChats: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chat' }],
             archivedChats: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Chat' }]
         },

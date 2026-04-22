@@ -1,4 +1,4 @@
-import React, { useState, useTransition, useMemo, memo, useEffect } from 'react';
+import React, { useState, useTransition, useMemo, memo, useEffect } from 'react'; 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { useSocketStore } from '../store/useSocketStore';
@@ -33,7 +33,7 @@ import { getOptimizedAvatar } from '../utils/avatar';
 
 
 // ── MEMOIZED PROJECT CARD ──
-const ProjectCard = memo(({ project, user, onlineUsers, toggleGlobalPresence, respondMutation, view, EASE, getStatusStyles }) => {
+const ProjectCard = memo(({ project, user, onlineUsers, toggleGlobalPresence, respondMutation, restoreMutation, purgeMutation, view, EASE, getStatusStyles }) => {
     const onlineMembersCount = project.members?.filter(m => 
         onlineUsers.some(u => u.userId === (m.userId?._id || m.userId))
     ).length || 0;
@@ -110,8 +110,13 @@ const ProjectCard = memo(({ project, user, onlineUsers, toggleGlobalPresence, re
                     <div className="flex items-center gap-2">
                         {view === 'invitations' ? (
                             <div className="flex gap-2">
-                                <button onClick={() => respondMutation.mutate({ id: project._id, status: 'rejected' })} className="text-[10px] font-black uppercase text-tertiary hover:text-danger px-2">Decline</button>
-                                <button onClick={() => respondMutation.mutate({ id: project._id, status: 'active' })} className="text-[10px] font-black uppercase text-theme px-3 py-1 bg-theme/10 rounded-md">Accept</button>
+                                <button onClick={() => respondMutation.mutate({ id: project._id, status: 'rejected' })} className="text-[10px] font-black uppercase text-tertiary hover:text-danger px-2 transition-colors">Decline</button>
+                                <button onClick={() => respondMutation.mutate({ id: project._id, status: 'active' })} className="text-[10px] font-black uppercase text-theme px-3 py-1 bg-theme/10 rounded-md hover:bg-theme hover:text-white transition-colors">Accept</button>
+                            </div>
+                        ) : view === 'archived' ? (
+                            <div className="flex gap-2">
+                                <button onClick={() => purgeMutation.mutate(project._id)} className="text-[10px] font-black uppercase text-tertiary hover:text-danger px-2 transition-colors">Delete</button>
+                                <button onClick={() => restoreMutation.mutate(project._id)} className="text-[10px] font-black uppercase text-success px-3 py-1 bg-success/10 rounded-md hover:bg-success hover:text-white transition-colors">Restore</button>
                             </div>
                         ) : (
                             <div className="flex items-center gap-2">
@@ -331,6 +336,8 @@ const Projects = () => {
                                 onlineUsers={onlineUsers}
                                 toggleGlobalPresence={toggleGlobalPresence}
                                 respondMutation={respondMutation}
+                                restoreMutation={restoreMutation}
+                                purgeMutation={purgeMutation}
                                 view={view}
                                 EASE={EASE}
                                 getStatusStyles={getStatusStyles}

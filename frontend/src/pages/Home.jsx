@@ -285,13 +285,6 @@ const HeaderMetric = ({ label, value, unit, color1, color2 }) => (
     </div>
 );
 
-const BackgroundGlow = () => (
-    <div style={{ position: 'fixed', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
-        <div className="glow-blob" style={{ background: 'var(--v-emerald)', top: '-10%', left: '-10%' }} />
-        <div className="glow-blob" style={{ background: 'var(--v-rose)', top: '40%', right: '-5%', width: '30vw', height: '30vw', opacity: 0.05 }} />
-    </div>
-);
-
 const SectionHeader = ({ label, right }) => (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 0 16px' }}>
         <span className="ent-label" style={{ fontSize: 10, letterSpacing: '0.15em' }}>{label}</span>
@@ -385,14 +378,13 @@ const Home = () => {
                 minHeight: '100vh',
                 background: 'transparent',
                 color: 'var(--ent-text-1)',
-                padding: '0 40px 64px',
+                padding: '0 0 64px',
                 width: '100%',
                 boxSizing: 'border-box',
                 position: 'relative',
             }}
 >
     <style>{styles}</style>
-    <BackgroundGlow />
     <DeadlinePopup projects={projects} user={user} />
 
     {/* ── HEADER ─────────────────────────────────────────────────── */}

@@ -26,7 +26,11 @@ const updateProfileSchema = z.object({
     interfacePrefs: z.object({
         showTeamClock: z.boolean().optional(),
         showWeather: z.boolean().optional(),
-        showApod: z.boolean().optional()
+        showApod: z.boolean().optional(),
+        showQuote: z.boolean().optional(),
+        showChatBubbles: z.boolean().optional(),
+        showIntelligence: z.boolean().optional(),
+        showGlobalPresence: z.boolean().optional()
     }).optional(),
     customMessage: z.string().max(250, 'Status message must be 250 characters or fewer').optional(),
 });
@@ -180,15 +184,12 @@ const updateProfile = async (req, res, next) => {
         if (req.body.customMessage !== undefined) updates.customMessage = req.body.customMessage.substring(0, 250);
 
         if (req.body.interfacePrefs) {
-            if (req.body.interfacePrefs.showTeamClock !== undefined) {
-                updates['interfacePrefs.showTeamClock'] = req.body.interfacePrefs.showTeamClock;
-            }
-            if (req.body.interfacePrefs.showWeather !== undefined) {
-                updates['interfacePrefs.showWeather'] = req.body.interfacePrefs.showWeather;
-            }
-            if (req.body.interfacePrefs.showApod !== undefined) {
-                updates['interfacePrefs.showApod'] = req.body.interfacePrefs.showApod;
-            }
+            const prefs = ['showTeamClock', 'showWeather', 'showApod', 'showQuote', 'showChatBubbles', 'showIntelligence', 'showGlobalPresence'];
+            prefs.forEach(pref => {
+                if (req.body.interfacePrefs[pref] !== undefined) {
+                    updates[`interfacePrefs.${pref}`] = req.body.interfacePrefs[pref];
+                }
+            });
         }
 
         if (Object.keys(updates).length === 0) {

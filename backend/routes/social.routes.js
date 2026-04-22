@@ -56,7 +56,7 @@ chatRouter.delete('/:chatId', chatCtrl.deleteUserChat);
 
 chatRouter.post('/upload', upload.single('file'), (req, res) => {
     if (!req.file) return res.status(400).json({ status: 'error', message: 'No file uploaded' });
-    const url = `${req.protocol}://${req.get('host')}/uploads/chat/${req.file.filename}`;
+    const url = `${req.protocol}://${req.get('host')}/uploads/${req.file.filename}`;
     res.status(200).json({ status: 'success', data: { url, filename: req.file.originalname, mimetype: req.file.mimetype, size: req.file.size } });
 });
 

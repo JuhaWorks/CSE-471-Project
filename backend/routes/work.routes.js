@@ -63,10 +63,12 @@ taskRouter.route('/')
 
 taskRouter.route('/:id')
     .get(taskCtrl.getTask)
-    .put(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), taskCtrl.updateTask)
+    .put(isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Developer']), taskCtrl.updateTask)
     .delete(isNotArchived, authorizeProjectAccess(['Manager', 'Editor']), taskCtrl.deleteTask);
 
-taskRouter.patch('/:id/status', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.updateTaskStatus);
+taskRouter.patch('/bulk-update', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Developer']), taskCtrl.bulkUpdateTasks);
+
+taskRouter.patch('/:id/status', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Developer', 'Viewer']), taskCtrl.updateTaskStatus);
 taskRouter.get('/:id/activity', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.getTaskActivity);
 taskRouter.route('/:id/comments')
     .get(isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.getTaskComments)

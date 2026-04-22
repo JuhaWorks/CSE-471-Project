@@ -47,10 +47,16 @@ export const useSocketStore = create((set, get) => ({
             }, 20000);
         };
 
+        const joinAllChats = () => {
+            const chats = useChatStore.getState().chats || [];
+            chats.forEach(chat => socket.emit('join_chat', chat._id));
+        };
+
         socket.on('connect', () => {
             set({ isConnected: true });
             // Immediately request fresh presence on every (re)connect
             socket.emit('requestPresenceSync');
+            joinAllChats();
             startHeartbeat();
             console.log('🚀 Socket connected');
         });
@@ -61,6 +67,7 @@ export const useSocketStore = create((set, get) => ({
                 socket.emit('joinProject', currentProjectId);
             }
             socket.emit('requestPresenceSync');
+            joinAllChats();
             console.log('🔄 Socket reconnected — presence synced');
         });
 

@@ -118,11 +118,13 @@ const Layout = ({ checkingAuth }) => {
     // ── GPU-DRIVEN LAYOUT: System Variables ──────────────────────────
     useEffect(() => {
         const root = document.documentElement;
-        // On mobile, the sidebar never pushes content. On desktop, it is permanently minimal (80px).
-        const width = isMobile ? 0 : (isSidebarExpanded ? 80 : 0);
+        // The icon rail (80px) only shows on the Home page. On others, it stays hidden (0px).
+        const isHome = location.pathname === '/';
+        const width = isMobile ? 0 : (isSidebarExpanded ? 250 : (isHome ? 80 : 0));
+        
         root.style.setProperty('--sb-width', `${width}px`);
         root.style.setProperty('--sb-offset', `${width}px`);
-    }, [isSidebarExpanded, isCollapsed, isMobile]);
+    }, [isSidebarExpanded, isCollapsed, isMobile, location.pathname]);
 
     // Handle mobile transition separately to avoid breaking the toggle button
     useEffect(() => {
@@ -173,9 +175,6 @@ const Layout = ({ checkingAuth }) => {
                     }} 
                 />
                 
-                {/* Reduced Blur elements for better performance */}
-                <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] bg-theme/5 rounded-full blur-[80px]" />
-                <div className="absolute bottom-[5%] left-[-2%] w-[30%] h-[30%] bg-theme/3 rounded-full blur-[60px]" />
                 <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{ backgroundImage: 'url("/noise.svg")' }} />
             </div>
 
