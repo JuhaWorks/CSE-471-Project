@@ -162,6 +162,25 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
         },
     });
 
+    const deleteTaskMutation = useMutation({
+        mutationFn: async (id) => (await api.delete(`/tasks/${id}`)).data,
+        onSuccess: () => { invalidate(); toast.success('Task deleted'); },
+        onError: () => toast.error('Failed to delete task')
+    });
+
+    const handleUpdateTask = useCallback((id, updates) => {
+        if (!id) {
+            createTaskMutation.mutate(updates);
+        } else {
+            updateTaskMutation.mutate({ id, updates });
+        }
+    }, [createTaskMutation, updateTaskMutation]);
+
+    const handleDeleteTask = useCallback((id) => {
+        if (id) deleteTaskMutation.mutate(id);
+        setSelectedTask(null);
+    }, [deleteTaskMutation]);
+
     const bulkUpdateTaskMutation = useMutation({
         mutationFn: async ({ taskIds, updates }) => (await api.patch('/tasks/bulk-update', { taskIds, updates })).data,
         onSuccess: (res) => { invalidate(); setSelectedTaskIds([]); toast.success(`Moved ${res.count} tasks`); },
@@ -440,6 +459,8 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                         task={selectedTask}
                         project={project}
                         onClose={() => setSelectedTask(null)}
+                        onUpdate={handleUpdateTask}
+                        onDelete={handleDeleteTask}
                     />
                 )}
             </AnimatePresence>

@@ -242,7 +242,7 @@ const SidebarComponent = () => {
                 }}
                 className={cn(
                     "h-full transition-colors duration-300",
-                    isMobile ? "fixed top-0 left-0 z-[90] rounded-r-[2rem] border-r border-default bg-base" : "relative border-r border-default",
+                    isMobile ? cn("fixed top-0 left-0 z-[90] rounded-r-[2rem] bg-base", isSidebarExpanded && "border-r border-default") : cn("relative", isSidebarExpanded && "border-r border-default"),
                     (!isMobile && isSidebarExpanded) ? "bg-base/95 backdrop-blur-3xl shadow-2xl absolute left-0 z-[60]" : (!isMobile ? "bg-transparent absolute left-0 z-[60]" : ""),
                     "flex flex-col overflow-hidden",
                     (isMobile || !isHome) && !isSidebarExpanded ? "pointer-events-none" : "pointer-events-auto"

@@ -54,51 +54,29 @@ const TasksContent = ({ projectId, searchQuery, quickFilter, viewMode, activePro
     return (
         <section className="relative flex-1 flex flex-col min-h-0 w-full mt-2 perspective-1000" aria-label="Task Board">
             <AnimatePresence mode="wait">
-                {!projectId ? (
-                    <motion.article
-                        key="unselected"
-                        initial={{ opacity: 0, rotateX: 5, y: 20 }}
-                        animate={{ opacity: 1, rotateX: 0, y: 0 }}
-                        exit={{ opacity: 0, rotateX: -5, y: -20 }}
-                        transition={LIQUID_SPRING}
-                        className="flex flex-col items-center justify-center py-40 bg-surface border border-subtle rounded-[4rem] text-center space-y-8 backdrop-blur-3xl shadow-xl z-10 relative"
-                    >
-                        <div className="w-32 h-32 rounded-[3rem] bg-theme/5 border border-subtle flex items-center justify-center relative group">
-                            <Target className="w-16 h-16 text-tertiary group-hover:text-theme transition-colors duration-500" />
-                            <div className="absolute inset-0 bg-theme/10 rounded-[3rem] blur-3xl opacity-0 group-hover:opacity-100 transition-opacity" />
+                <motion.div
+                    key={projectId || 'initialized'}
+                    initial={{ opacity: 0, scale: 0.98 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.98 }}
+                    transition={LIQUID_SPRING}
+                    className="w-full flex-1 flex flex-col min-h-0"
+                >
+                    {viewMode === 'kanban' ? (
+                        <KanbanBoard
+                            projectId={projectId}
+                            searchQuery={searchQuery}
+                            quickFilter={quickFilter}
+                            triggerQuickAdd={triggerQuickAdd}
+                        />
+                    ) : (
+                        <div className="bg-white/2 border border-white/5 rounded-[3rem] p-10 flex flex-col items-center justify-center text-center py-40 backdrop-blur-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
+                            <List className="w-16 h-16 text-gray-700 mb-6" />
+                            <h3 className="text-xl font-black text-primary tracking-tight uppercase">List View In Development</h3>
+                            <p className="text-gray-500 text-sm mt-2">Switch back to Kanban for immediate task management.</p>
                         </div>
-                        <div className="space-y-3">
-                            <h2 className="text-[length:clamp(1.5rem,3vw,2.5rem)] font-black text-[var(--text-main)] tracking-tighter">No Project Selected.</h2>
-                            <p className="text-gray-500 font-medium max-w-sm mx-auto text-[length:clamp(0.875rem,1.5vw,1rem)] line-clamp-3">
-                                Select a project to view and manage its tasks, track progress, and collaborate with your team.
-                            </p>
-                        </div>
-                    </motion.article>
-                ) : (
-                    <motion.div
-                        key={projectId || 'initialized'}
-                        initial={{ opacity: 0, scale: 0.98 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.98 }}
-                        transition={LIQUID_SPRING}
-                        className="w-full flex-1 flex flex-col min-h-0"
-                    >
-                        {viewMode === 'kanban' ? (
-                            <KanbanBoard
-                                projectId={projectId}
-                                searchQuery={searchQuery}
-                                quickFilter={quickFilter}
-                                triggerQuickAdd={triggerQuickAdd}
-                            />
-                        ) : (
-                            <div className="bg-white/2 border border-white/5 rounded-[3rem] p-10 flex flex-col items-center justify-center text-center py-40 backdrop-blur-3xl shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)]">
-                                <List className="w-16 h-16 text-gray-700 mb-6" />
-                                <h3 className="text-xl font-black text-primary tracking-tight uppercase">List View In Development</h3>
-                                <p className="text-gray-500 text-sm mt-2">Switch back to Kanban for immediate task management.</p>
-                            </div>
-                        )}
-                    </motion.div>
-                )}
+                    )}
+                </motion.div>
             </AnimatePresence>
 
             {/* Ambient Decorative Elements */}

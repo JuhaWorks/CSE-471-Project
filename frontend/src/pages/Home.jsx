@@ -365,7 +365,23 @@ const Home = () => {
 
     const updateTaskMutation = useMutation({
         mutationFn: async ({ id, updates }) => (await api.put(`/tasks/${id}`, updates)).data,
-        onSuccess: () => queryClient.invalidateQueries(['myTasks']),
+        onSuccess: () => {
+            queryClient.invalidateQueries(['myTasks']);
+            queryClient.invalidateQueries(['workspace-stats']);
+            toast.success('Task updated');
+        },
+        onError: () => toast.error('Failed to update task'),
+    });
+
+    const deleteTaskMutation = useMutation({
+        mutationFn: async (id) => (await api.delete(`/tasks/${id}`)).data,
+        onSuccess: () => { 
+            queryClient.invalidateQueries(['myTasks']); 
+            queryClient.invalidateQueries(['workspace-stats']);
+            toast.success('Task deleted'); 
+            setSelectedTask(null);
+        },
+        onError: () => toast.error('Failed to delete task')
     });
 
     /* completion bar */
@@ -701,6 +717,7 @@ const Home = () => {
                 projectId={selectedTask.project?._id || selectedTask.project}
                 onClose={() => setSelectedTask(null)}
                 onUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
+                onDelete={() => deleteTaskMutation.mutate(selectedTask._id)}
             />
         )}
     </AnimatePresence>

@@ -1,18 +1,16 @@
 import { useQuery } from '@tanstack/react-query';
 import { api } from '../../../store/useAuthStore';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Rocket, Info, Calendar, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, Rocket } from 'lucide-react';
 import { Card } from '../../ui/BaseUI';
 import { Skeleton } from '../../ui/Loaders';
-import { useState, memo } from 'react';
+import { memo } from 'react';
 
 /**
- * Modern 2026 APOD Widget - Compact Command Center Edition
- * Optimized for Sidebar | Snappy Explanations | Minimized Footprint
+ * Modern 2026 APOD Widget - Grand Editorial Edition
+ * Fills dashboard whitespace gorgeously with NASA imagery.
  */
 
 const ApodWidget = () => {
-    const [isExpanded, setIsExpanded] = useState(false);
 
     const { data: apodData, isLoading, isError } = useQuery({
         queryKey: ['apod'],
@@ -59,64 +57,43 @@ const ApodWidget = () => {
                 </div>
             </div>
 
-            {/* Image Aperture - Significantly Slimmer */}
-            <div className="relative h-[110px] shrink-0 overflow-hidden bg-sunken">
+            {/* Image Aperture - Grand Visual Intelligence */}
+            <div className="relative h-[250px] sm:h-[350px] lg:h-[450px] shrink-0 overflow-hidden bg-sunken">
                 <img
                     src={display.url}
                     alt={display.title}
-                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
+                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-[1.03]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent" />
-                <h3 className="absolute bottom-3 left-4 right-4 text-[13px] font-black text-white tracking-tight leading-tight line-clamp-2">
-                    {display.title}
-                </h3>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+                <div className="absolute bottom-6 left-6 right-6">
+                    <h3 className="text-xl sm:text-2xl font-black text-white tracking-tighter leading-tight drop-shadow-xl">
+                        {display.title}
+                    </h3>
+                    <div className="flex items-center gap-2 text-white/60 mt-2">
+                        <Calendar className="w-3.5 h-3.5" />
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em]">{display.date}</span>
+                    </div>
+                </div>
             </div>
 
-            {/* Content Section - Compact Quick-View */}
-            <div className="px-5 py-4 flex flex-col gap-2 bg-surface/10">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-tertiary opacity-40">
-                        <Calendar className="w-2.5 h-2.5" />
-                        <span className="text-[8px] font-black uppercase tracking-[0.2em]">{display.date}</span>
+            {/* Content Section - Professional Briefing */}
+            <div className="px-6 py-5 flex flex-col gap-2 bg-surface">
+                <p className="text-[13px] sm:text-[14px] font-medium text-secondary leading-relaxed pl-4 border-l-2 border-cyan-500/40">
+                    {display.explanation}
+                </p>
+                
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-glass">
+                    {display.author ? (
+                        <p className="text-[9px] font-black text-tertiary uppercase tracking-widest italic opacity-60">
+                            Captured by: {display.author}
+                        </p>
+                    ) : <div />}
+                    
+                    <div className="flex items-center gap-3 opacity-40">
+                        <span className="text-[8px] font-black uppercase tracking-[0.3em]">Operational Update Complete</span>
+                        <div className="w-12 h-px bg-glass" />
                     </div>
-                    <button
-                        onClick={() => setIsExpanded(!isExpanded)}
-                        className="p-1 rounded-md bg-sunken border border-glass hover:text-cyan-400 transition-all flex items-center gap-1.5"
-                    >
-                        <span className="text-[7px] font-black uppercase tracking-widest px-1">Details</span>
-                        {isExpanded ? <ChevronUp size={10} /> : <ChevronDown size={10} />}
-                    </button>
                 </div>
-
-                <AnimatePresence>
-                    {isExpanded && (
-                        <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: 'auto', opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="pt-2 border-t border-glass mt-2">
-                                <p className="text-[11px] font-medium text-secondary leading-relaxed pl-3 border-l border-cyan-500/30">
-                                    {display.explanation}
-                                </p>
-                                {display.author && (
-                                    <p className="text-[8px] font-black text-tertiary uppercase tracking-widest mt-3 text-right italic opacity-40">
-                                        — {display.author}
-                                    </p>
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-
-                {!isExpanded && (
-                    <div className="pt-1 flex items-center gap-4 opacity-20 pointer-events-none">
-                        <div className="h-px flex-1 bg-glass" />
-                        <span className="text-[7px] font-black uppercase tracking-[0.3em]">Operational Update Complete</span>
-                        <div className="h-px flex-1 bg-glass" />
-                    </div>
-                )}
             </div>
         </Card>
     );
