@@ -970,6 +970,10 @@ const ChatBox = ({ chat, onBack, isBubbleMode, setConfirmConfig }) => {
     const handleSend = (data) => {
         sendMessage(chat._id, { ...data, replyTo: replyTo?._id || null });
         setReplyTo(null);
+        // Force scroll to bottom immediately and after layout shifts (keyboard hide, textarea shrink)
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+        setTimeout(() => scrollToBottom('smooth'), 150);
+        setTimeout(() => scrollToBottom('smooth'), 400);
     };
 
     return (
