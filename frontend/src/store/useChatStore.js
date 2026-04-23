@@ -226,6 +226,8 @@ export const useChatStore = create((set, get) => ({
                 [chatId]: newHistory
             };
 
+            const chatExists = state.chats.some(c => c._id === chatId);
+
             // 2. Update chat list (last message and unread count)
             const updatedChats = state.chats.map(c => {
                 if (c._id === chatId) {
@@ -245,6 +247,11 @@ export const useChatStore = create((set, get) => ({
                 const myId = useAuthStore.getState().user?._id;
                 return acc + (chat.unreadCounts?.[myId] || 0);
             }, 0);
+
+            // If it's a completely new chat, trigger a fetch to grab the chat metadata
+            if (!chatExists) {
+                setTimeout(() => get().fetchChats(), 100);
+            }
 
             return {
                 messages: newMessages,
