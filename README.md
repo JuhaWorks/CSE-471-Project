@@ -11,7 +11,7 @@
 
 ---
 
-[**🚀 ENTER THE TERMINAL**](https://klivra.vercel.app/)
+[**WEBSITE**](https://klivra.vercel.app/)
 
 ---
 
