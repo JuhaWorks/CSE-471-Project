@@ -81,7 +81,7 @@ A shared canvas for architectural mapping and planning. Visualize ideas together
 
 ## 🖼️ Interface Gallery
 
-![Klivra UI Mosaic](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/ui-mosaic.png)
+![Klivra Dashboard Preview](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/dashboard-preview.png)
 
 ---
 
