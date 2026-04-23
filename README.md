@@ -1,6 +1,6 @@
 <div align="center">
 
-![Klivra Grand Vision](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/scratch/klivra_full_vision_banner.png)
+![Klivra Grand Vision](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/hero-banner.png)
 
 <br/>
 
@@ -81,14 +81,14 @@ A shared canvas for architectural mapping and planning. Visualize ideas together
 
 ## 🖼️ Interface Gallery
 
-![Klivra UI Mosaic](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/scratch/klivra_ui_mosaic.png)
+![Klivra UI Mosaic](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/ui-mosaic.png)
 
 ---
 
 ## 💻 Tech Stack
 
 <div align="center">
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/scratch/klivra_blueprint_tech.png" width="100%" />
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/tech-blueprint.png" width="100%" />
 </div>
 
 <br/>
@@ -112,7 +112,7 @@ A shared canvas for architectural mapping and planning. Visualize ideas together
 Klivra is designed for speed and data integrity:
 
 > [!TIP]
-> **Centralized Real-time Logic**: All live updates are managed through a single store (`useSocketStore.js`). This ensures that notifications and messages appear instantly across all tabs without duplication.
+> **Centralized Real-time Logic**: All live updates are managed through a single store ([useSocketStore.js](https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/store/useSocketStore.js)). This ensures that notifications and messages appear instantly across all tabs without duplication.
 
 *   **Activity Logging**: Every project update is automatically logged into a readable history feed.
 *   **Component-Driven Design**: Built with reusable, high-quality components for a consistent professional look.
