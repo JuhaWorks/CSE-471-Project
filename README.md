@@ -1,17 +1,18 @@
 <div align="center">
 
+![Klivra Grand Vision](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/scratch/klivra_full_vision_banner.png)
 
 <br/>
 
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="200" alt="Klivra Logo" />
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="180" alt="Klivra Logo" />
 
 # 🌌 KLIVRA
-### **The Sovereign Intelligence & Strategic Command Nexus**
-*Orchestrating High-Stakes Systems with Absolute Visibility.*
+### **Modern Project Management & Team Collaboration Hub**
+*Real-time visibility for engineering teams.*
 
 ---
 
-[**WEBSITE**](https://klivra.vercel.app/)
+[**🚀 VIEW LIVE APP**](https://klivra.vercel.app/)
 
 ---
 
@@ -20,99 +21,121 @@
 [![Socket.io](https://img.shields.io/badge/Socket.io-Real--Time-010101?style=for-the-badge&logo=socketdotio&logoColor=white)](https://socket.io/)
 [![Tailwind](https://img.shields.io/badge/Tailwind-4.0-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com/)
 [![Three.js](https://img.shields.io/badge/Three.js-3D--Visuals-ffffff?style=for-the-badge&logo=threedotjs&logoColor=black)](https://threejs.org/)
-[![Sentry](https://img.shields.io/badge/Sentry-Stability-362D59?style=for-the-badge&logo=sentry&logoColor=white)](https://sentry.io/)
 
-**Klivra** is a state-of-the-art operational nexus engineered for elite engineering squads. It transcends traditional management by synthesizing real-time telemetry, strategic communications, and visual intelligence into a singular, breathtaking command environment.
+**Klivra** is a high-performance project management platform built for modern engineering teams. It combines real-time task tracking, instant messaging, and collaborative tools into a sleek, professional interface.
 
-[**Core Modules**](#-command-modules) • [**Interface Matrix**](#-the-interface-matrix) • [**Technical DNA**](#-technical-dna) • [**Deployment**](#-deployment)
+[**Features**](#-features) • [**Tech Stack**](#-tech-stack) • [**Architecture**](#-architecture) • [**Setup**](#-setup)
 
 </div>
 
 ---
 
-## 🏛️ Command Modules
+## ✨ Features
 
+<div align="center">
 <table width="100%">
 <tr>
 <td width="50%">
-<h3>🛰️ Executive Intelligence Loop</h3>
-A real-time "Grand Editorial" dashboard. Aggregates global project health, team velocity, and tactical updates. Integrated with <b>NASA APOD</b> telemetry for an immersive, atmospheric command experience.
+<details open>
+<summary>📊 <b>Interactive Dashboard</b></summary>
+<br/>
+A central hub for project health, recent activity, and team updates. Features a daily "Astronomy Picture of the Day" for a professional, inspiring workspace.
+<br/><br/>
+<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Home.jsx">View Source →</a>
+</details>
 </td>
 <td width="50%">
-<h3>🍱 Immersive Kanban Engine</h3>
-A zero-latency execution interface. Features <b>Orbital Dependency Mapping</b> to visualize bottlenecks in 3D-space and <b>Execution Risk Scoring</b> to isolate critical-path vulnerabilities.
+<details open>
+<summary>📋 <b>Real-time Kanban</b></summary>
+<br/>
+Highly responsive task management. Drag-and-drop cards, track dependencies, and manage complex projects with zero latency.
+<br/><br/>
+<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Tasks.jsx">View Source →</a>
+</details>
 </td>
 </tr>
 <tr>
 <td width="50%">
-<h3>💬 Strategic Communications</h3>
-Military-grade messaging. Features centralized socket management for zero-latency alerts, integrated <code>@teammate</code> mentions, and polymorphic file intelligence previews.
+<details open>
+<summary>💬 <b>Instant Messaging</b></summary>
+<br/>
+Real-time chat with teammate mentions, file sharing, and instant notifications to keep everyone in sync.
+<br/><br/>
+<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Networking.jsx">View Source →</a>
+</details>
 </td>
 <td width="50%">
-<h3>🎨 Tactical Whiteboard</h3>
-A collaborative architecture canvas. Leverages <b>Three.js</b> and <b>GSAP</b> for fluid, real-time architectural mapping and tactical planning.
+<details open>
+<summary>🎨 <b>Collaborative Whiteboard</b></summary>
+<br/>
+A shared canvas for architectural mapping and planning. Visualize ideas together in real-time.
+<br/><br/>
+<a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/ProjectWhiteboard.jsx">View Source →</a>
+</details>
 </td>
 </tr>
 </table>
-
----
-
-## 🖼️ The Interface Matrix
-
-![Klivra UI Mosaic](file:///C:/Users/asus/.gemini/antigravity/brain/ac45cad6-7e82-408d-b51f-194ee5bf0c64/klivra_ui_mosaic_1776980904536.png)
-
----
-
-## 🧬 Technical DNA
-
-<div align="center">
-<img src="file:///C:/Users/asus/.gemini/antigravity/brain/ac45cad6-7e82-408d-b51f-194ee5bf0c64/klivra_blueprint_tech_1776980962228.png" width="100%" />
 </div>
 
-### **The Neural Frontend**
-*   **Engine**: React 19 (Experimental Performance Mode)
-*   **Orchestration**: TanStack Query (Data Telemetry) & Zustand (Central Neural State)
-*   **Visual Physics**: Framer Motion, GSAP, Three.js (Spatial Rendering)
-*   **Design System**: Custom Glassmorphism Framework with TailwindCSS 4.0
+---
 
-### **The Backend Nexus**
-*   **Core**: Node.js & Express 5 (High-Concurrency Architecture)
-*   **Persistence**: MongoDB with Mongoose (Atomic Polymorphic Schema)
-*   **Real-time Layer**: Socket.io with Redis Clustering for global sync
-*   **Security Architecture**: JWT-AES Encryption, OAuth 2.0 (Google/GitHub), Advanced Rate Limiting
-*   **Global Services**: Cloudinary (Asset Hub), Brevo (SMTP Relay), Web-Push
+## 🖼️ Interface Gallery
+
+![Klivra UI Mosaic](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/scratch/klivra_ui_mosaic.png)
 
 ---
 
-## 📐 System Architecture
+## 💻 Tech Stack
 
-Klivra is governed by the **Distributed Intelligence Pattern (DIP)**:
+<div align="center">
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/scratch/klivra_blueprint_tech.png" width="100%" />
+</div>
 
-> [!IMPORTANT]
-> **Centralized Socket Nexus**: Unlike legacy apps, Klivra consolidates all real-time listeners into a single source of truth (`useSocketStore`). This ensures 100% data integrity, zero event duplication, and ultra-low latency across the grid.
+<br/>
 
-*   **Strategic Narrative Auditing**: Every system event is captured and translated by a custom narrative engine into human-readable tactical logs.
-*   **Atomic Design System**: A strictly governed component library built on high-fidelity primitives (GlassSurface, BaseUI), ensuring visual dominance across every module.
+### **Frontend**
+*   **Framework**: React 19 & Vite
+*   **State**: Zustand & TanStack Query
+*   **UI/UX**: Framer Motion, GSAP, Three.js
+*   **Styling**: TailwindCSS 4.0 (Glassmorphism)
+
+### **Backend**
+*   **Server**: Node.js & Express 5
+*   **Database**: MongoDB & Mongoose
+*   **Real-time**: Socket.io & Redis
+*   **Services**: Cloudinary (Storage), Brevo (Email), Web-Push (Notifications)
 
 ---
 
-## 🚀 Deployment
+## 📐 Architecture
 
-### 1. Initialize Nexus
+Klivra is designed for speed and data integrity:
+
+> [!TIP]
+> **Centralized Real-time Logic**: All live updates are managed through a single store (`useSocketStore.js`). This ensures that notifications and messages appear instantly across all tabs without duplication.
+
+*   **Activity Logging**: Every project update is automatically logged into a readable history feed.
+*   **Component-Driven Design**: Built with reusable, high-quality components for a consistent professional look.
+
+---
+
+## 🚀 Setup
+
+### 1. Clone Project
 ```bash
 git clone https://github.com/JuhaWorks/Klivra.git
 cd Klivra
 ```
 
-### 2. Configure Backend
+### 2. Backend Setup
 ```bash
 cd backend
 npm install
-# Configure .env with MONGO_URI, JWT_SECRET, and REDIS_URL
+# Add your MONGO_URI and JWT_SECRET to .env
 npm run dev
 ```
 
-### 3. Launch Frontend
+### 3. Frontend Setup
 ```bash
 cd ../frontend
 npm install
@@ -123,9 +146,9 @@ npm run dev
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="100" alt="Klivra Logo" />
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="80" alt="Klivra Logo" />
 
-**Engineered for Absolute Visibility.**
+**Professional Project Management.**
 
 [Documentation](https://github.com/JuhaWorks/Klivra) • [Support](https://github.com/JuhaWorks/Klivra) • [API Reference](https://github.com/JuhaWorks/Klivra)
 
