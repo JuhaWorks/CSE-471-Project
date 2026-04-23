@@ -37,9 +37,11 @@
 <tr>
 <td width="50%">
 <details open>
-<summary>📊 <b>Interactive Dashboard</b></summary>
+<summary>📊 <b>Interactive Dashboard & Networking</b></summary>
 <br/>
-A central hub for project health, recent activity, and team updates. Features a daily "Astronomy Picture of the Day" for a professional, inspiring workspace.
+A central hub for project health, activity narratives, and team networking. View teammate intelligence and manage connections in real-time.
+<br/><br/>
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/networking-preview.png" width="100%" alt="Networking Preview" />
 <br/><br/>
 <a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Home.jsx">View Source →</a>
 </details>
@@ -61,6 +63,8 @@ Highly responsive task management. Drag-and-drop cards, track dependencies, and 
 <br/>
 Real-time chat with teammate mentions, file sharing, and instant notifications to keep everyone in sync.
 <br/><br/>
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/messaging-preview.png" width="100%" alt="Messaging Preview" />
+<br/><br/>
 <a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/Networking.jsx">View Source →</a>
 </details>
 </td>
@@ -69,6 +73,8 @@ Real-time chat with teammate mentions, file sharing, and instant notifications t
 <summary>🎨 <b>Collaborative Whiteboard</b></summary>
 <br/>
 A shared canvas for architectural mapping and planning. Visualize ideas together in real-time.
+<br/><br/>
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/whiteboard-preview.png" width="100%" alt="Whiteboard Preview" />
 <br/><br/>
 <a href="https://github.com/JuhaWorks/Klivra/blob/master/frontend/src/pages/ProjectWhiteboard.jsx">View Source →</a>
 </details>
