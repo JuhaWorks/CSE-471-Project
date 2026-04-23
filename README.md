@@ -84,21 +84,6 @@ A shared canvas for architectural mapping and planning. Visualize ideas together
 </div>
 
 ---
-
-## 🖼️ Interface Gallery
-
-![Klivra UI Mosaic](./assets/ui-mosaic.png)
-
----
-
-## 💻 Tech Stack
-
-<div align="center">
-<img src="./assets/tech-blueprint.png" width="100%" />
-</div>
-
-<br/>
-
 ### **Frontend**
 *   **Framework**: React 19 & Vite
 *   **State**: Zustand & TanStack Query
