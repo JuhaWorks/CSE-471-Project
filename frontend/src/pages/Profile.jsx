@@ -12,7 +12,6 @@ import ProgressionCard from '../components/profile/ProgressionCard';
 import GeneralTab from '../components/profile/GeneralTab';
 import ConsistencyMatrix from '../components/profile/ConsistencyMatrix';
 import { CropModal, LevelUpCelebrationModal } from '../components/profile/ProfileModals';
-import NotificationSettings from '../components/notifications/NotificationSettings';
 
 // Utils
 import getCroppedImg from '../utils/getCroppedImg';
@@ -40,7 +39,6 @@ export default function Profile() {
     const [skillInput, setSkillInput] = useState('');
     const [profileLoading, setProfileLoading] = useState(false);
     const [saved, setSaved] = useState(false);
-    const [activeTab, setActiveTab] = useState('profile');
 
     // Heatmap Query
     const { data: heatmapData } = useQuery({
@@ -189,60 +187,27 @@ export default function Profile() {
 
                     {/* Right Column */}
                     <div className="space-y-6">
-                        {/* Tab Switcher */}
-                        <div className="flex gap-1 p-1 bg-sunken rounded-2xl w-fit">
-                            <button
-                                onClick={() => setActiveTab('profile')}
-                                className={cn(
-                                    "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    activeTab === 'profile' ? "bg-surface text-theme shadow-sm" : "text-tertiary hover:text-primary"
-                                )}
-                            >
-                                Profile
-                            </button>
-                            <button
-                                onClick={() => setActiveTab('notifications')}
-                                className={cn(
-                                    "px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all",
-                                    activeTab === 'notifications' ? "bg-surface text-theme shadow-sm" : "text-tertiary hover:text-primary"
-                                )}
-                            >
-                                Notifications
-                            </button>
-                        </div>
-
                         <AnimatePresence mode="wait">
-                            {activeTab === 'profile' ? (
-                                <motion.div 
-                                    key="profile-tab"
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                    className="space-y-6"
-                                >
-                                    <GeneralTab 
-                                        user={user}
-                                        form={form}
-                                        setForm={setForm}
-                                        skillInput={skillInput}
-                                        setSkillInput={setSkillInput}
-                                        setStatus={setStatus}
-                                        saveProfile={saveProfile}
-                                        profileLoading={profileLoading}
-                                        saved={saved}
-                                    />
-                                    <ConsistencyMatrix heatmapData={heatmapData} />
-                                </motion.div>
-                            ) : (
-                                <motion.div 
-                                    key="notifications-tab"
-                                    initial={{ opacity: 0, x: 10 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -10 }}
-                                >
-                                    <NotificationSettings />
-                                </motion.div>
-                            )}
+                            <motion.div 
+                                key="profile-tab"
+                                initial={{ opacity: 0, x: 10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -10 }}
+                                className="space-y-6"
+                            >
+                                <GeneralTab 
+                                    user={user}
+                                    form={form}
+                                    setForm={setForm}
+                                    skillInput={skillInput}
+                                    setSkillInput={setSkillInput}
+                                    setStatus={setStatus}
+                                    saveProfile={saveProfile}
+                                    profileLoading={profileLoading}
+                                    saved={saved}
+                                />
+                                <ConsistencyMatrix heatmapData={heatmapData} />
+                            </motion.div>
                         </AnimatePresence>
                     </div>
                 </div>

@@ -180,8 +180,9 @@ const createTask = async (req, res, next) => {
         const room = task.project?._id?.toString() || task.project?.toString();
         getIO().to(room).emit('taskUpdated', populatedTask);
         if (taskAssignees.length > 0) {
-            for (const recipientId of taskAssignees) {
-                if (recipientId.toString() === req.user._id.toString()) continue;
+            const uniqueAssignees = [...new Set(taskAssignees.map(id => id.toString()))];
+            for (const recipientId of uniqueAssignees) {
+                if (recipientId === req.user._id.toString()) continue;
 
                 await notificationService.notify({
                     recipientId,

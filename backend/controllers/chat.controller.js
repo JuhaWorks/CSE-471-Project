@@ -177,19 +177,32 @@ const sendMessage = async (req, res, next) => {
             logger.warn(`Socket dispatch failed for newMessage: ${sErr.message}`);
         }
 
-        // 5. Create Database Notifications
-        const otherParticipants = chat.participants.filter(p => p.toString() !== req.user._id.toString());
+        // 5. Create Database Notifications & Handle Mentions
+        const uniqueParticipants = [...new Set(chat.participants.map(p => p.toString()))];
+        const otherParticipants = uniqueParticipants.filter(pId => pId !== req.user._id.toString());
+        
+        // Mention Detection Regex: @[name](id) or @name
+        const mentions = [];
+        if (content && typeof content === 'string') {
+            const mentionRegex = /@\[([^\]]+)\]\(([^)]+)\)/g;
+            let match;
+            while ((match = mentionRegex.exec(content)) !== null) {
+                mentions.push(match[2]);
+            }
+        }
+
         otherParticipants.forEach(async (pId) => {
             try {
+                const isMentioned = mentions.includes(pId);
                 await notificationService.notify({
                     recipientId: pId,
                     senderId: req.user._id,
-                    type: 'Chat',
-                    priority: 'Medium',
-                    title: `New message from ${req.user.name}`,
+                    type: isMentioned ? 'Mention' : 'Chat',
+                    priority: isMentioned ? 'High' : 'Medium',
+                    title: isMentioned ? `Mentioned by ${req.user.name}` : `New message from ${req.user.name}`,
                     message: content ? (content.length > 50 ? content.substring(0, 47) + '...' : content) : (type === 'image' ? 'Sent a photo' : 'Sent an attachment'),
                     link: '/chat',
-                    metadata: { chatId: targetChatId }
+                    metadata: { chatId: targetChatId, messageId: message._id }
                 });
             } catch (err) {
                 logger.error(`Failed to dispatch chat notification: ${err.message}`);

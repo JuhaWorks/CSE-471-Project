@@ -761,11 +761,24 @@ const deleteNotification = catchAsync(async (req, res) => {
 });
 
 const updateNotificationPreferences = catchAsync(async (req, res) => {
+    const prefs = req.body;
+    
+    // Server-side normalization to prevent data corruption from legacy clients
+    if (prefs.categories) {
+        Object.keys(prefs.categories).forEach(key => {
+            const val = prefs.categories[key];
+            if (typeof val === 'boolean') {
+                prefs.categories[key] = { email: val, inApp: val, push: val };
+            }
+        });
+    }
+
     const user = await User.findByIdAndUpdate(
         req.user._id,
-        { notificationPrefs: req.body },
+        { notificationPrefs: prefs },
         { new: true, runValidators: true }
     ).select('notificationPrefs');
+    
     res.status(200).json({ status: 'success', data: user.notificationPrefs });
 });
 

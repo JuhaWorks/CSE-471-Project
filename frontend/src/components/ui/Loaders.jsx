@@ -74,34 +74,56 @@ export const PrecisionSpinner = memo(({ diameter = 64 }) => {
 export const KlivraLogo = memo(({ pulse = true }) => {
     return (
         <motion.div 
-            animate={pulse ? { 
-                opacity: [0.4, 1, 0.4],
-                scale: [0.98, 1, 0.98]
-            } : {}} 
-            transition={{ 
-                repeat: Infinity, 
-                duration: 3, 
-                ease: "easeInOut" 
-            }}
-            className="flex items-center gap-4"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="flex flex-col items-center gap-6"
         >
-            {/* Branded Logo Container */}
-            <div className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_32px_rgba(0,0,0,0.4)] border border-white/10 bg-transparent flex items-center justify-center backdrop-blur-xl relative group">
-                <div className="absolute inset-0 bg-theme/5 opacity-50" />
+            {/* Branded Logo Container with "Pop" Pulse */}
+            <motion.div 
+                animate={pulse ? { 
+                    scale: [1, 1.08, 1],
+                    filter: ["brightness(1)", "brightness(1.3) contrast(1.1)", "brightness(1)"],
+                    boxShadow: [
+                        "0 4px 32px rgba(0,0,0,0.4)",
+                        "0 12px 48px rgba(34,211,238,0.3)",
+                        "0 4px 32px rgba(0,0,0,0.4)"
+                    ]
+                } : {}} 
+                transition={{ 
+                    repeat: Infinity, 
+                    duration: 3, 
+                    ease: "easeInOut" 
+                }}
+                className="shrink-0 w-24 h-16 rounded-[2rem] overflow-hidden border border-white/10 bg-transparent flex items-center justify-center backdrop-blur-3xl relative group"
+            >
+                <div className="absolute inset-0 bg-theme/10 opacity-30 group-hover:opacity-50 transition-opacity" />
                 <img 
                     src="/logo.png" 
                     alt="Klivra logo" 
-                    className="w-full h-full object-contain invert opacity-95 relative z-10 p-1.5"
+                    className="w-full h-full object-contain invert opacity-95 relative z-10 p-3"
                 />
-            </div>
+            </motion.div>
             
-            {/* Brand Wordmark */}
-            <div className="flex flex-col">
-                <span className="text-3xl font-black tracking-tighter text-white leading-none">
+            {/* Brand Wordmark with Fading Reveal */}
+            <motion.div 
+                animate={pulse ? {
+                    opacity: [0.3, 1, 0.3]
+                } : {}}
+                transition={{
+                    repeat: Infinity,
+                    duration: 3,
+                    ease: "easeInOut",
+                    delay: 0.5
+                }}
+                className="flex flex-col items-center"
+            >
+                <span className="text-4xl font-black tracking-[-0.08em] text-white leading-none uppercase">
                     klivra
                 </span>
-                <div className="h-0.5 w-full bg-gradient-to-right from-theme to-transparent opacity-30 mt-1 rounded-full" />
-            </div>
+                <span className="text-[10px] font-black tracking-[0.4em] text-theme/60 mt-2 uppercase">
+                    Core Intelligence
+                </span>
+            </motion.div>
         </motion.div>
     );
 });

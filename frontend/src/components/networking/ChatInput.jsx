@@ -6,6 +6,7 @@ import { cn } from '../../utils/cn';
 import { useSocketStore } from '../../store/useSocketStore';
 import { useChatStore } from '../../store/useChatStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import MentionInput from '../ui/MentionInput';
 
 // ─── Client-side image compression (no extra deps) ───────────────────────────
 const MAX_IMAGE_PX = 1200;
@@ -58,6 +59,7 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
     const { socket } = useSocketStore();
     const { activeChat } = useChatStore();
     const { user } = useAuthStore();
+    const [mentionedIds, setMentionedIds] = useState([]);
     const typingTimeoutRef = useRef(null);
     const isTypingRef = useRef(false);
 
@@ -156,17 +158,20 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
         if ((!input.trim() && !attachments.length) || disabled || uploading) return;
         setUploading(true);
         try {
+            const payload = { content: input.trim(), mentionedIds };
+            
             // Send one attachment at a time (enterprise pattern: individual messages per file)
             if (attachments.length > 0) {
                 for (const att of attachments) {
-                    await onSend({ content: input.trim(), attachments: [att] });
+                    await onSend({ ...payload, attachments: [att] });
                 }
-                if (!attachments.length && input.trim()) await onSend({ content: input.trim(), attachments: [] });
+                if (!attachments.length && input.trim()) await onSend({ ...payload, attachments: [] });
             } else {
-                await onSend({ content: input.trim(), attachments: [] });
+                await onSend({ ...payload, attachments: [] });
             }
         } finally {
             setInput('');
+            setMentionedIds([]);
             setAttachments([]);
             setShowEmoji(false);
             setUploading(false);
@@ -262,13 +267,15 @@ const ChatInput = ({ onSend, disabled, placeholder = 'Type a message…', replyT
 
                 {/* Input capsule */}
                 <div className="flex-1 flex items-end bg-white/[0.03] hover:bg-white/[0.05] border border-white/5 rounded-[1.5rem] py-2 px-5 transition-all focus-within:bg-white/[0.06] focus-within:border-white/10" ref={emojiRef}>
-                    <textarea
+                    <MentionInput
                         ref={textareaRef}
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        onChange={setInput}
+                        onMentionChange={setMentionedIds}
                         onKeyDown={handleKeyDown}
                         placeholder={replyTo ? `Reply...` : placeholder}
-                        rows={1}
+                        members={activeChat?.participants || []}
+                        disabled={disabled || uploading}
                         className="flex-1 bg-transparent border-none !border-none outline-none !outline-none ring-0 !ring-0 focus:ring-0 focus:outline-none text-[15px] py-1.5 px-0.5 resize-none font-bold text-primary placeholder:text-white/30 custom-scrollbar max-h-[160px] tracking-tight leading-relaxed"
                     />
                     {/* Emoji */}

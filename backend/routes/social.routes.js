@@ -38,6 +38,7 @@ notificationRouter.use(protect);
 notificationRouter.get('/', userCtrl.getNotifications);
 notificationRouter.patch('/read-all', userCtrl.markAllAsRead);
 notificationRouter.patch('/:id/read', userCtrl.markAsRead);
+notificationRouter.delete('/:id', userCtrl.deleteNotification);
 notificationRouter.put('/preferences', userCtrl.updateNotificationPreferences);
 notificationRouter.post('/test', userCtrl.sendTestNotification);
 

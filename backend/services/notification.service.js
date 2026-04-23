@@ -73,7 +73,12 @@ class NotificationService {
                 'StatusUpdate': 'statusUpdates',
                 'MetadataUpdate': 'updates',
                 'Comment': 'comments',
-                'Chat': 'messages'
+                'Chat': 'messages',
+                'Security': 'security',
+                'ConnectionRequest': 'updates', // Categorize under updates for now
+                'ConnectionAccepted': 'updates',
+                'Endorsement': 'updates',
+                'System': 'updates'
             };
             const prefKey = CATEGORY_MAP[type];
 

@@ -65,8 +65,9 @@ const getApod = async (req, res, next) => {
                         title: response.data.title,
                         explanation: response.data.explanation,
                         author: response.data.copyright || 'NASA',
-                        url: response.data.media_type === 'video' ? (response.data.thumbnail_url || response.data.url) : response.data.url,
+                        url: response.data.media_type === 'video' ? (response.data.url || response.data.thumbnail_url) : response.data.url,
                         date: response.data.date,
+                        mediaType: response.data.media_type
                     };
                     break;
                 }
@@ -85,6 +86,7 @@ const getApod = async (req, res, next) => {
                 author: 'Klivra Intelligence',
                 url: 'https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=1200&auto=format&fit=crop', 
                 date: new Date().toISOString().split('T')[0],
+                mediaType: 'image'
             };
         }
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useQuery } from '@tanstack/react-query';
 import {
     Search, Bell, Menu, User, Settings, LogOut, Command, ChevronDown, Users2
 } from 'lucide-react';
@@ -36,23 +37,21 @@ const TopBar = () => {
     const dropdownRef = useRef(null);
     const { socket } = useSocketStore();
 
-    useEffect(() => {
-        const fetchInitialUnread = async () => {
-            try {
-                const { data } = await api.get('/notifications?unread=true&limit=1');
-                setUnreadCount(data.unreadCount);
-            } catch (err) { /* silent */ }
-        };
-        fetchInitialUnread();
-    }, []);
+    // Unread Count Sync
+    const { data: countData } = useQuery({
+        queryKey: ['unread-notifications-count'],
+        queryFn: async () => {
+            const { data } = await api.get('/notifications/unread/count');
+            return data.count;
+        },
+        refetchInterval: 60000, // Poll every minute as backup
+    });
 
     useEffect(() => {
-        if (socket) {
-            const handleNew = () => setUnreadCount(prev => prev + 1);
-            socket.on('newNotification', handleNew);
-            return () => socket.off('newNotification', handleNew);
+        if (countData !== undefined) {
+            setUnreadCount(countData);
         }
-    }, [socket]);
+    }, [countData]);
     
     // Responsive Detection
     const isMobile = useMediaQuery('(max-width: 1024px)');
@@ -91,7 +90,18 @@ const TopBar = () => {
 
                     {/* Brand Logo */}
                     <Link to="/" className="flex items-center gap-3 shrink-0 group mr-6 outline-none rounded-xl">
-                        <div className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.2)] border border-white/10 transition-transform duration-300 group-hover:scale-105 bg-transparent flex items-center justify-center">
+                        <motion.div 
+                            animate={{ 
+                                scale: [1, 1.05, 1],
+                                opacity: [1, 0.8, 1] 
+                            }}
+                            transition={{ 
+                                repeat: Infinity, 
+                                duration: 3, 
+                                ease: "easeInOut" 
+                            }}
+                            className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_16px_rgba(0,0,0,0.2)] border border-white/10 bg-transparent flex items-center justify-center"
+                        >
                             <img 
                                 src="/logo.png" alt="Klivra logo" 
                                 fetchPriority="high" 
@@ -100,11 +110,15 @@ const TopBar = () => {
                                     isDark ? "invert" : ""
                                 ))}
                             />
-                        </div>
+                        </motion.div>
                         <div className="flex flex-col min-w-0">
-                            <span className="text-2xl font-black tracking-tight text-primary leading-none mt-0.5 transition-colors duration-200 group-hover:text-theme">
+                            <motion.span 
+                                animate={{ opacity: [1, 0.7, 1] }}
+                                transition={{ repeat: Infinity, duration: 3, delay: 0.5 }}
+                                className="text-2xl font-black tracking-tight text-primary leading-none mt-0.5 transition-colors duration-200 group-hover:text-theme"
+                            >
                                 klivra
-                            </span>
+                            </motion.span>
                         </div>
                     </Link>
 

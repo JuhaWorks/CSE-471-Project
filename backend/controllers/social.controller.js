@@ -123,7 +123,19 @@ const sendRequest = async (req, res, next) => {
 
         // Notify recipient in real-time
         try {
-            getIO().to(recipientId).emit('connection:received', {
+            const notificationService = require('../services/notification.service');
+            await notificationService.notify({
+                recipientId,
+                senderId: requesterId,
+                type: 'ConnectionRequest',
+                priority: 'Medium',
+                title: 'New Connection Request',
+                message: `${req.user.name} wants to connect with you.`,
+                link: '/networking?tab=requests',
+                metadata: { connectionId: connection._id }
+            });
+
+            getIO().to(`user_${recipientId}`).emit('connection:received', {
                 request: await Connection.findById(connection._id).populate('requester', 'name email avatar role status customMessage').lean(),
                 message: `${req.user.name} sent you a connection request.`
             });
@@ -211,7 +223,21 @@ const respondToRequest = async (req, res, next) => {
 
         // Notify requester in real-time
         try {
-            getIO().to(updatedConnection.requester.toString()).emit('connection:status_updated', {
+            if (action === 'accept') {
+                const notificationService = require('../services/notification.service');
+                await notificationService.notify({
+                    recipientId: updatedConnection.requester,
+                    senderId: updatedConnection.recipient,
+                    type: 'ConnectionAccepted',
+                    priority: 'Medium',
+                    title: 'Connection Accepted',
+                    message: `${req.user.name} accepted your connection request!`,
+                    link: `/networking/profile/${updatedConnection.recipient}`,
+                    metadata: { connectionId: updatedConnection._id }
+                });
+            }
+
+            getIO().to(`user_${updatedConnection.requester.toString()}`).emit('connection:status_updated', {
                 connectionId: updatedConnection._id,
                 status: updatedConnection.status,
                 responderName: req.user.name,
@@ -890,6 +916,24 @@ const toggleEndorsement = async (req, res, next) => {
             res.status(200).json({ status: 'success', action: 'removed' });
         } else {
             await Endorsement.create({ fromUser: fromUserId, toUser: toUserId, skillName });
+            
+            // Notify recipient
+            try {
+                const notificationService = require('../services/notification.service');
+                await notificationService.notify({
+                    recipientId: toUserId,
+                    senderId: fromUserId,
+                    type: 'Endorsement',
+                    priority: 'Low',
+                    title: 'Skill Endorsed',
+                    message: `${req.user.name} endorsed you for ${skillName}.`,
+                    link: `/profile/${toUserId}`,
+                    metadata: { skillName }
+                });
+            } catch (err) {
+                logger.error(`Notification failed in toggleEndorsement: ${err.message}`);
+            }
+
             res.status(201).json({ status: 'success', action: 'added' });
         }
     } catch (error) {

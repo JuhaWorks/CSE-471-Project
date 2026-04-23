@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Bell, Mail, ShieldAlert, Zap, Info, RefreshCw } from 'lucide-react';
 import { useAuthStore, api } from '../../store/useAuthStore';
 import { Button, Card } from '../ui/BaseUI';
-;
 import { motion } from 'framer-motion';
 import { GlassSurface } from '../ui/Aesthetics';
 import { toast } from 'react-hot-toast';
@@ -16,6 +15,17 @@ export default function NotificationsTab() {
     const { user, setUser } = useAuthStore();
     const [saving, setSaving] = useState(false);
     
+    // Normalization helper to bridge legacy boolean prefs to new granular object schema
+    const normalizeCategory = (cat) => {
+        if (typeof cat === 'object' && cat !== null) return { 
+            email: cat.email ?? true, 
+            inApp: cat.inApp ?? true,
+            push: cat.push ?? true 
+        };
+        const val = typeof cat === 'boolean' ? cat : true;
+        return { email: val, inApp: val, push: val };
+    };
+
     // Bind to the new granular schema
     const [prefs, setPrefs] = useState({
         email: user?.notificationPrefs?.email ?? true,
@@ -26,34 +36,64 @@ export default function NotificationsTab() {
             start: user?.notificationPrefs?.quietHours?.start ?? '22:00',
             end: user?.notificationPrefs?.quietHours?.end ?? '08:00'
         },
-        // Matrix Toggles
         categories: {
-            mentions: user?.notificationPrefs?.categories?.mentions || { email: true, inApp: true },
-            assignments: user?.notificationPrefs?.categories?.assignments || { email: true, inApp: true },
-            deadlines: user?.notificationPrefs?.categories?.deadlines || { email: true, inApp: true },
-            comments: user?.notificationPrefs?.categories?.comments || { email: true, inApp: true },
-            messages: user?.notificationPrefs?.categories?.messages || { email: false, inApp: true },
-            security: user?.notificationPrefs?.categories?.security || { email: true, inApp: true },
-            updates: user?.notificationPrefs?.categories?.updates || { email: true, inApp: true },
+            mentions: normalizeCategory(user?.notificationPrefs?.categories?.mentions),
+            assignments: normalizeCategory(user?.notificationPrefs?.categories?.assignments),
+            deadlines: normalizeCategory(user?.notificationPrefs?.categories?.deadlines),
+            comments: normalizeCategory(user?.notificationPrefs?.categories?.comments),
+            messages: normalizeCategory(user?.notificationPrefs?.categories?.messages),
+            security: normalizeCategory(user?.notificationPrefs?.categories?.security),
+            statusUpdates: normalizeCategory(user?.notificationPrefs?.categories?.statusUpdates),
+            updates: normalizeCategory(user?.notificationPrefs?.categories?.updates),
         }
     });
 
-    const toggleChannel = (category, channel) => {
-        setPrefs(prev => ({
-            ...prev,
-            categories: {
-                ...prev.categories,
-                [category]: {
-                    ...prev.categories[category],
-                    [channel]: !prev.categories[category][channel]
+    // Sync state if user object updates from elsewhere
+    useEffect(() => {
+        if (user?.notificationPrefs) {
+            setPrefs({
+                email: user.notificationPrefs.email ?? true,
+                inApp: user.notificationPrefs.inApp ?? true,
+                frequency: user.notificationPrefs.frequency ?? 'instant',
+                quietHours: {
+                    enabled: user.notificationPrefs.quietHours?.enabled ?? false,
+                    start: user.notificationPrefs.quietHours?.start ?? '22:00',
+                    end: user.notificationPrefs.quietHours?.end ?? '08:00'
+                },
+                categories: {
+                    mentions: normalizeCategory(user.notificationPrefs.categories?.mentions),
+                    assignments: normalizeCategory(user.notificationPrefs.categories?.assignments),
+                    deadlines: normalizeCategory(user.notificationPrefs.categories?.deadlines),
+                    comments: normalizeCategory(user.notificationPrefs.categories?.comments),
+                    messages: normalizeCategory(user.notificationPrefs.categories?.messages),
+                    security: normalizeCategory(user.notificationPrefs.categories?.security),
+                    statusUpdates: normalizeCategory(user.notificationPrefs.categories?.statusUpdates),
+                    updates: normalizeCategory(user.notificationPrefs.categories?.updates),
                 }
-            }
-        }));
+            });
+        }
+    }, [user?.notificationPrefs]);
+
+    const toggleChannel = (category, channel) => {
+        setPrefs(prev => {
+            const currentCat = prev.categories[category];
+            return {
+                ...prev,
+                categories: {
+                    ...prev.categories,
+                    [category]: {
+                        ...currentCat,
+                        [channel]: !currentCat[channel]
+                    }
+                }
+            };
+        });
     };
 
     const handleSave = async () => {
         setSaving(true);
         try {
+            // Note: Route mapping fix - ensure we use the global notification preferences endpoint
             const { data } = await api.put('/notifications/preferences', prefs);
             setUser({ ...user, notificationPrefs: data.data });
             toast.success("Command Center updated successfully");
@@ -190,6 +230,7 @@ export default function NotificationsTab() {
                                     <MatrixRow title="Collaboration Feedback" slug="comments" desc="Reviews on your projects" prefs={prefs.categories.comments} onToggle={(ch) => toggleChannel('comments', ch)} />
                                     <MatrixRow title="Direct Messages" slug="messages" desc="In-app chat message notifications" prefs={prefs.categories.messages} onToggle={(ch) => toggleChannel('messages', ch)} />
                                     <MatrixRow title="Security Alerts" slug="security" desc="Logins & safety audits" prefs={prefs.categories.security} onToggle={(ch) => toggleChannel('security', ch)} />
+                                    <MatrixRow title="Status Updates" slug="statusUpdates" desc="Task status transitions" prefs={prefs.categories.statusUpdates} onToggle={(ch) => toggleChannel('statusUpdates', ch)} />
                                     <MatrixRow title="General Updates" slug="updates" desc="New features & announcements" prefs={prefs.categories.updates} onToggle={(ch) => toggleChannel('updates', ch)} />
                                 </tbody>
                             </table>

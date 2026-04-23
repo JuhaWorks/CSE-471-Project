@@ -66,14 +66,23 @@ const NotificationInbox = ({ isOpen, onClose, onUnreadCountChange }) => {
     useEffect(() => {
         if (socket) {
             const handleNewNotify = (notify) => {
-                setNotifications(prev => [notify, ...prev].slice(0, 50));
+                setNotifications(prev => {
+                    // Critical: Prevent UI duplication if event fires twice or race condition with fetch
+                    if (prev.some(n => n._id === notify._id)) return prev;
+                    return [notify, ...prev].slice(0, 50);
+                });
+                
                 setUnreadCount(prev => (Number(prev) || 0) + 1);
-                if (onUnreadCountChange) onUnreadCountChange((Number(unreadCount) || 0) + 1);
+                
+                // Functional update to parent count to ensure synchronization
+                if (onUnreadCountChange) {
+                    onUnreadCountChange(prev => (Number(prev) || 0) + 1);
+                }
             };
             socket.on('newNotification', handleNewNotify);
             return () => socket.off('newNotification', handleNewNotify);
         }
-    }, [socket, unreadCount]);
+    }, [socket, onUnreadCountChange]);
 
     const markAsRead = async (id) => {
         try {
@@ -103,6 +112,15 @@ const NotificationInbox = ({ isOpen, onClose, onUnreadCountChange }) => {
             setNotifications(prev => prev.filter(n => n._id !== id));
         } catch (error) {
             console.error("Failed to archive notification:", error);
+        }
+    };
+
+    const deleteNotification = async (id) => {
+        try {
+            await api.delete(`/notifications/${id}`);
+            setNotifications(prev => prev.filter(n => n._id !== id));
+        } catch (error) {
+            console.error("Failed to delete notification:", error);
         }
     };
 
@@ -268,10 +286,17 @@ const NotificationInbox = ({ isOpen, onClose, onUnreadCountChange }) => {
                                                         <div className="flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                                                             <button 
                                                                 onClick={(e) => { e.preventDefault(); archiveNotification(n._id); }}
-                                                                className="p-2 rounded-xl bg-white/5 border border-white/5 text-tertiary hover:text-danger hover:bg-danger/10 transition-all"
+                                                                className="p-2 rounded-xl bg-white/5 border border-white/5 text-tertiary hover:text-theme hover:bg-theme/10 transition-all"
                                                                 title="Archive"
                                                             >
                                                                 <Archive className="w-4 h-4" />
+                                                            </button>
+                                                            <button 
+                                                                onClick={(e) => { e.preventDefault(); deleteNotification(n._id); }}
+                                                                className="p-2 rounded-xl bg-white/5 border border-white/5 text-tertiary hover:text-danger hover:bg-danger/10 transition-all"
+                                                                title="Delete"
+                                                            >
+                                                                <Trash2 className="w-4 h-4" />
                                                             </button>
                                                         </div>
                                                     </div>
@@ -318,7 +343,7 @@ const NotificationInbox = ({ isOpen, onClose, onUnreadCountChange }) => {
                         {/* Footer */}
                         <div className="relative z-10 p-6 border-t border-white/10">
                             <Link 
-                                to="/profile?tab=security" 
+                                to="/settings?tab=notifications" 
                                 onClick={onClose}
                                 className="w-full flex items-center justify-center gap-2 py-4 rounded-3xl bg-white/5 border border-white/10 text-sm font-bold text-white hover:bg-white/10 transition-all"
                             >

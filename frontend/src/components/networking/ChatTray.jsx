@@ -88,45 +88,8 @@ const ChatTray = ({ isPageMode = false }) => {
         if (user) {
             fetchChats();
             requestNotificationPermission();
-            const { socket } = useSocketStore.getState();
-            if (socket) {
-                socket.on('newMessage', ({ chat, message }) => {
-                    addIncomingMessage(chat, message);
-                    const isFromMe = message.sender?._id === user._id || message.sender === user._id;
-                    const isCurrentChatOpen = useChatStore.getState().activeChat?._id === chat && isDrawerOpen;
-                    if (!isFromMe && !isCurrentChatOpen) {
-                        const chatObj = useChatStore.getState().chats.find(c => c._id === chat);
-                        fireChatNotification(message, chatObj, user, () => {
-                            setDrawerOpen(true);
-                            setActiveChat(chatObj);
-                        });
-                    }
-                });
-                socket.on('typing', ({ chat, userId, isTyping }) => {
-                    setTyping(chat, userId, isTyping);
-                });
-                socket.on('messageDeleted', ({ chat, messageId }) => {
-                    handleMessageDeleted(chat, messageId);
-                });
-                socket.on('chatCleared', ({ chat, userId }) => {
-                    if (userId === user?._id) {
-                        fetchChats(); // Refresh to update previews
-                        if (useChatStore.getState().activeChat?._id === chat) {
-                            useChatStore.getState().fetchMessages(chat);
-                        }
-                    }
-                });
-            }
         }
-        return () => {
-            const { socket } = useSocketStore.getState();
-            if (socket) {
-                socket.off('newMessage');
-                socket.off('typing');
-                socket.off('messageDeleted');
-            }
-        };
-    }, [user, fetchChats, addIncomingMessage, setTyping, isDrawerOpen, setDrawerOpen, setActiveChat, handleMessageDeleted]);
+    }, [user, fetchChats]);
 
     const isMobile = useMediaQuery('(max-width: 768px)');
     const bubbledChats = chats.filter(c => bubbledChatIds.includes(c._id));

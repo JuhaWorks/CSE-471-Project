@@ -4,6 +4,8 @@ import { toast } from 'react-hot-toast';
 import { useAuthStore } from './useAuthStore';
 import { useChatStore } from './useChatStore';
 import { startTransition } from 'react';
+import { getOptimizedAvatar } from '../utils/avatar';
+import { Bell } from 'lucide-react';
 
 const BACKEND_URL = import.meta.env.VITE_SOCKET_URL || 
                     import.meta.env.VITE_BACKEND_URL || 
@@ -54,12 +56,20 @@ export const useSocketStore = create((set, get) => ({
         };
 
         socket.on('connect', () => {
+            const user = useAuthStore.getState().user;
             set({ isConnected: true });
+            
             // Immediately request fresh presence on every (re)connect
             socket.emit('requestPresenceSync');
+            
+            // Join personal room and all chat rooms
+            if (user?._id) {
+                socket.emit('join_chat', `user_${user._id}`);
+            }
             joinAllChats();
+            
             startHeartbeat();
-            console.log('🚀 Socket connected');
+            console.log('🚀 Socket connected and rooms joined');
         });
 
         socket.on('reconnect', () => {
@@ -92,8 +102,28 @@ export const useSocketStore = create((set, get) => ({
             startTransition(() => set({ onlineUsers: users }));
         });
 
-        socket.on('projectActivity', ({ userName, action }) => {
-            toast(`${userName} ${action}`, {
+        socket.on('project_activity', (populated) => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['projectActivity', populated.entityId] });
+                queryClient.invalidateQueries({ queryKey: ['taskActivity', populated.entityId] });
+            }
+
+            // Humanize action name
+            const actionMap = {
+                'CommentAdded': 'added a comment',
+                'TaskCreated': 'created a task',
+                'TaskUpdated': 'updated a task',
+                'StatusChanged': 'changed task status',
+                'AssignmentChanged': 'updated assignments',
+                'DeadlineUpdated': 'changed a deadline',
+                'MetadataUpdated': 'updated task details'
+            };
+
+            const actionLabel = actionMap[populated.action] || populated.action.toLowerCase();
+            const userName = populated.user?.name || 'Teammate';
+
+            toast(`${userName} ${actionLabel}`, {
                 icon: '🚀',
                 style: {
                     borderRadius: '16px',
@@ -101,10 +131,30 @@ export const useSocketStore = create((set, get) => ({
                     color: '#fff',
                     border: '1px solid rgba(255,255,255,0.1)',
                     fontSize: '13px',
-                    fontWeight: '500'
+                    fontWeight: '500',
+                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                 },
                 position: 'bottom-right'
             });
+        });
+
+        socket.on('workspace_activity', (populated) => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['workspaceActivity'] });
+            }
+        });
+
+        socket.on('commentAdded', ({ taskId, comment }) => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['taskComments', taskId] });
+                queryClient.invalidateQueries({ queryKey: ['taskActivity', taskId] });
+            }
+        });
+
+        socket.on('typing', ({ chat, userId, isTyping }) => {
+            useChatStore.getState().setTyping(chat, userId, isTyping);
         });
 
         socket.on('statusUpdated', (newStatus) => {
@@ -125,7 +175,10 @@ export const useSocketStore = create((set, get) => ({
             if (queryClient) {
                 queryClient.invalidateQueries({ queryKey: ['tasks'] });
                 queryClient.invalidateQueries({ queryKey: ['workspace-stats'] });
-                if (task?._id) queryClient.invalidateQueries({ queryKey: ['task', task._id] });
+                if (task?._id) {
+                    queryClient.invalidateQueries({ queryKey: ['task', task._id] });
+                    queryClient.invalidateQueries({ queryKey: ['taskActivity', task._id] });
+                }
             }
         });
 
@@ -143,6 +196,7 @@ export const useSocketStore = create((set, get) => ({
                 queryClient.invalidateQueries({ queryKey: ['projects'] });
                 queryClient.invalidateQueries({ queryKey: ['project-detail'] });
                 queryClient.invalidateQueries({ queryKey: ['workspace-stats'] });
+                queryClient.invalidateQueries({ queryKey: ['projectActivity'] });
             }
         });
 
@@ -209,7 +263,44 @@ export const useSocketStore = create((set, get) => ({
         // --- REAL-TIME CHAT SYNCHRONIZATION ---
         socket.on('newMessage', ({ chat, message }) => {
             console.log('📬 New real-time message received:', chat);
-            useChatStore.getState().addIncomingMessage(chat, message);
+            const chatStore = useChatStore.getState();
+            const authStore = useAuthStore.getState();
+            const user = authStore.user;
+
+            chatStore.addIncomingMessage(chat, message);
+
+            // Chat Notification Logic
+            const isFromMe = message.sender?._id === user?._id || message.sender === user?._id;
+            const isCurrentChatOpen = chatStore.activeChat?._id === chat && chatStore.isDrawerOpen;
+
+            if (!isFromMe && !isCurrentChatOpen) {
+                const chatObj = chatStore.chats.find(c => c._id === chat);
+                const chatName = chatObj?.type === 'group' ? chatObj.name : (message.sender?.name || 'Someone');
+                const preview = (message.content || '').slice(0, 50);
+
+                // Use centralized toast for chat messages too
+                toast(`${chatName}: ${preview}`, {
+                    icon: '💬',
+                    style: {
+                        borderRadius: '16px',
+                        background: '#09090b',
+                        color: '#fff',
+                        border: '1px solid rgba(34,211,238,0.2)',
+                        fontSize: '13px',
+                        fontWeight: '600'
+                    },
+                    position: 'bottom-right',
+                    onClick: () => {
+                        chatStore.setDrawerOpen(true);
+                        if (chatObj) chatStore.setActiveChat(chatObj);
+                    }
+                });
+
+                // Browser notification
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(chatName, { body: preview, icon: message.sender?.avatar || '/icon.png' });
+                }
+            }
         });
 
         socket.on('messageDeleted', ({ chat, messageId }) => {
@@ -217,11 +308,54 @@ export const useSocketStore = create((set, get) => ({
             useChatStore.getState().handleMessageDeleted(chat, messageId);
         });
 
+        socket.on('chatCleared', ({ chat, userId }) => {
+            const user = useAuthStore.getState().user;
+            if (userId === user?._id) {
+                useChatStore.getState().fetchChats();
+                if (useChatStore.getState().activeChat?._id === chat) {
+                    useChatStore.getState().fetchMessages(chat);
+                }
+            }
+        });
+
         socket.on('newNotification', (notification) => {
             const queryClient = get().queryClient;
             if (queryClient) {
                 queryClient.invalidateQueries({ queryKey: ['notifications'] });
                 queryClient.invalidateQueries({ queryKey: ['unread-notifications-count'] });
+            }
+
+            // Centralized Notification Toast
+            toast(notification.message, {
+                icon: notification.priority === 'High' ? '🔥' : '🔔',
+                style: {
+                    borderRadius: '16px',
+                    background: '#09090b',
+                    color: '#fff',
+                    border: notification.priority === 'High' ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.1)',
+                    fontSize: '13px',
+                    fontWeight: '600',
+                    boxShadow: '0 10px 40px rgba(0,0,0,0.6)'
+                },
+                position: 'top-right',
+                duration: 5000
+            });
+        });
+
+        // ── NETWORKING EVENTS ──
+        socket.on('connection:received', () => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['pending-connections'] });
+                queryClient.invalidateQueries({ queryKey: ['networking-stats'] });
+            }
+        });
+
+        socket.on('connection:status_updated', () => {
+            const queryClient = get().queryClient;
+            if (queryClient) {
+                queryClient.invalidateQueries({ queryKey: ['connections'] });
+                queryClient.invalidateQueries({ queryKey: ['networking-stats'] });
             }
         });
 

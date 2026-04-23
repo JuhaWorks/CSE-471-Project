@@ -108,7 +108,7 @@ const NotificationHistoryWidget = ({ className, limit = 5, variant = 'card' }) =
                                 <p className="text-[8px] font-black text-tertiary uppercase tracking-widest mt-1 opacity-40">Direct Telemetry</p>
                             </div>
                         </div>
-                        <Link to="/profile?tab=notifications" className="p-2 rounded-lg hover:bg-white/5 text-tertiary transition-colors">
+                        <Link to="/settings?tab=notifications" className="p-2 rounded-lg hover:bg-white/5 text-tertiary transition-colors">
                             <ExternalLink className="w-3.5 h-3.5" />
                         </Link>
                     </div>

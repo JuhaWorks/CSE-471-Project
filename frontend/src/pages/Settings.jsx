@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSearchParams } from 'react-router-dom';
 import {
     User, Shield, Bell, Palette, AlertCircle,
     Settings as SettingsIcon, ChevronRight, Globe,
@@ -67,7 +68,24 @@ const TabButton = ({ tab, active, onClick }) => {
 
 export default function Settings() {
     const { user } = useAuthStore();
-    const [activeTab, setActiveTab] = useState('general');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const tabParam = searchParams.get('tab');
+    
+    // Validate tabParam against available TABS
+    const initialTab = TABS.find(t => t.id === tabParam) ? tabParam : 'general';
+    const [activeTab, setActiveTab] = useState(initialTab);
+
+    // Sync activeTab with URL if tab param exists
+    useEffect(() => {
+        if (tabParam && TABS.find(t => t.id === tabParam) && tabParam !== activeTab) {
+            setActiveTab(tabParam);
+        }
+    }, [tabParam]);
+
+    const handleTabChange = (id) => {
+        setActiveTab(id);
+        setSearchParams({ tab: id });
+    };
 
     return (
         <div className="flex flex-col gap-8 pb-20">
@@ -102,7 +120,7 @@ export default function Settings() {
                                     key={tab.id}
                                     tab={tab}
                                     active={activeTab === tab.id}
-                                    onClick={setActiveTab}
+                                    onClick={handleTabChange}
                                 />
                             ))}
                         </div>
