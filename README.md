@@ -1,7 +1,5 @@
 <div align="center">
 
-![Klivra Grand Vision](https://raw.githubusercontent.com/JuhaWorks/Klivra/master/assets/hero-banner.png)
-
 <br/>
 
 <img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="180" alt="Klivra Logo" />
