@@ -3,7 +3,7 @@
 
 <br/>
 
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="160" alt="Klivra Logo" />
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="200" alt="Klivra Logo" />
 
 # 🌌 KLIVRA
 ### **The Sovereign Intelligence & Strategic Command Nexus**
@@ -22,9 +22,9 @@
 [![Three.js](https://img.shields.io/badge/Three.js-3D--Visuals-ffffff?style=for-the-badge&logo=threedotjs&logoColor=black)](https://threejs.org/)
 [![Sentry](https://img.shields.io/badge/Sentry-Stability-362D59?style=for-the-badge&logo=sentry&logoColor=white)](https://sentry.io/)
 
-**Klivra** is a high-fidelity operational hub designed for elite engineering squads. It transcends traditional management by synthesizing real-time telemetry, strategic communications, and visual intelligence into a singular, breathtaking command environment.
+**Klivra** is a state-of-the-art operational nexus engineered for elite engineering squads. It transcends traditional management by synthesizing real-time telemetry, strategic communications, and visual intelligence into a singular, breathtaking command environment.
 
-[**Core Modules**](#-command-modules) • [**Interface Gallery**](#-the-interface-matrix) • [**Technical DNA**](#-technical-dna) • [**Architecture**](#-system-architecture) • [**Deployment**](#-deployment)
+[**Core Modules**](#-command-modules) • [**Interface Matrix**](#-the-interface-matrix) • [**Technical DNA**](#-technical-dna) • [**Deployment**](#-deployment)
 
 </div>
 
@@ -32,25 +32,28 @@
 
 ## 🏛️ Command Modules
 
-<details open>
-<summary><b>1. Executive Intelligence Loop (EIL)</b></summary>
-A real-time "Grand Editorial" dashboard. Aggregates global project health, team velocity, and tactical updates. Integrated with **NASA APOD** telemetry for an immersive, atmospheric command experience.
-</details>
-
-<details>
-<summary><b>2. Immersive Kanban Engine (IKE)</b></summary>
-A zero-latency execution interface. Features **Orbital Dependency Mapping** to visualize bottlenecks in 3D-space and **Execution Risk Scoring** to isolate critical-path vulnerabilities.
-</details>
-
-<details>
-<summary><b>3. Strategic Communications (S-COM)</b></summary>
-Military-grade messaging. Features centralized socket management for zero-latency alerts, integrated `@teammate` mentions, and polymorphic file intelligence previews.
-</details>
-
-<details>
-<summary><b>4. Tactical Whiteboard (T-WB)</b></summary>
-A collaborative architecture canvas. Leverages **Three.js** and **GSAP** for fluid, real-time architectural mapping and tactical planning.
-</details>
+<table width="100%">
+<tr>
+<td width="50%">
+<h3>🛰️ Executive Intelligence Loop</h3>
+A real-time "Grand Editorial" dashboard. Aggregates global project health, team velocity, and tactical updates. Integrated with <b>NASA APOD</b> telemetry for an immersive, atmospheric command experience.
+</td>
+<td width="50%">
+<h3>🍱 Immersive Kanban Engine</h3>
+A zero-latency execution interface. Features <b>Orbital Dependency Mapping</b> to visualize bottlenecks in 3D-space and <b>Execution Risk Scoring</b> to isolate critical-path vulnerabilities.
+</td>
+</tr>
+<tr>
+<td width="50%">
+<h3>💬 Strategic Communications</h3>
+Military-grade messaging. Features centralized socket management for zero-latency alerts, integrated <code>@teammate</code> mentions, and polymorphic file intelligence previews.
+</td>
+<td width="50%">
+<h3>🎨 Tactical Whiteboard</h3>
+A collaborative architecture canvas. Leverages <b>Three.js</b> and <b>GSAP</b> for fluid, real-time architectural mapping and tactical planning.
+</td>
+</tr>
+</table>
 
 ---
 
@@ -61,6 +64,10 @@ A collaborative architecture canvas. Leverages **Three.js** and **GSAP** for flu
 ---
 
 ## 🧬 Technical DNA
+
+<div align="center">
+<img src="file:///C:/Users/asus/.gemini/antigravity/brain/ac45cad6-7e82-408d-b51f-194ee5bf0c64/klivra_blueprint_tech_1776980962228.png" width="100%" />
+</div>
 
 ### **The Neural Frontend**
 *   **Engine**: React 19 (Experimental Performance Mode)
@@ -116,7 +123,7 @@ npm run dev
 
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="80" alt="Klivra Logo" />
+<img src="https://raw.githubusercontent.com/JuhaWorks/Klivra/master/frontend/public/logo.png" width="100" alt="Klivra Logo" />
 
 **Engineered for Absolute Visibility.**
 
