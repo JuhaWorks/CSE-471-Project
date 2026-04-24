@@ -52,7 +52,9 @@ const styles = `
   .ent-scroll::-webkit-scrollbar-thumb { background: var(--ent-border-2); border-radius: 10px; }
   .ent-task-row {
     display: grid; grid-template-columns: minmax(200px, 1.5fr) 140px 120px 1.2fr; gap: 12px; align-items: center;
-    border-bottom: 1px solid var(--ent-border); transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
+    border-bottom: 1px solid var(--ent-border); 
+    transition: background 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.2s ease; 
+    cursor: pointer;
   }
   .ent-task-row:hover { background: var(--ent-surface-2); transform: translateX(4px); }
   .ent-tag { display: inline-flex; items-center; gap: 6px; font-family: var(--ent-mono); font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 20px; border: 1px solid; }

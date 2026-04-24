@@ -176,14 +176,14 @@ const Layout = ({ checkingAuth }) => {
 
             {/* ── LAYOUT SHELL ─────────────────────────────────────────── */}
             <div className={twMerge(clsx(
-                "fixed inset-x-0 z-50 transition-all duration-300",
-                showNotice ? "top-11" : "top-0"
+                "fixed inset-x-0 z-50 transition-transform duration-300 top-0",
+                showNotice ? "translate-y-11" : "translate-y-0"
             ))}>
                 <TopBar />
             </div>
 
             <div className={twMerge(clsx(
-                "fixed bottom-0 left-0 transition-all duration-300",
+                "fixed bottom-0 left-0 transition-premium",
                 isMobile ? "z-[70] inset-0" : "z-40",
                 "pointer-events-none", // Always transparent to events unless children override it
                 !isMobile ? (showNotice ? "top-[108px]" : "top-16") : ""
@@ -193,7 +193,7 @@ const Layout = ({ checkingAuth }) => {
 
             <main 
                 className={twMerge(clsx(
-                    "flex-1 flex flex-col min-w-0 min-h-screen relative z-20 transition-all duration-300 ease-in-out",
+                    "flex-1 flex flex-col min-w-0 min-h-screen relative z-20 transition-colors duration-300 ease-in-out",
                     showNotice ? "pt-[108px]" : "pt-16"
                 ))} 
                 style={{ transform: 'translateZ(0)', paddingLeft: 'var(--sb-offset)' }}

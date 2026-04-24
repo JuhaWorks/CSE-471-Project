@@ -28,59 +28,38 @@ const STATUS_COLOR = {
 
 const TopBar = () => {
     const { user, logout } = useAuthStore();
-    const { toggleSidebar, isSidebarExpanded } = useUIStore();
+    const { setSidebarExpanded, isSidebarExpanded } = useUIStore();
     const { mode } = useTheme();
     const isDark = mode === MODES.DARK;
+    const isMobile = useMediaQuery('(max-width: 1024px)');
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const dropdownRef = useRef(null);
     const [notificationsOpen, setNotificationsOpen] = useState(false);
     const [unreadCount, setUnreadCount] = useState(0);
-    const dropdownRef = useRef(null);
-    const { socket } = useSocketStore();
 
-    // Unread Count Sync
-    const { data: countData } = useQuery({
-        queryKey: ['unread-notifications-count'],
-        queryFn: async () => {
-            try {
-                const response = await api.get('/notifications/unread/count');
-                return response.data?.data ?? 0;
-            } catch (err) {
-                console.warn('[NOTIF] Failed to fetch unread count:', err.message);
-                return 0;
-            }
-        },
-        refetchInterval: 60000, // Poll every minute as backup
-    });
+    const toggleSidebar = () => {
+        setSidebarExpanded(!isSidebarExpanded);
+    };
 
     useEffect(() => {
-        if (countData !== undefined) {
-            setUnreadCount(countData);
-        }
-    }, [countData]);
-    
-    // Responsive Detection
-    const isMobile = useMediaQuery('(max-width: 1024px)');
-
-    useEffect(() => {
-        const handler = (e) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
                 setDropdownOpen(false);
             }
         };
-        document.addEventListener('mousedown', handler);
-        return () => document.removeEventListener('mousedown', handler);
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
     }, []);
 
     return (
-        <header className="h-16 transition-all duration-300 relative z-50 rounded-b-[3.15rem]">
+        <header className="h-16 transition-colors duration-300 relative z-50 rounded-b-[3.15rem]">
             <div className="absolute inset-0 z-0 overflow-hidden rounded-b-[3.15rem] backdrop-blur-xl bg-base/40">
                 <GlassSurface width="100%" height="100%" borderRadius="0 0 3.15rem 3.15rem" displace={0.5} distortionScale={-20} backgroundOpacity={isDark ? 0.04 : 0.3} opacity={0.93} />
             </div>
-            
-            <div className="w-full h-full flex items-center justify-between pr-4 sm:pr-6 lg:pr-10 pl-0 relative z-10">
-                <div className="flex items-center flex-1 pr-4">
-                    {/* Sidebar Toggle & Alignment Box */}
-                    <div className="w-[80px] flex justify-center shrink-0">
+
+            <div className="relative z-10 h-full px-6 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-4 min-w-0">
+                    <div className="flex items-center gap-2 shrink-0">
                         <button
                             onClick={toggleSidebar}
                             className={twMerge(clsx(
@@ -93,19 +72,11 @@ const TopBar = () => {
                         </button>
                     </div>
 
-                    {/* Brand Logo */}
-                    <Link to="/" className="flex items-center gap-3 shrink-0 group mr-6 outline-none rounded-xl">
+                    <Link to="/" className="flex items-center gap-3 group shrink-0 mr-4">
                         <motion.div 
-                            animate={{ 
-                                scale: [1, 1.05, 1],
-                                opacity: [1, 0.8, 1] 
-                            }}
-                            transition={{ 
-                                repeat: Infinity, 
-                                duration: 3, 
-                                ease: "easeInOut" 
-                            }}
-                            className="shrink-0 w-16 h-11 rounded-xl overflow-hidden shadow-[0_4px_166px_rgba(0,0,0,0.2)] border border-white/10 bg-transparent flex items-center justify-center"
+                            whileHover={{ scale: 1.05 }}
+                            whileActive={{ scale: 0.95 }}
+                            className="w-10 h-8 relative flex items-center justify-center"
                         >
                             <img 
                                 src="/logo.png" alt="Klivra logo" 
@@ -114,7 +85,7 @@ const TopBar = () => {
                                 width={64}
                                 height={44}
                                 className={twMerge(clsx(
-                                    "w-full h-full object-contain transition-all duration-300",
+                                    "w-full h-full object-contain transition-opacity duration-300",
                                     isDark ? "invert" : ""
                                 ))}
                             />
@@ -206,55 +177,46 @@ const TopBar = () => {
                                     initial={{ opacity: 0, scale: 0.95, y: 10 }}
                                     animate={{ opacity: 1, scale: 1, y: 0 }}
                                     exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                    className="absolute right-0 mt-3 w-64 shadow-modal p-2 z-[100] overflow-hidden rounded-[2.5rem] border border-white/10 backdrop-blur-xl bg-black/60"
+                                    className="absolute right-0 mt-2 w-64 glass-2 bg-base/90 backdrop-blur-3xl border border-default rounded-3xl p-2 shadow-2xl overflow-hidden"
                                 >
-                                    <div className="absolute inset-0 z-0 pointer-events-none">
-                                        <GlassSurface 
-                                            width="100%" height="100%" borderRadius={40} displace={0.4} distortionScale={-20} 
-                                            backgroundOpacity={0.08} opacity={0.95} blur={20}
-                                        />
+                                    <div className="p-3 mb-2 bg-sunken/40 rounded-2xl">
+                                        <p className="text-xs font-black text-primary truncate mb-0.5">{user?.name}</p>
+                                        <p className="text-[10px] font-bold text-tertiary truncate">{user?.email}</p>
                                     </div>
 
-                                    <div className="relative z-10">
-                                        <div className="p-5 border-b border-default mb-2">
-                                            <p className="text-sm font-black text-primary tracking-tight">{user?.name}</p>
-                                            <p className="text-[10px] font-bold text-tertiary uppercase tracking-widest truncate mt-0.5">{user?.email}</p>
-                                        </div>
+                                    <div className="space-y-1">
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setDropdownOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-colors duration-200 group"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
+                                                <User className="w-4 h-4 group-hover:text-cyan-500 transition-colors" />
+                                            </div>
+                                            Profile
+                                        </Link>
+                                        <Link
+                                            to="/settings"
+                                            onClick={() => setDropdownOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-colors duration-200 group"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-theme/20 transition-colors">
+                                                <Settings className="w-4 h-4 group-hover:text-theme transition-colors" />
+                                            </div>
+                                            Settings
+                                        </Link>
 
-                                        <div className="space-y-1 p-1">
-                                            <Link
-                                                to="/profile"
-                                                onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-colors duration-200 group"
-                                            >
-                                                <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-cyan-500/20 transition-colors">
-                                                    <User className="w-4 h-4 group-hover:text-cyan-500 transition-colors" />
-                                                </div>
-                                                <span>My Profile</span>
-                                            </Link>
-                                            <Link
-                                                to="/settings"
-                                                onClick={() => setDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-tertiary hover:text-primary hover:bg-sunken transition-colors duration-200 group"
-                                            >
-                                                <div className="w-8 h-8 rounded-xl bg-sunken flex items-center justify-center group-hover:bg-theme/20 transition-colors">
-                                                    <Settings className="w-4 h-4 group-hover:text-theme transition-colors" />
-                                                </div>
-                                                <span>Settings</span>
-                                            </Link>
-                                            
-                                            <div className="h-px bg-default my-2 mx-3" />
+                                        <div className="h-px bg-default mx-2 my-1" />
 
-                                            <button
-                                                onClick={() => { logout(); setDropdownOpen(false); }}
-                                                className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors duration-200 group"
-                                            >
-                                                <div className="w-8 h-8 rounded-xl bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
-                                                    <LogOut className="w-4 h-4" />
-                                                </div>
-                                                <span>Sign Out</span>
-                                            </button>
-                                        </div>
+                                        <button
+                                            onClick={() => { logout(); setDropdownOpen(false); }}
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-sm font-bold text-rose-400/80 hover:text-rose-400 hover:bg-rose-500/10 transition-colors duration-200 group"
+                                        >
+                                            <div className="w-8 h-8 rounded-xl bg-rose-500/5 flex items-center justify-center group-hover:bg-rose-500/20 transition-colors">
+                                                <LogOut className="w-4 h-4" />
+                                            </div>
+                                            Sign Out
+                                        </button>
                                     </div>
                                 </motion.div>
                             )}
@@ -267,4 +229,3 @@ const TopBar = () => {
 };
 
 export default memo(TopBar);
-

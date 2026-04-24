@@ -477,7 +477,7 @@ const SidebarComponent = () => {
                         >
                             {user?.avatar 
                                 ? <img 
-                                    src={getOptimizedAvatar(user.avatar)} 
+                                    src={getOptimizedAvatar(user.avatar, 'xs')} 
                                     alt={user.name} 
                                     width={36} height={36} 
                                     loading="lazy" decoding="async" 
