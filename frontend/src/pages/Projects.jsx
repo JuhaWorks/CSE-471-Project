@@ -292,7 +292,7 @@ const Projects = () => {
                             ))}
                         </div>
 
-                        {user?.role !== PROJECT_ROLES.ADMIN && (
+                        {(user?.role === PROJECT_ROLES.ADMIN || user?.role === PROJECT_ROLES.MANAGER) && (
                             <Button
                                 size="md"
                                 onClick={() => setIsCreateModalOpen(true)}

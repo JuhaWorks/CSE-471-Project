@@ -20,9 +20,10 @@ const TaskDetailModal = lazy(() => import('../components/Kanban/TaskDetailModal'
 import { useSocketStore } from '../store/useSocketStore';
 import { Button, Card, Counter } from '../components/ui/BaseUI';
 import { DeadlinePopup } from '../components/projects/ProjectShared';
+import ProjectCreationModal from '../components/projects/ProjectCreationModal';
 import { cn } from '../utils/cn';
 import { toast } from 'react-hot-toast';
-import { TASK_STATUSES, TASK_PRIORITIES } from '../constants';
+import { TASK_STATUSES, TASK_PRIORITIES, PROJECT_ROLES } from '../constants';
 
 
 // c:\Users\asus\CSE 471 Project\frontend\src\pages\Home.jsx
@@ -143,6 +144,7 @@ const Home = () => {
     const queryClient = useQueryClient();
 
     const [selectedTask, setSelectedTask] = useState(null);
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
     const [greeting, setGreeting] = useState('');
 
     useEffect(() => {
@@ -282,12 +284,11 @@ const Home = () => {
                 </div>
 
                 <div className="ent-dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 380px', gap: 48, alignItems: 'start' }}>
-                    {user?.role !== 'Admin' && (
+                    {(user?.role === PROJECT_ROLES.ADMIN || user?.role === PROJECT_ROLES.MANAGER) && (
                         <Button
                             variant="primary"
                             leftIcon={Plus}
-                            as={Link}
-                            to="/projects"
+                            onClick={() => setIsCreateModalOpen(true)}
                             style={{
                                 fontFamily: 'var(--ent-mono)',
                                 fontSize: 10,
@@ -580,6 +581,8 @@ const Home = () => {
                     </Suspense>
                 )}
             </AnimatePresence>
+
+            <ProjectCreationModal open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen} />
 
         </div>
     );
