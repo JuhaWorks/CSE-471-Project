@@ -8,6 +8,7 @@ import {
     AlertCircle,
     ChevronDown,
     CheckCircle2,
+    Pin,
 } from 'lucide-react';
 import { twMerge } from 'tailwind-merge';
 import { clsx } from 'clsx';
@@ -135,6 +136,7 @@ const TaskCard = React.memo(({
     onOpen,
     onSelect,
     onToggleSubtask,
+    onTogglePin,
     isCompact = false,
 }) => {
     const [isExpanded, setIsExpanded] = useState(false);
@@ -236,6 +238,18 @@ const TaskCard = React.memo(({
                     'flex flex-col',
                     isCompact ? 'gap-2 p-2.5 pl-3.5' : 'gap-2.5 p-3 pl-4.5'
                 ))}>
+                    {/* Pin Toggle */}
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onTogglePin?.(task._id); }}
+                        className={twMerge(clsx(
+                            "absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-300 z-10",
+                            task.isPinned 
+                                ? "bg-theme/20 text-theme border border-theme/30 opacity-100" 
+                                : "text-tertiary/20 hover:text-tertiary hover:bg-white/5 opacity-0 group-hover:opacity-100"
+                        ))}
+                    >
+                        <Pin className={twMerge(clsx("w-3 h-3", task.isPinned && "fill-current"))} />
+                    </button>
 
                     {/* Title row */}
                     <div className="flex items-start gap-2">

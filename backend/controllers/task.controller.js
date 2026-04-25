@@ -68,13 +68,13 @@ const getTasks = async (req, res, next) => {
             .populate('assignee', 'name email avatar')
             .populate('watchers', 'name email avatar')
             .populate('project', 'name color')
-            .select('-__v -description -timeSessions -subtasks') // Payload reduction: omit heavy fields for list views
+            .select('-__v -description -timeSessions -subtasks') 
             .sort('-updatedAt')
             .skip(skip)
             .limit(limit)
             .lean();
 
-        // Standardize assignees for legacy support
+        // Standardize assignees and add isPinned state
         const migratedTasks = tasks.map(task => {
             if (task.assignee && (!task.assignees || task.assignees.length === 0)) {
                 task.assignees = [task.assignee];
@@ -82,6 +82,7 @@ const getTasks = async (req, res, next) => {
             if (!task.assignee && task.assignees?.length > 0) {
                 task.assignee = task.assignees[0];
             }
+            task.isPinned = task.pinnedBy?.some(id => id.toString() === req.user._id.toString()) || false;
             return task;
         });
 
@@ -926,6 +927,35 @@ const toggleReaction = async (req, res, next) => {
         res.status(200).json({ status: 'success', data: comment.reactions });
     } catch (error) { next(error); }
 };
+
+const togglePinTask = async (req, res, next) => {
+    try {
+        const task = await Task.findById(req.params.id);
+        if (!task) {
+            res.status(404);
+            throw new Error('Task not found');
+        }
+
+        const userId = req.user._id;
+        const isPinned = task.pinnedBy.includes(userId);
+
+        if (isPinned) {
+            task.pinnedBy = task.pinnedBy.filter(id => id.toString() !== userId.toString());
+        } else {
+            task.pinnedBy.push(userId);
+        }
+
+        await task.save();
+
+        res.status(200).json({
+            status: 'success',
+            data: { isPinned: !isPinned }
+        });
+    } catch (error) {
+        next(error);
+    }
+};
+
 module.exports = {
     getTasks,
     getTask,
@@ -940,6 +970,7 @@ module.exports = {
     getTaskComments,
     addTaskComment,
     deleteTaskComment,
-    toggleReaction
+    toggleReaction,
+    togglePinTask
 };
 

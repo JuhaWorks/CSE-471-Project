@@ -57,6 +57,10 @@ const projectSchema = new mongoose.Schema(
                     type: Date,
                     default: Date.now,
                 },
+                isPinned: {
+                    type: Boolean,
+                    default: false
+                }
             }
         ],
         // Media Assets

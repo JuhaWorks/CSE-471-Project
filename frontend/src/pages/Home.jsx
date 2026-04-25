@@ -7,7 +7,7 @@ import {
     Plus, Activity, ArrowUpRight, TrendingUp,
     Target, Clock, AlertCircle, CheckCircle2,
     Zap, Briefcase, ChevronRight, MoreHorizontal,
-    Circle, Minus
+    Circle, Minus, Pin
 } from 'lucide-react';
 
 import ApodWidget from '../components/tools/Widgets/ApodWidget';
@@ -203,6 +203,7 @@ const Home = () => {
         return allTasks
             .filter(t => t.status !== TASK_STATUSES[2] && t.status !== TASK_STATUSES[3])
             .sort((a, b) => {
+                if (a.isPinned !== b.isPinned) return b.isPinned ? -1 : 1;
                 const p = { [TASK_PRIORITIES[3]]: 4, [TASK_PRIORITIES[2]]: 3, [TASK_PRIORITIES[1]]: 2, [TASK_PRIORITIES[0]]: 1 };
                 if (p[b.priority] !== p[a.priority]) return p[b.priority] - p[a.priority];
                 return (a.dueDate && b.dueDate) ? new Date(a.dueDate) - new Date(b.dueDate) : 0;
@@ -218,6 +219,14 @@ const Home = () => {
             toast.success('Task updated');
         },
         onError: () => toast.error('Failed to update task'),
+    });
+
+    const togglePinMutation = useMutation({
+        mutationFn: async (id) => (await api.post(`/tasks/${id}/toggle-pin`)).data,
+        onSuccess: () => {
+            queryClient.invalidateQueries(['myTasks']);
+        },
+        onError: () => toast.error('Failed to toggle pin'),
     });
 
     const deleteTaskMutation = useMutation({
@@ -394,8 +403,12 @@ const Home = () => {
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap',
-                                            paddingRight: 20
+                                            paddingRight: 20,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 8
                                         }}>
+                                            {t.isPinned && <Pin className="w-3 h-3 text-theme fill-current" />}
                                             {t.title}
                                         </span>
 
@@ -577,6 +590,7 @@ const Home = () => {
                             onClose={() => setSelectedTask(null)}
                             onUpdate={(id, updates) => updateTaskMutation.mutate({ id, updates })}
                             onDelete={() => deleteTaskMutation.mutate(selectedTask._id)}
+                            onTogglePin={(id) => togglePinMutation.mutate(id)}
                         />
                     </Suspense>
                 )}

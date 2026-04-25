@@ -49,6 +49,10 @@ class NotificationService {
      * Core method to create and dispatch notifications
      */
     async notify({ recipientId, senderId, type, priority = TASK_PRIORITIES[1], title, message, link, metadata }) {
+        if (!recipientId) {
+            logger.warn(`[NOTIFY] Skipped: recipientId is missing for type ${type}`);
+            return null;
+        }
         try {
             // 1. Save to Database
             const notification = await Notification.create({

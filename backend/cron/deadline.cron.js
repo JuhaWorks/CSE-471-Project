@@ -20,7 +20,9 @@ const checkProjectDeadlines = async () => {
         for (const project of projects) {
             if (!project.endDate) continue;
             const timeDiff = project.endDate.getTime() - now.getTime();
-            const managers = project.members.filter(m => m.role === PROJECT_ROLES.MANAGER).map(m => m.userId);
+            const managers = project.members
+                .filter(m => m.role === PROJECT_ROLES.MANAGER && m.userId)
+                .map(m => m.userId);
             if (managers.length === 0) continue;
 
             // Exceeded
@@ -78,6 +80,7 @@ const checkTaskDeadlines = async () => {
         for (const task of tasks) {
             const recipients = task.assignees?.length > 0 ? task.assignees : (task.assignee ? [task.assignee] : []);
             for (const recipientId of recipients) {
+                if (!recipientId) continue;
                 await notificationService.notify({
                     recipientId: recipientId._id || recipientId,
                     type: NOTIFICATION_TYPES.DEADLINE,

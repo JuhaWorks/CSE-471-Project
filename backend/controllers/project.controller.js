@@ -17,31 +17,13 @@ const { TASK_STATUSES, TASK_PRIORITIES, PROJECT_ROLES, MEMBERSHIP_STATUS, NOTIFI
 
 const getProjects = async (req, res, next) => {
     try {
-        const showArchived = req.query.archived === 'true';
-        const query = { 
-            members: { 
-                $elemMatch: { 
-                    userId: req.user._id, 
-                    status: { $nin: [MEMBERSHIP_STATUS.PENDING, MEMBERSHIP_STATUS.REJECTED] } 
-                } 
-            } 
-        };
-        if (showArchived) query.deletedAt = { $ne: null };
-        else query.deletedAt = null;
-
-        const projects = await Project.find(query)
-            .populate('members.userId', 'name email avatar')
-            .select('name description status category startDate endDate coverImageUrl members.userId members.status createdBy')
-            .sort('-createdAt')
-            .lean();
-
-        // Filter out pending/rejected members so the frontend team count is accurate
-        const formattedProjects = projects.map(p => ({
-            ...p,
-            members: (p.members || []).filter(m => m.status !== MEMBERSHIP_STATUS.PENDING && m.status !== MEMBERSHIP_STATUS.REJECTED)
+        const archived = req.query.archived === 'true';
+        const projects = await Project.find({ 'members.userId': req.user._id, deletedAt: archived ? { $ne: null } : null }).populate('members.userId', 'name email avatar').lean();
+        const data = projects.map(p => ({ ...p, 
+            isPinned: p.members.find(m => String(m.userId?._id || m.userId) === String(req.user._id))?.isPinned,
+            members: p.members.filter(m => !['pending', 'rejected'].includes(m.status))
         }));
-
-        res.status(200).json({ status: 'success', results: formattedProjects.length, data: formattedProjects });
+        res.json({ status: 'success', results: data.length, data });
     } catch (error) { 
         logger.error(`Critical 500 in getProjects: ${error.stack}`);
         next(error); 
@@ -299,6 +281,15 @@ const dismissDeadlineAlert = async (req, res, next) => {
     } catch (error) { next(error); }
 };
 
+const togglePin = async (req, res, next) => {
+    try {
+        const p = await Project.findOne({ _id: req.params.id, 'members.userId': req.user._id });
+        const m = p?.members.find(m => String(m.userId) === String(req.user._id));
+        if (m) { m.isPinned = !m.isPinned; await p.save(); await clearUserCache('projects_list', req.user._id); }
+        res.json({ status: 'success', data: { isPinned: m?.isPinned } });
+    } catch (e) { next(e); }
+};
+
 // --- Activity & Analytics ---
 
 const getProjectActivity = async (req, res, next) => {
@@ -323,7 +314,7 @@ const getProjectInsights = async (req, res, next) => {
             { $match: { _id: new mongoose.Types.ObjectId(id) } },
             {
                 $lookup: {
-                    from: 'audits', // Fixed from 'activities' to match Audit model collection
+                    from: 'audits',
                     let: { projectId: '$_id' },
                     pipeline: [{ $match: { $expr: { $and: [{ $eq: ['$entityId', '$$projectId'] }, { $eq: ['$entityType', 'Project'] }, { $gte: ['$createdAt', new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)] }] } } }],
                     as: 'recentActivities'
@@ -560,6 +551,7 @@ module.exports = {
     getProjects, getProject, createProject, updateProject, deleteProject, restoreProject,
     uploadProjectImage, dismissDeadlineAlert, getProjectActivity, getProjectInsights,
     getWorkspaceStats, addMember, updateMemberRole, removeMember, globalSearch,
-    getProjectInvitations, respondToProjectInvite, purgeProject, respondToInviteByToken
+    getProjectInvitations, respondToProjectInvite, purgeProject, respondToInviteByToken,
+    togglePin
 };
 

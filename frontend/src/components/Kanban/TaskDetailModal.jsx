@@ -10,7 +10,8 @@ import {
     X,
     AlertCircle,
     Save,
-    Activity
+    Activity,
+    Pin
 } from 'lucide-react';
 import { api } from '../../store/useAuthStore';
 import { toast } from 'react-hot-toast';
@@ -29,7 +30,7 @@ import {
 /**
  * High-fidelity TaskDetailModal - Refactored for Modularity & Portal usage
  */
-const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTasks: parentAvailableTasks, onClose, onUpdate, onDelete }) => {
+const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTasks: parentAvailableTasks, onClose, onUpdate, onDelete, onTogglePin }) => {
     const isNew = !task._id;
     const isAuthorized = true; // Should ideally come from RBAC
     const { socket } = useSocketStore();
@@ -243,6 +244,22 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
 
                     <div className="grid grid-cols-1 lg:grid-cols-6 gap-4">
                         <div className="lg:col-span-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                    <button 
+                                        onClick={() => onTogglePin?.(task._id)}
+                                        className={twMerge(clsx(
+                                            "flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all",
+                                            task.isPinned 
+                                                ? "bg-theme/10 border-theme/30 text-theme" 
+                                                : "bg-white/5 border-white/10 text-tertiary hover:text-secondary"
+                                        ))}
+                                    >
+                                        <Pin className={twMerge(clsx("w-3.5 h-3.5", task.isPinned && "fill-current"))} />
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{task.isPinned ? 'Pinned' : 'Pin Task'}</span>
+                                    </button>
+                                </div>
+                            </div>
                             {/* Basic Info */}
                             <div className="space-y-5">
                                 <div className="space-y-1">

@@ -147,7 +147,7 @@ export const KanbanColumn = React.memo(({
     quickAddCol, quickAddTitle, onQuickAddTitle,
     quickAddType, onQuickAddType,
     onQuickAddSubmit, onQuickAddOpen, onQuickAddCancel,
-    onToggleCompact, isMobile,
+    onToggleCompact, isMobile, onTogglePin,
 }) => {
     return (
         <div className="flex flex-col h-full" style={{ minWidth: isMobile ? '100%' : 280, flex: 1 }}>
@@ -210,6 +210,7 @@ export const KanbanColumn = React.memo(({
                                     onOpen={onOpenTask}
                                     onSelect={onSelectTask}
                                     onToggleSubtask={onToggleSubtask}
+                                    onTogglePin={onTogglePin}
                                     isCompact={isCompact}
                                 />
                             </div>

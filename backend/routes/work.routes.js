@@ -37,6 +37,7 @@ projectRouter.post('/:id/image', isNotArchived, authorizeProjectAccess(['Manager
 projectRouter.post('/:id/restore', authorizeProjectAccess(['Manager']), projectCtrl.restoreProject);
 projectRouter.delete('/:id/purge', authorizeProjectAccess(['Manager']), projectCtrl.purgeProject);
 projectRouter.post('/:id/dismiss-alert', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), projectCtrl.dismissDeadlineAlert);
+projectRouter.post('/:id/toggle-pin', authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), projectCtrl.togglePin);
 
 // Members & Insights
 projectRouter.route('/:id/members')
@@ -69,6 +70,7 @@ taskRouter.route('/:id')
 taskRouter.patch('/bulk-update', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Developer']), taskCtrl.bulkUpdateTasks);
 
 taskRouter.patch('/:id/status', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Developer', 'Viewer']), taskCtrl.updateTaskStatus);
+taskRouter.post('/:id/toggle-pin', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Developer', 'Viewer']), taskCtrl.togglePinTask);
 taskRouter.get('/:id/activity', isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.getTaskActivity);
 taskRouter.route('/:id/comments')
     .get(isNotArchived, authorizeProjectAccess(['Manager', 'Editor', 'Viewer']), taskCtrl.getTaskComments)

@@ -7,7 +7,7 @@ import { useMediaQuery } from '../../hooks/useMediaQuery';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     CheckCircle2, Plus, BarChart3, Layers, Activity, Filter, WifiOff,
-    Grid2x2, GitBranch, Calendar, AlignLeft, LayoutGrid, X
+    Grid2x2, GitBranch, Calendar, AlignLeft, LayoutGrid, X, Pin
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -173,6 +173,25 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
         onError: () => toast.error('Failed to delete task')
     });
 
+    const togglePinMutation = useMutation({
+        mutationFn: async (id) => (await api.post(`/tasks/${id}/toggle-pin`)).data,
+        onMutate: async (id) => {
+            await queryClient.cancelQueries({ queryKey: ['tasks', projectId] });
+            const snapshot = queryClient.getQueryData(['tasks', projectId]);
+            queryClient.setQueryData(['tasks', projectId], (old = []) =>
+                old.map(t => (String(t._id) === String(id) || String(t.id) === String(id)) ? { ...t, isPinned: !t.isPinned } : t)
+            );
+            return { snapshot };
+        },
+        onSuccess: (res, id) => {
+            queryClient.invalidateQueries({ queryKey: ['tasks', projectId] });
+        },
+        onError: (_e, _v, ctx) => {
+            if (ctx?.snapshot) { queryClient.setQueryData(['tasks', projectId], ctx.snapshot); }
+            toast.error('Failed to toggle pin');
+        },
+    });
+
     const handleUpdateTask = useCallback((id, updates) => {
         if (!id) {
             createTaskMutation.mutate(updates);
@@ -225,8 +244,11 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                 tasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) >= now && new Date(t.dueDate) <= soon);
             }
         }
-
-        tasks.sort((a, b) => (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0));
+        
+        tasks.sort((a, b) => {
+            if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1;
+            return (PRIORITY_ORDER[b.priority] || 0) - (PRIORITY_ORDER[a.priority] || 0);
+        });
         const colIds = allColumns.map(c => c.id || c._id?.toString());
 
         const group = (arr) => {
@@ -419,6 +441,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                                         onQuickAddSubmit={handleQuickAdd} onQuickAddOpen={setQuickAddCol}
                                         onQuickAddCancel={() => { setQuickAddCol(null); setQuickAddTitle(''); }}
                                         onToggleCompact={toggleColumnCompact} isMobile={isMobile}
+                                        onTogglePin={(id) => togglePinMutation.mutate(id)}
                                     />
                                 ))}
                             </div>
@@ -437,7 +460,7 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                                                         <AnimatePresence mode="popLayout">
                                                             {row.tasks[col.id]?.map((task, idx) => (
                                                                 <div key={task._id} style={compactColumns.includes(col.id) ? { marginTop: idx > 0 ? '-108px' : 0, zIndex: idx + 1, position: 'relative' } : undefined}>
-                                                                    <TaskCard task={task} isSelected={selectedTaskIds.includes(task._id)} isBlocked={blockedTaskIds.has(task._id)} onDragStart={handleDragStart} onOpen={setSelectedTask} onSelect={handleTaskSelect} onToggleSubtask={toggleSubtask} isCompact={compactColumns.includes(col.id)} />
+                                                                    <TaskCard task={task} isSelected={selectedTaskIds.includes(task._id)} isBlocked={blockedTaskIds.has(task._id)} onDragStart={handleDragStart} onOpen={setSelectedTask} onSelect={handleTaskSelect} onToggleSubtask={toggleSubtask} onTogglePin={(id) => togglePinMutation.mutate(id)} isCompact={compactColumns.includes(col.id)} />
                                                                 </div>
                                                             ))}
                                                         </AnimatePresence>
@@ -466,8 +489,9 @@ const KanbanBoard = ({ projectId, searchQuery = '', triggerQuickAdd, quickFilter
                         task={selectedTask}
                         project={project}
                         onClose={() => setSelectedTask(null)}
-                        onUpdate={handleUpdateTask}
+                         onUpdate={handleUpdateTask}
                         onDelete={handleDeleteTask}
+                        onTogglePin={(id) => togglePinMutation.mutate(id)}
                     />
                 )}
             </AnimatePresence>

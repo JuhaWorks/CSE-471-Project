@@ -88,7 +88,11 @@ const taskSchema = new mongoose.Schema(
                 dueDate: { type: Date, default: null },
                 priority: { type: String, enum: ['Low', 'Medium', 'High', 'Urgent'], default: 'Medium' }
             }
-        ]
+        ],
+        pinnedBy: [{
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'User'
+        }]
     },
     {
         timestamps: true,
