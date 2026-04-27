@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { api } from '../../store/useAuthStore';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import toast from 'react-hot-toast';
-import { Button, Input } from '../ui/BaseUI';
+import { Button, Input, SegmentedControl } from '../ui/BaseUI';
 import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
@@ -126,7 +126,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                     {step === 2 && "Category Selection"}
                                     {step === 3 && "Timeline Planning"}
                                 </Dialog.Title>
-                                <Dialog.Description className="text-[10px] font-bold text-gray-500 uppercase tracking-[0.3em] mt-1">
+                                <Dialog.Description className="text-[11px] font-black text-gray-400 uppercase tracking-[0.3em] mt-1">
                                     New Project Setup • Step {step} of 3
                                 </Dialog.Description>
                             </div>
@@ -155,7 +155,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         />
                                         
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Project Description</label>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1">Project Description</label>
                                             <textarea
                                                 {...register('description')}
                                                 rows={3}
@@ -165,7 +165,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                             {errors.description && <p className="text-xs text-red-400 ml-1 font-bold">{errors.description.message}</p>}
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Project Cover Image</label>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1">Project Cover Image</label>
                                             <div className="flex gap-4">
                                                 <div
                                                     onClick={() => fileInputRef.current.click()}
@@ -219,7 +219,7 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                         className="space-y-6"
                                     >
                                         <div className="space-y-4">
-                                            <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 ml-1">Project Category</label>
+                                            <label className="text-[11px] font-black uppercase tracking-widest text-gray-400 ml-1">Project Category</label>
                                             <div className="grid grid-cols-2 gap-3">
                                                 {['Development', 'Design', 'Marketing', 'Research', 'Internal', 'Client'].map((cat) => (
                                                     <button
@@ -275,28 +275,14 @@ const ProjectCreationModal = ({ open, onOpenChange }) => {
                                                 <Pin className={twMerge("w-4 h-4", watch('isPinned') ? "text-theme fill-current" : "text-gray-500")} />
                                                 <span className="text-sm font-bold text-gray-300">Pin to dashboard?</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setValue('isPinned', true)}
-                                                    className={twMerge(
-                                                        "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
-                                                        watch('isPinned') ? "bg-theme text-black" : "bg-white/5 text-tertiary hover:bg-white/10"
-                                                    )}
-                                                >
-                                                    Yes
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setValue('isPinned', false)}
-                                                    className={twMerge(
-                                                        "px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all",
-                                                        !watch('isPinned') ? "bg-white/20 text-white" : "bg-white/5 text-tertiary hover:bg-white/10"
-                                                    )}
-                                                >
-                                                    No
-                                                </button>
-                                            </div>
+                                            <SegmentedControl
+                                                value={watch('isPinned')}
+                                                onChange={(val) => setValue('isPinned', val)}
+                                                options={[
+                                                    { label: 'Yes', value: true },
+                                                    { label: 'No', value: false },
+                                                ]}
+                                            />
                                         </div>
                                     </motion.div>
                                 )}

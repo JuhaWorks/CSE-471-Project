@@ -18,6 +18,7 @@ import { clsx } from 'clsx';
 import { api } from '../../store/useAuthStore';
 import { toast } from 'react-hot-toast';
 import { useSocketStore } from '../../store/useSocketStore';
+import { SegmentedControl } from '../ui/BaseUI';
 
 // Sub-components
 import { 
@@ -251,46 +252,32 @@ const TaskDetailModal = ({ task, projectId, project, projectMembers, availableTa
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center gap-2">
                                     {isNew ? (
-                                        <div className="flex items-center justify-between w-full p-3 bg-white/5 rounded-2xl border border-white/5">
+                                        <div className="flex items-center justify-between w-full p-4 bg-white/5 rounded-2xl border border-white/5">
                                             <div className="flex items-center gap-3">
-                                                <Pin className={twMerge("w-4 h-4", isPinned ? "text-theme fill-current" : "text-gray-500")} />
-                                                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-300">Pin to dashboard?</span>
+                                                <Pin className={twMerge("w-4 h-4 transition-colors", isPinned ? "text-theme fill-current" : "text-gray-500")} />
+                                                <span className="text-[11px] font-black uppercase tracking-[0.2em] text-gray-300">Pin to dashboard?</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPinned(true)}
-                                                    className={twMerge(
-                                                        "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all",
-                                                        isPinned ? "bg-theme text-black" : "bg-white/5 text-tertiary hover:bg-white/10"
-                                                    )}
-                                                >
-                                                    Yes
-                                                </button>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => setIsPinned(false)}
-                                                    className={twMerge(
-                                                        "px-4 py-1.5 rounded-xl text-[9px] font-black uppercase tracking-wider transition-all",
-                                                        !isPinned ? "bg-white/20 text-white" : "bg-white/5 text-tertiary hover:bg-white/10"
-                                                    )}
-                                                >
-                                                    No
-                                                </button>
-                                            </div>
+                                            <SegmentedControl
+                                                value={isPinned}
+                                                onChange={setIsPinned}
+                                                options={[
+                                                    { label: 'Yes', value: true },
+                                                    { label: 'No', value: false },
+                                                ]}
+                                            />
                                         </div>
                                     ) : (
                                         <button 
                                             onClick={() => onTogglePin?.(task._id)}
                                             className={twMerge(clsx(
-                                                "flex items-center gap-2 px-3 py-1.5 rounded-xl border transition-all",
+                                                "flex items-center gap-2.5 px-4 py-2 rounded-xl border transition-all duration-300 active:scale-95 group/pin",
                                                 task.isPinned 
-                                                    ? "bg-theme/10 border-theme/30 text-theme" 
-                                                    : "bg-white/5 border-white/10 text-tertiary hover:text-secondary"
+                                                    ? "bg-theme/10 border-theme/30 text-theme shadow-theme-sm" 
+                                                    : "bg-white/5 border-white/5 text-tertiary hover:border-white/10 hover:text-secondary"
                                             ))}
                                         >
-                                            <Pin className={twMerge(clsx("w-3.5 h-3.5", task.isPinned && "fill-current"))} />
-                                            <span className="text-[10px] font-black uppercase tracking-widest">{task.isPinned ? 'Pinned' : 'Pin Task'}</span>
+                                            <Pin className={twMerge(clsx("w-3.5 h-3.5 transition-transform group-hover/pin:rotate-12", task.isPinned && "fill-current"))} />
+                                            <span className="text-[10px] font-black uppercase tracking-[0.2em]">{task.isPinned ? 'Pinned' : 'Pin Task'}</span>
                                         </button>
                                     )}
                                 </div>

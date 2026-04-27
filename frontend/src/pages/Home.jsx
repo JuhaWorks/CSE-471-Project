@@ -1,4 +1,5 @@
 import React, { useRef, useState, useEffect, useMemo, memo, lazy, Suspense } from 'react';
+import { Helmet } from 'react-helmet-async';
 import { useAuthStore, api } from '../store/useAuthStore';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
@@ -257,6 +258,10 @@ const Home = () => {
             }}
         >
             <style>{styles}</style>
+            <Helmet>
+                <title>Klivra | Workspace Dashboard</title>
+                <meta name="description" content="Access your Klivra workspace dashboard. Manage your projects, track tasks, and view real-time team analytics." />
+            </Helmet>
             <DeadlinePopup projects={projects} user={user} />
 
             {/* ── HEADER ─────────────────────────────────────────────────── */}

@@ -25,6 +25,7 @@ const IdentityCard = ({
                             alt={user?.name}
                             loading="lazy"
                             decoding="async"
+                            referrerPolicy="no-referrer"
                             className="w-full h-full object-cover"
                         />
                     </div>
@@ -43,7 +44,7 @@ const IdentityCard = ({
 
             {/* Name & email */}
             <div className="text-center space-y-1">
-                <p className="font-bold text-primary text-base leading-snug">
+                <p className="font-black text-primary text-base leading-snug">
                     {user?.name}
                 </p>
                 <p className="text-[11px] font-medium text-tertiary">{user?.email}</p>

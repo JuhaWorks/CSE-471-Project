@@ -82,7 +82,7 @@ export const TaskActivity = ({ taskId, projectId }) => {
                 >
                     <div className="w-8 h-8 rounded-xl bg-sunken border border-glass flex items-center justify-center shrink-0 group-hover:border-theme/30 transition-colors">
                         {a.user?.avatar ? (
-                            <img src={a.user.avatar} className="w-full h-full rounded-xl object-cover" alt="" />
+                            <img src={a.user.avatar} referrerPolicy="no-referrer" className="w-full h-full rounded-xl object-cover" alt="" />
                         ) : (
                             <span className="text-[10px] font-black text-theme">
                                 {a.user?.name?.charAt(0) || 'S'}
@@ -178,7 +178,7 @@ export const TaskAssignees = ({ assigneeIds = [], setAssigneeIds, projectMembers
                                             title={m.userId?.name}
                                         >
                                             {m.userId?.avatar ? (
-                                                <img src={getOptimizedAvatar(m.userId.avatar, 'xs')} alt={m.userId.name} className="w-full h-full object-cover" />
+                                                <img src={getOptimizedAvatar(m.userId.avatar, 'xs')} alt={m.userId.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                                             ) : (
                                                 <div className="w-full h-full bg-sunken flex items-center justify-center text-[10px] font-black text-theme">
                                                     {m.userId?.name?.charAt(0)}
@@ -255,7 +255,7 @@ export const TaskComments = ({
                                     className="flex gap-5 group/comment transition-all py-1"
                                 >
                                     <div className="w-10 h-10 rounded-xl overflow-hidden border border-glass shrink-0 transition-transform group-hover/comment:scale-105">
-                                        <img src={getOptimizedAvatar(comment.user?.avatar, 'sm')} alt={comment.user?.name} className="w-full h-full object-cover" />
+                                        <img src={getOptimizedAvatar(comment.user?.avatar, 'sm')} alt={comment.user?.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex-1 space-y-2.5">
                                         <div className="flex items-center justify-between">

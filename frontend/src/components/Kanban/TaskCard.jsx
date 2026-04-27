@@ -79,7 +79,7 @@ function AvatarStack({ assignees = [], compact = false }) {
                     )}
                 >
                     {a.avatar
-                        ? <img src={getOptimizedAvatar(a.avatar, 'xs')} alt={a.name} className="w-full h-full object-cover" />
+                        ? <img src={getOptimizedAvatar(a.avatar, 'xs')} alt={a.name} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
                         : <span className={twMerge('w-full h-full flex items-center justify-center font-black text-secondary', size)}>
                             {a.name?.charAt(0)?.toUpperCase()}
                         </span>
@@ -244,11 +244,16 @@ const TaskCard = React.memo(({
                         className={twMerge(clsx(
                             "absolute top-2 right-2 p-1.5 rounded-lg transition-all duration-300 z-10",
                             task.isPinned 
-                                ? "bg-theme/20 text-theme border border-theme/30 opacity-100" 
-                                : "text-tertiary/20 hover:text-tertiary hover:bg-white/5 opacity-0 group-hover:opacity-100"
+                                ? "bg-theme/20 text-theme border border-theme/30 opacity-100 shadow-theme-sm" 
+                                : "text-tertiary/20 hover:text-secondary hover:bg-white/5 opacity-0 group-hover:opacity-100"
                         ))}
                     >
-                        <Pin className={twMerge(clsx("w-3 h-3", task.isPinned && "fill-current"))} />
+                        <motion.div
+                            animate={task.isPinned ? { scale: [1, 1.2, 1], rotate: [0, 15, 0] } : {}}
+                            transition={{ duration: 0.4 }}
+                        >
+                            <Pin className={twMerge(clsx("w-3 h-3 transition-colors", task.isPinned && "fill-current"))} />
+                        </motion.div>
                     </button>
 
                     {/* Title row */}
@@ -258,7 +263,7 @@ const TaskCard = React.memo(({
                                 <h4 className={twMerge(clsx(
                                     'font-black leading-tight text-primary tracking-tight',
                                     'group-hover:text-theme transition-colors duration-200',
-                                    isCompact ? 'text-[12px]' : 'text-[14px]'
+                                    isCompact ? 'text-[13px]' : 'text-[15px]'
                                 ))}>
                                     {task.title}
                                 </h4>

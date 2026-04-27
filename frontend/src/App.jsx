@@ -32,6 +32,7 @@ const SecurityFeed = lazy(() => import('./pages/SecurityFeed'));
 import Home from './pages/Home';
 const Networking = lazy(() => import('./pages/Networking'));
 const Messaging = lazy(() => import('./pages/Messaging'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 import { GlobalLoadingScreen, PageLoader } from './components/ui/Loaders';
 import { registerServiceWorker, subscribeToNotifications } from './utils/push';
@@ -151,7 +152,7 @@ function App() {
           </Route>
 
           {/* Catch all unmatched routes */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Suspense>
     </Router>

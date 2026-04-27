@@ -289,3 +289,35 @@ export const Tooltip = memo(({ children, content, position = 'top', className })
 });
 
 Tooltip.displayName = 'Tooltip';
+// ─── SEGMENTED CONTROL ───────────────────────────────────────────────────────
+export const SegmentedControl = memo(({ options, value, onChange, className }) => {
+    return (
+        <div className={cn("relative flex p-1 bg-sunken rounded-xl border border-default w-fit", className)}>
+            {options.map((opt) => {
+                const isActive = opt.value === value;
+                return (
+                    <button
+                        key={opt.value}
+                        type="button"
+                        onClick={() => onChange(opt.value)}
+                        className={cn(
+                            "relative z-10 px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all min-w-[60px]",
+                            isActive ? "text-white" : "text-tertiary hover:text-secondary"
+                        )}
+                    >
+                        {opt.label}
+                        {isActive && (
+                            <motion.div
+                                layoutId="segmented-slider"
+                                className="absolute inset-0 bg-theme rounded-lg -z-10 shadow-theme-sm"
+                                transition={{ type: "spring", bounce: 0.2, duration: 0.4 }}
+                            />
+                        )}
+                    </button>
+                );
+            })}
+        </div>
+    );
+});
+
+SegmentedControl.displayName = 'SegmentedControl';

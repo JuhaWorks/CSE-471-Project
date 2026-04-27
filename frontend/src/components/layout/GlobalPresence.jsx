@@ -82,6 +82,7 @@ const GlobalPresence = () => {
                                                 className="w-full h-full object-cover"
                                                 alt={user.name}
                                                 loading="lazy"
+                                                referrerPolicy="no-referrer"
                                             />
                                         </div>
                                         <div className={`absolute -bottom-1 -right-1 w-3.5 h-3.5 rounded-full border-[3px] border-[#0a0a0a]

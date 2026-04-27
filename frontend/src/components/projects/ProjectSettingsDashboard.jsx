@@ -112,7 +112,7 @@ const ProjectSettingsDashboard = () => {
         { id: 'insights', label: 'Insights', icon: Zap },
         { id: 'members', label: 'Team', icon: Users },
         { id: 'activity', label: 'Audit', icon: History },
-        ...(isManager ? [{ id: 'danger', label: 'Critical Operations', icon: AlertCircle, color: 'text-red-400' }] : []),
+        ...(isManager ? [{ id: 'danger', label: 'Danger Zone', icon: AlertTriangle, color: 'text-red-500' }] : []),
     ];
 
     return (

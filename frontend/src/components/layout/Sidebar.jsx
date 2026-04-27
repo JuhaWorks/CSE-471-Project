@@ -79,7 +79,7 @@ const SidebarItem = memo(({ item, isActive, onClose, onPrefetch, isCollapsed, un
                 <span className="relative z-10 flex flex-col min-w-0 flex-1">
                     <span className={cn(
                         "text-sm leading-tight truncate transition-colors duration-150",
-                        isActive ? "font-semibold text-theme" : "font-medium"
+                        isActive ? "font-black text-theme" : "font-bold"
                     )}>
                         {item.label}
                     </span>
@@ -481,6 +481,7 @@ const SidebarComponent = () => {
                                     alt={user.name} 
                                     width={36} height={36} 
                                     loading="lazy" decoding="async" 
+                                    referrerPolicy="no-referrer"
                                     className="w-full h-full object-cover" 
                                   /> 
                                 : <UserCircle className="w-6 h-6 text-theme" />

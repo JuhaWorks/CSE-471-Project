@@ -5,7 +5,44 @@
   <meta charset="UTF-8" />
   <!-- Accessibility: allow user scaling (Lighthouse flags maximum-scale=1 as a11y issue) -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Klivra — Modern project management and team collaboration platform. Manage projects, tasks, and your team in real time." />
+  <meta name="description" content="Klivra — High-performance project management and team collaboration hub. Real-time task tracking, instant messaging, and shared whiteboards for modern engineering teams." />
+  <meta name="keywords" content="project management, team collaboration, kanban, real-time chat, engineering tools, klivra, task tracking, whiteboard" />
+  <meta name="author" content="JuhaWorks" />
+  <meta name="robots" content="index, follow" />
+
+  <!-- Open Graph / Facebook -->
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://klivra.vercel.app/" />
+  <meta property="og:title" content="Klivra — Modern Project Management Hub" />
+  <meta property="og:description" content="Manage projects, tasks, and teams in real time with Klivra's sleek, professional interface." />
+  <meta property="og:image" content="https://klivra.vercel.app/logo.png" />
+
+  <!-- Twitter -->
+  <meta property="twitter:card" content="summary_large_image" />
+  <meta property="twitter:url" content="https://klivra.vercel.app/" />
+  <meta property="twitter:title" content="Klivra — Modern Project Management Hub" />
+  <meta property="twitter:description" content="Manage projects, tasks, and teams in real time with Klivra's sleek, professional interface." />
+  <meta property="twitter:image" content="https://klivra.vercel.app/logo.png" />
+
+  <!-- Canonical Link -->
+  <link rel="canonical" href="https://klivra.vercel.app/" />
+
+  <!-- JSON-LD Structured Data (Schema.org) -->
+  <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Klivra",
+      "url": "https://klivra.vercel.app/",
+      "description": "Modern project management and team collaboration platform.",
+      "applicationCategory": "BusinessApplication",
+      "operatingSystem": "All",
+      "author": {
+        "@type": "Organization",
+        "name": "JuhaWorks"
+      }
+    }
+  </script>
 
   <!-- Strict Content Security Policy (Prevents unauthorized data exfiltration) -->
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' http://localhost:* https://localhost:* ws://localhost:* wss://localhost:* http://127.0.0.1:* https://127.0.0.1:* wss://syncforge-io.onrender.com https://syncforge-io.onrender.com https://*.sentry.io https://sentry.io https://api.nasa.gov https://favqs.com https://api.fontshare.com https://cdn.fontshare.com; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob: data: https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' blob: https://fonts.googleapis.com https://api.fontshare.com https://cdn.fontshare.com; font-src 'self' data: https://fonts.gstatic.com https://api.fontshare.com https://cdn.fontshare.com; worker-src 'self' blob: data:; img-src 'self' data: blob: *; media-src 'self' data: blob:; object-src 'none'; frame-src 'self' *;" />
@@ -28,6 +65,8 @@
 
   <!-- Logo: preload at actual display size (40x40), not 640x640 -->
   <link rel="icon" type="image/png" href="/logo.png">
+  <link rel="apple-touch-icon" href="/logo.png">
+  <link rel="manifest" href="/manifest.json">
   <link rel="preload" as="image" href="/logo.png" fetchpriority="high">
 
   <title>• KLIVRA •</title>

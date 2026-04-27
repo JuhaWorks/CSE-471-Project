@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://klivra.vercel.app/sitemap.xml
