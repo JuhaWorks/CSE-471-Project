@@ -182,7 +182,6 @@ const SidebarComponent = () => {
     }, [socket, queryClient]);
 
     const chunkMap = {
-        '/': () => import('../../pages/Home'),
         '/projects': () => import('../../pages/Projects'),
         '/tasks': () => import('../../pages/Tasks'),
         '/networking': () => import('../../pages/Networking'),

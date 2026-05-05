@@ -63,25 +63,30 @@ function App() {
     checkAuth();
     
     // Performance: Prefetch high-priority assets early to reduce LCP sequential delay
+    // Assuming APOD is public or doesn't cause harmful 401s
     queryClient.prefetchQuery({
       queryKey: ['apod'],
       queryFn: async () => (await api.get('/tools/apod')).data.data,
       staleTime: 1000 * 60 * 60 * 6,
     });
-
-    // Prefetch core dashboard data to parallelize with bundle loading
-    queryClient.prefetchQuery({
-      queryKey: ['myTasks'],
-      queryFn: async () => (await api.get('/tasks')).data.data,
-      staleTime: 1000 * 60 * 2,
-    });
-
-    queryClient.prefetchQuery({
-      queryKey: ['workspaceAnalytics'],
-      queryFn: async () => (await api.get('/analytics/workspace')).data.data,
-      staleTime: 1000 * 60 * 10,
-    });
   }, [checkAuth, queryClient]);
+
+  // Only prefetch protected core dashboard data if the user is authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      queryClient.prefetchQuery({
+        queryKey: ['myTasks'],
+        queryFn: async () => (await api.get('/tasks')).data.data,
+        staleTime: 1000 * 60 * 2,
+      });
+
+      queryClient.prefetchQuery({
+        queryKey: ['workspaceAnalytics'],
+        queryFn: async () => (await api.get('/analytics/workspace')).data.data,
+        staleTime: 1000 * 60 * 10,
+      });
+    }
+  }, [isAuthenticated, queryClient]);
 
   // Initialize background push notifications
   useEffect(() => {

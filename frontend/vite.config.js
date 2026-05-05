@@ -25,7 +25,7 @@ export default defineConfig({
       drop: ['console', 'debugger'],
     },
     sourcemap: false,
-    chunkSizeWarningLimit: 600,
+    chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
         manualChunks(id) {

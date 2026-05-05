@@ -28,7 +28,13 @@ const queryClient = new QueryClient({
       refetchOnWindowFocus: false,
       staleTime: 5 * 60 * 1000,  // 5 min: data stays fresh
       gcTime: 5 * 60 * 1000,    // 5 min: free unused cache aggressively
-      retry: 1,
+      retry: (failureCount, error) => {
+        // Do not retry on authentication/authorization errors
+        if (error?.response?.status === 401 || error?.response?.status === 403) {
+          return false;
+        }
+        return failureCount < 1;
+      },
       networkMode: 'offlineFirst',
     },
   },
