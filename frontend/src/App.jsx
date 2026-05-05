@@ -90,15 +90,13 @@ function App() {
 
   // Initialize background push notifications
   useEffect(() => {
-    const initPush = async () => {
-      await registerServiceWorker();
-      // If user is already authenticated, ensure they are subscribed on this device
-      if (isAuthenticated) {
-        // Simple delay to ensure registration is ready
-        setTimeout(subscribeToNotifications, 3000);
-      }
-    };
-    initPush();
+    // const initPush = async () => {
+    //   await registerServiceWorker();
+    //   if (isAuthenticated) {
+    //     setTimeout(subscribeToNotifications, 3000);
+    //   }
+    // };
+    // initPush();
   }, [isAuthenticated]);
 
   // Connect Socket to React Query for zero-reload synchronized updates

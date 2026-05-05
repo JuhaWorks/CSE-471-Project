@@ -6,6 +6,14 @@ import './index.css'
 import { HelmetProvider } from 'react-helmet-async'
 import App from './App.jsx'
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then(function(registrations) {
+    for(let registration of registrations) {
+      registration.unregister();
+    }
+  });
+}
+
 if (import.meta.env.VITE_SENTRY_DSN && import.meta.env.PROD) {
   Sentry.init({
     dsn: import.meta.env.VITE_SENTRY_DSN,
