@@ -12,6 +12,12 @@ if ('serviceWorker' in navigator) {
       registration.unregister();
     }
   });
+  // Force clear caches to purge any PWA-cached versions of index.html
+  if ('caches' in window) {
+    caches.keys().then(names => {
+      for (let name of names) caches.delete(name);
+    });
+  }
 }
 
 if (import.meta.env.VITE_SENTRY_DSN && import.meta.env.PROD) {

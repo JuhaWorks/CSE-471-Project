@@ -184,7 +184,7 @@ export const useAuthStore = create(
                 // Safety timeout to prevent "infinity loading"
                 const authCheckPromise = api.get(API_ENDPOINTS.AUTH.ME);
                 const timeoutPromise = new Promise((_, reject) =>
-                    setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 8000) // Increased slightly for slower live connections
+                    setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 15000) // Increased to 15s for backend cold starts
                 );
 
                 try {

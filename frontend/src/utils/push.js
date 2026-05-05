@@ -18,15 +18,7 @@ function urlBase64ToUint8Array(base64String) {
 }
 
 export const registerServiceWorker = async () => {
-  if ('serviceWorker' in navigator && 'PushManager' in window) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log('[PUSH] Service Worker registered:', registration.scope);
-      return registration;
-    } catch (err) {
-      console.error('[PUSH] Service Worker registration failed:', err);
-    }
-  }
+  // Service Worker registration disabled to prevent WebApp/PWA behavior
   return null;
 };
 
